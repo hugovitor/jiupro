@@ -23,7 +23,8 @@ import type {
   Student,
 } from "./types";
 
-const STORAGE_KEY = "tatame.demo.v2";
+const STORAGE_KEY = "tatame.demo.v3";
+const SESSION_KEY = "tatame.session.v3";
 
 type Store = AppState & {
   ready: boolean;
@@ -53,35 +54,6 @@ const StoreContext = createContext<Store | null>(null);
 const listeners = new Set<() => void>();
 let cached: AppState | null = null;
 
-const SERVER_STATE: AppState = {
-  version: 2,
-  academy: {
-    id: "ssr",
-    name: "Tatame",
-    slug: "tatame",
-    city: "",
-    state: "",
-    address: "",
-    phone: "",
-    instagram: "",
-    plan: "academia",
-    monthlyGoal: 0,
-    createdAt: "2021-01-01T00:00:00.000Z",
-  },
-  users: [],
-  students: [],
-  classes: [],
-  attendance: [],
-  payments: [],
-  expenses: [],
-  inventory: [],
-  graduations: [],
-  posts: [],
-  session: null,
-};
-
-const SESSION_KEY = "tatame.session.v2";
-
 function persist(state: AppState) {
   try {
     localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
@@ -99,7 +71,7 @@ function load(): AppState {
   try {
     const raw = localStorage.getItem(STORAGE_KEY);
     const seeded = raw ? (JSON.parse(raw) as AppState) : createSeed();
-    const parsed = seeded.version === 2 ? seeded : createSeed();
+    const parsed = seeded.version === 3 ? seeded : createSeed();
     let session = parsed.session ?? null;
     try {
       const extra = localStorage.getItem(SESSION_KEY);
@@ -125,7 +97,7 @@ function subscribe(listener: () => void) {
 }
 
 function getSnapshot(): AppState {
-  if (!cached || cached.academy.id === "ssr") cached = load();
+  if (!cached) cached = load();
   return cached;
 }
 
@@ -145,15 +117,13 @@ export function peekSession() {
 }
 
 export function StoreProvider({ children }: { children: ReactNode }) {
-  const [state, setState] = useState<AppState>(SERVER_STATE);
+  const [state, setState] = useState<AppState>(createSeed);
 
   useEffect(() => {
-    const sync = () => setState(getSnapshot());
-    sync();
-    return subscribe(sync);
+    return subscribe(() => setState(getSnapshot()));
   }, []);
 
-  const hydrated = state.academy.id !== "ssr";
+  const hydrated = true;
 
   const login = useCallback((email: string) => {
     const current = getSnapshot();
@@ -486,6 +456,13 @@ export function StoreProvider({ children }: { children: ReactNode }) {
   );
 
   return <StoreContext.Provider value={value}>{children}</StoreContext.Provider>;
+}
+
+export function currentStudent(state: { students: Student[]; session: AppState["session"] }) {
+  return (
+    state.students.find((s) => s.userId === state.session?.userId) ??
+    state.students.find((s) => s.id === "s_joao")
+  );
 }
 
 export function useStore() {

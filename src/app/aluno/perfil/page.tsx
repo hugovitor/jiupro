@@ -4,12 +4,12 @@ import { useRouter } from "next/navigation";
 import { BeltBadge, PersonAvatar } from "@/components/belt-badge";
 import { Button } from "@/components/ui/button";
 import { brl, currentMonth, formatDate } from "@/lib/format";
-import { useStore } from "@/lib/store";
+import { currentStudent, useStore } from "@/lib/store";
 
 export default function PerfilAluno() {
   const store = useStore();
   const router = useRouter();
-  const student = store.students.find((s) => s.userId === store.session?.userId);
+  const student = currentStudent(store);
   const month = currentMonth();
   const pay = student
     ? store.payments.find((p) => p.studentId === student.id && p.month === month)

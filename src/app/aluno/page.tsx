@@ -5,11 +5,11 @@ import { BeltBadge } from "@/components/belt-badge";
 import { Button } from "@/components/ui/button";
 import { isoDate } from "@/lib/format";
 import { attendanceInDays } from "@/lib/insights";
-import { useStore } from "@/lib/store";
+import { currentStudent, useStore } from "@/lib/store";
 
 export default function AlunoHome() {
   const store = useStore();
-  const student = store.students.find((s) => s.userId === store.session?.userId);
+  const student = currentStudent(store);
   const classes = store.todayClasses().filter((c) => {
     if (!student) return true;
     if (c.division === "kids") return student.division === "kids";

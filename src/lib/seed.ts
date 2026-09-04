@@ -45,6 +45,12 @@ export function createSeed(): AppState {
     createdAt: "2021-03-08T12:00:00.000Z",
   };
 
+  const session = {
+    userId: "u_carla",
+    academyId: ACADEMY_ID,
+    role: "owner" as const,
+  };
+
   const users: User[] = [
     {
       id: "u_carla",
@@ -742,7 +748,7 @@ export function createSeed(): AppState {
   ];
 
   return {
-    version: 2,
+    version: 3,
     academy,
     users,
     students,
@@ -753,7 +759,7 @@ export function createSeed(): AppState {
     inventory,
     graduations,
     posts,
-    session: null,
+    session,
   };
 }
 

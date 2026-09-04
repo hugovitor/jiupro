@@ -5,11 +5,11 @@ import { Progress } from "@/components/ui/progress";
 import { beltLabel } from "@/lib/belts";
 import { formatDate, monthsBetween } from "@/lib/format";
 import { attendanceInDays } from "@/lib/insights";
-import { useStore } from "@/lib/store";
+import { currentStudent, useStore } from "@/lib/store";
 
 export default function EvolucaoPage() {
   const store = useStore();
-  const student = store.students.find((s) => s.userId === store.session?.userId);
+  const student = currentStudent(store);
   if (!student) {
     return <p className="text-sm text-muted-foreground">Perfil de aluno não ligado.</p>;
   }

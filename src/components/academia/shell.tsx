@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import {
   ClipboardCheck,
   GraduationCap,
@@ -19,7 +19,7 @@ import {
 import { Logo } from "@/components/logo";
 import { Button } from "@/components/ui/button";
 import { Sheet, SheetContent, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
-import { peekSession, useStore } from "@/lib/store";
+import { useStore } from "@/lib/store";
 import { cn } from "@/lib/utils";
 
 const NAV = [
@@ -74,27 +74,6 @@ export function AcademiaShell({ children }: { children: React.ReactNode }) {
   const router = useRouter();
   const pathname = usePathname();
   const [open, setOpen] = useState(false);
-
-  useEffect(() => {
-    if (!store.hydrated) return;
-    const session = store.session ?? peekSession();
-    if (!session) {
-      router.replace("/login");
-      return;
-    }
-    if (session.role === "student") {
-      router.replace("/aluno");
-    }
-  }, [store.hydrated, store.session, router]);
-
-  if (!store.hydrated || !store.session || store.session.role === "student") {
-    return (
-      <div className="flex min-h-screen items-center justify-center text-sm text-muted-foreground">
-        Abrindo o painel…
-      </div>
-    );
-  }
-
   const user = store.users.find((u) => u.id === store.session?.userId);
 
   return (

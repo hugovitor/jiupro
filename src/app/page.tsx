@@ -116,7 +116,7 @@ export default function HomePage() {
               presença no celular e acompanham a própria evolução.
             </p>
             <div className="mt-8 flex flex-col gap-3 sm:flex-row">
-              <Button size="lg" render={<Link href="/login" />}>
+              <Button size="lg" render={<Link href="/academia" />}>
                 Ver a academia de demonstração
               </Button>
               <Button variant="outline" size="lg" render={<Link href="/planos" />}>
@@ -197,7 +197,7 @@ export default function HomePage() {
               <li>— Mural da academia: seminário, carona, horário.</li>
               <li>— Evolução: tempo de faixa, presenças, histórico de graus.</li>
             </ul>
-            <Button className="mt-6" render={<Link href="/login" />}>
+            <Button className="mt-6" render={<Link href="/aluno" />}>
               Entrar como aluno
             </Button>
           </div>
@@ -290,7 +290,7 @@ export default function HomePage() {
             O produto já nasce para ser apresentado no tatame: o dono vê o
             painel, o aluno vê o PWA. Sem enrolação de plataforma.
           </p>
-          <Button className="mt-6" size="lg" render={<Link href="/login" />}>
+          <Button className="mt-6" size="lg" render={<Link href="/academia" />}>
             Abrir a demo agora
           </Button>
         </div>
