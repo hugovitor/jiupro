@@ -26,6 +26,7 @@ const STORAGE_KEY = "tatame.demo.v2";
 
 type Store = AppState & {
   ready: boolean;
+  hydrated: boolean;
   login: (email: string) => boolean;
   logout: () => void;
   resetDemo: () => void;
@@ -78,9 +79,16 @@ const SERVER_STATE: AppState = {
   session: null,
 };
 
+const SESSION_KEY = "tatame.session.v2";
+
 function persist(state: AppState) {
   try {
     localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+    if (state.session) {
+      localStorage.setItem(SESSION_KEY, JSON.stringify(state.session));
+    } else {
+      localStorage.removeItem(SESSION_KEY);
+    }
   } catch {
     /* ignore quota */
   }
@@ -89,13 +97,27 @@ function persist(state: AppState) {
 function load(): AppState {
   try {
     const raw = localStorage.getItem(STORAGE_KEY);
-    if (!raw) return createSeed();
-    const parsed = JSON.parse(raw) as AppState;
-    if (parsed.version !== 2) return createSeed();
-    return { ...parsed, session: parsed.session ?? null };
+    const seeded = raw ? (JSON.parse(raw) as AppState) : createSeed();
+    const parsed = seeded.version === 2 ? seeded : createSeed();
+    let session = parsed.session ?? null;
+    try {
+      const extra = localStorage.getItem(SESSION_KEY);
+      if (extra) session = JSON.parse(extra) as AppState["session"];
+    } catch {
+      /* keep parsed session */
+    }
+    return { ...parsed, session };
   } catch {
     return createSeed();
   }
+}
+
+function useIsClient() {
+  return useSyncExternalStore(
+    () => () => {},
+    () => true,
+    () => false,
+  );
 }
 
 function emit() {
@@ -108,7 +130,7 @@ function subscribe(listener: () => void) {
 }
 
 function getSnapshot(): AppState {
-  if (!cached) cached = load();
+  if (!cached || cached.academy.id === "ssr") cached = load();
   return cached;
 }
 
@@ -127,7 +149,18 @@ function commit(updater: (prev: AppState) => AppState) {
 }
 
 export function StoreProvider({ children }: { children: ReactNode }) {
-  const state = useSyncExternalStore(subscribe, getSnapshot, getServerSnapshot);
+  const hydrated = useIsClient();
+  const subscribed = useSyncExternalStore(
+    subscribe,
+    getSnapshot,
+    getServerSnapshot,
+  );
+  const state =
+    !hydrated
+      ? SERVER_STATE
+      : subscribed.academy.id === "ssr"
+        ? getSnapshot()
+        : subscribed;
 
   const login = useCallback((email: string) => {
     const current = getSnapshot();
@@ -414,7 +447,8 @@ export function StoreProvider({ children }: { children: ReactNode }) {
   const value = useMemo<Store>(
     () => ({
       ...state,
-      ready: true,
+      ready: hydrated,
+      hydrated,
       login,
       logout,
       resetDemo,
@@ -436,6 +470,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
     }),
     [
       state,
+      hydrated,
       login,
       logout,
       resetDemo,

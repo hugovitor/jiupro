@@ -76,6 +76,7 @@ export function AcademiaShell({ children }: { children: React.ReactNode }) {
   const [open, setOpen] = useState(false);
 
   useEffect(() => {
+    if (!store.hydrated) return;
     if (!store.session) {
       router.replace("/login");
       return;
@@ -83,9 +84,9 @@ export function AcademiaShell({ children }: { children: React.ReactNode }) {
     if (store.session.role === "student") {
       router.replace("/aluno");
     }
-  }, [store.session, router]);
+  }, [store.hydrated, store.session, router]);
 
-  if (!store.session || store.session.role === "student") {
+  if (!store.hydrated || !store.session || store.session.role === "student") {
     return (
       <div className="flex min-h-screen items-center justify-center text-sm text-muted-foreground">
         Abrindo o painel…
