@@ -19,7 +19,7 @@ import {
 import { Logo } from "@/components/logo";
 import { Button } from "@/components/ui/button";
 import { Sheet, SheetContent, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
-import { useStore } from "@/lib/store";
+import { peekSession, useStore } from "@/lib/store";
 import { cn } from "@/lib/utils";
 
 const NAV = [
@@ -77,11 +77,12 @@ export function AcademiaShell({ children }: { children: React.ReactNode }) {
 
   useEffect(() => {
     if (!store.hydrated) return;
-    if (!store.session) {
+    const session = store.session ?? peekSession();
+    if (!session) {
       router.replace("/login");
       return;
     }
-    if (store.session.role === "student") {
+    if (session.role === "student") {
       router.replace("/aluno");
     }
   }, [store.hydrated, store.session, router]);

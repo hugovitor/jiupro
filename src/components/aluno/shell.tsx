@@ -4,7 +4,7 @@ import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { useEffect } from "react";
 import { Home, LineChart, MessageSquare, User } from "lucide-react";
-import { useStore } from "@/lib/store";
+import { peekSession, useStore } from "@/lib/store";
 import { cn } from "@/lib/utils";
 
 const NAV = [
@@ -21,11 +21,12 @@ export function AlunoShell({ children }: { children: React.ReactNode }) {
 
   useEffect(() => {
     if (!store.hydrated) return;
-    if (!store.session) {
+    const session = store.session ?? peekSession();
+    if (!session) {
       router.replace("/login");
       return;
     }
-    if (store.session.role !== "student") {
+    if (session.role !== "student") {
       router.replace("/academia");
     }
   }, [store.hydrated, store.session, router]);

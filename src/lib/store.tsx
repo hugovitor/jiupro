@@ -4,8 +4,9 @@ import {
   createContext,
   useCallback,
   useContext,
+  useEffect,
   useMemo,
-  useSyncExternalStore,
+  useState,
   type ReactNode,
 } from "react";
 import { nextAdultBelt } from "./belts";
@@ -112,30 +113,20 @@ function load(): AppState {
   }
 }
 
-function useIsClient() {
-  return useSyncExternalStore(
-    () => () => {},
-    () => true,
-    () => false,
-  );
-}
-
 function emit() {
   listeners.forEach((listener) => listener());
 }
 
 function subscribe(listener: () => void) {
   listeners.add(listener);
-  return () => listeners.delete(listener);
+  return () => {
+    listeners.delete(listener);
+  };
 }
 
 function getSnapshot(): AppState {
   if (!cached || cached.academy.id === "ssr") cached = load();
   return cached;
-}
-
-function getServerSnapshot(): AppState {
-  return SERVER_STATE;
 }
 
 function write(next: AppState) {
@@ -148,19 +139,21 @@ function commit(updater: (prev: AppState) => AppState) {
   write(updater(getSnapshot()));
 }
 
+export function peekSession() {
+  if (typeof window === "undefined") return null;
+  return getSnapshot().session;
+}
+
 export function StoreProvider({ children }: { children: ReactNode }) {
-  const hydrated = useIsClient();
-  const subscribed = useSyncExternalStore(
-    subscribe,
-    getSnapshot,
-    getServerSnapshot,
-  );
-  const state =
-    !hydrated
-      ? SERVER_STATE
-      : subscribed.academy.id === "ssr"
-        ? getSnapshot()
-        : subscribed;
+  const [state, setState] = useState<AppState>(SERVER_STATE);
+
+  useEffect(() => {
+    const sync = () => setState(getSnapshot());
+    sync();
+    return subscribe(sync);
+  }, []);
+
+  const hydrated = state.academy.id !== "ssr";
 
   const login = useCallback((email: string) => {
     const current = getSnapshot();

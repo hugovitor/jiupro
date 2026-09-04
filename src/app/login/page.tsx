@@ -25,7 +25,6 @@ export default function LoginPage() {
     }
     const role =
       DEMO_ACCOUNTS.find((a) => a.email === nextEmail)?.role ?? "owner";
-    toast.success("Bem-vindo ao tatame.");
     router.push(role === "student" ? "/aluno" : "/academia");
   }
 
