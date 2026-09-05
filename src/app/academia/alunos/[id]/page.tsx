@@ -13,6 +13,7 @@ import {
   currentMonth,
   formatDate,
   formatDay,
+  isoDate,
   monthsBetween,
 } from "@/lib/format";
 import { attendanceInDays } from "@/lib/insights";
@@ -225,7 +226,7 @@ function Avaliacao({ studentId }: { studentId: string }) {
             if (!notes.trim()) return;
             store.addEvaluation({
               studentId,
-              date: new Date().toISOString().slice(0, 10),
+              date: isoDate(0),
               instructorName:
                 store.users.find((u) => u.id === store.session?.userId)?.name ??
                 "Professor",

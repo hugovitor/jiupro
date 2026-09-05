@@ -1,4 +1,4 @@
-import { isoDate } from "./format";
+import { currentMonth, isoDate, shiftMonth, weekdayToday } from "./format";
 import type {
   Academy,
   AcademyEvent,
@@ -20,18 +20,12 @@ import type {
 const ACADEMY_ID = "ac_origem";
 
 function monthOffset(n: number) {
-  const d = new Date();
-  d.setDate(1);
-  d.setMonth(d.getMonth() + n);
-  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}`;
+  return shiftMonth(currentMonth(), n);
 }
 
 function dateOnWeekday(weekday: number, weeksAgo: number) {
-  const d = new Date();
-  d.setHours(12, 0, 0, 0);
-  const diff = (d.getDay() - weekday + 7) % 7;
-  d.setDate(d.getDate() - diff - weeksAgo * 7);
-  return d.toISOString().slice(0, 10);
+  const diff = (weekdayToday() - weekday + 7) % 7;
+  return isoDate(-(diff + weeksAgo * 7));
 }
 
 export function createSeed(): AppState {

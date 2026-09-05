@@ -9,7 +9,7 @@ import {
   type ReactNode,
 } from "react";
 import { nextAdultBelt } from "./belts";
-import { currentMonth, isoDate, uid } from "./format";
+import { currentMonth, isoDate, uid, weekdayToday } from "./format";
 import { createSeed } from "./seed";
 import { dayCode } from "./whatsapp";
 import type {
@@ -455,7 +455,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
   );
 
   const todayClasses = useCallback(() => {
-    const day = new Date().getDay();
+    const day = weekdayToday();
     return state.classes.filter((c) => c.weekday === day);
   }, [state]);
 

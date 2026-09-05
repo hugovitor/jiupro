@@ -1,4 +1,4 @@
-import { monthsBetween } from "./format";
+import { currentMonth, daysSince, isoDate, monthsBetween, parseDate } from "./format";
 import type { AppState, Student } from "./types";
 
 export function lastClassDate(state: AppState, studentId: string) {
@@ -9,9 +9,7 @@ export function lastClassDate(state: AppState, studentId: string) {
 }
 
 export function attendanceInDays(state: AppState, studentId: string, days: number) {
-  const cutoff = new Date();
-  cutoff.setDate(cutoff.getDate() - days);
-  const from = cutoff.toISOString().slice(0, 10);
+  const from = isoDate(-days);
   return state.attendance.filter((a) => a.studentId === studentId && a.date >= from)
     .length;
 }
@@ -20,9 +18,7 @@ export function isAtRisk(state: AppState, student: Student) {
   if (student.status !== "active") return false;
   const last = lastClassDate(state, student.id);
   if (!last) return true;
-  const days = Math.floor(
-    (Date.now() - new Date(last).getTime()) / (1000 * 60 * 60 * 24),
-  );
+  const days = daysSince(last);
   return days >= 14;
 }
 
@@ -58,20 +54,21 @@ export function overdueTotal(state: AppState) {
 }
 
 export function birthdaysSoon(students: Student[], withinDays = 7) {
-  const start = new Date();
-  start.setHours(0, 0, 0, 0);
+  const todayIso = isoDate(0);
+  const year = Number(todayIso.slice(0, 4));
+  const today = parseDate(todayIso);
   return students.filter((s) => {
     if (!s.birthDate) return false;
-    const born = new Date(s.birthDate);
-    const next = new Date(start.getFullYear(), born.getMonth(), born.getDate());
-    if (next < start) next.setFullYear(next.getFullYear() + 1);
-    const diff = Math.round((next.getTime() - start.getTime()) / 86400000);
+    const [, m, d] = s.birthDate.slice(0, 10).split("-").map(Number);
+    let next = new Date(Date.UTC(year, (m ?? 1) - 1, d ?? 1, 12));
+    if (next < today) next = new Date(Date.UTC(year + 1, (m ?? 1) - 1, d ?? 1, 12));
+    const diff = Math.round((next.getTime() - today.getTime()) / 86_400_000);
     return diff >= 0 && diff <= withinDays;
   });
 }
 
 export function attendanceThisMonth(state: AppState, studentId: string) {
-  const month = new Date().toISOString().slice(0, 7);
+  const month = currentMonth();
   return state.attendance.filter(
     (a) => a.studentId === studentId && a.date.startsWith(month),
   ).length;

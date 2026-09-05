@@ -7,7 +7,7 @@ import { FormDialog } from "@/components/form-dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { weekdayFull, weekdayName, isoDate } from "@/lib/format";
+import { weekdayFull, weekdayName, isoDate, weekdayToday } from "@/lib/format";
 import { useStore } from "@/lib/store";
 
 export default function TurmasPage() {
@@ -60,7 +60,7 @@ export default function TurmasPage() {
                       <div>
                         <p>
                           {weekdayName(c.weekday).toUpperCase()} · até {c.capacity}
-                          {c.weekday === new Date().getDay() ? ` · ${todayCount} hoje` : ""}
+                          {c.weekday === weekdayToday() ? ` · ${todayCount} hoje` : ""}
                         </p>
                         <BeltBadge
                           belt={c.division === "kids" ? "yellow" : "blue"}

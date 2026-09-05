@@ -7,7 +7,7 @@ import { PersonAvatar } from "@/components/belt-badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { brl, isoDate } from "@/lib/format";
+import { brl, currentMonth, isoDate } from "@/lib/format";
 import { useStore } from "@/lib/store";
 import { dayCode } from "@/lib/whatsapp";
 
@@ -217,7 +217,7 @@ function Visitante({ classId }: { classId: string }) {
 
 function FrequenciaMes() {
   const store = useStore();
-  const month = new Date().toISOString().slice(0, 7);
+  const month = currentMonth();
   const rows = store.students
     .filter((s) => s.status !== "inactive")
     .map((s) => ({

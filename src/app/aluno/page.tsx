@@ -5,7 +5,7 @@ import { toast } from "sonner";
 import { BeltBadge } from "@/components/belt-badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { formatDay, isoDate, weekdayFull } from "@/lib/format";
+import { formatDay, isoDate, weekdayFull, weekdayToday } from "@/lib/format";
 import { attendanceInDays } from "@/lib/insights";
 import { currentStudent, useStore } from "@/lib/store";
 import { useState } from "react";
@@ -130,7 +130,7 @@ function GradeSemana() {
     })
     .slice()
     .sort((a, b) => a.weekday - b.weekday || a.startTime.localeCompare(b.startTime));
-  const today = new Date().getDay();
+  const today = weekdayToday();
 
   return (
     <section className="border border-border bg-card p-4">

@@ -1,3 +1,24 @@
+const TZ = "America/Sao_Paulo";
+const DATE_ONLY = /^\d{4}-\d{2}-\d{2}$/;
+
+/** Date-only values are calendar days, not UTC midnights. */
+export function parseDate(iso: string) {
+  if (DATE_ONLY.test(iso)) return new Date(`${iso}T12:00:00.000Z`);
+  return new Date(iso);
+}
+
+function civilParts(date: Date) {
+  const parts = new Intl.DateTimeFormat("en-US", {
+    timeZone: TZ,
+    year: "numeric",
+    month: "numeric",
+    day: "numeric",
+  }).formatToParts(date);
+  const n = (type: Intl.DateTimeFormatPartTypes) =>
+    Number(parts.find((p) => p.type === type)?.value);
+  return { year: n("year"), month: n("month"), day: n("day") };
+}
+
 export function brl(value: number) {
   return new Intl.NumberFormat("pt-BR", {
     style: "currency",
@@ -10,21 +31,24 @@ export function formatDate(iso: string) {
     day: "2-digit",
     month: "short",
     year: "numeric",
-  }).format(new Date(iso));
+    timeZone: TZ,
+  }).format(parseDate(iso));
 }
 
 export function formatDay(iso: string) {
   return new Intl.DateTimeFormat("pt-BR", {
     day: "2-digit",
     month: "short",
-  }).format(new Date(iso));
+    timeZone: TZ,
+  }).format(parseDate(iso));
 }
 
 export function formatTime(iso: string) {
   return new Intl.DateTimeFormat("pt-BR", {
     hour: "2-digit",
     minute: "2-digit",
-  }).format(new Date(iso));
+    timeZone: TZ,
+  }).format(parseDate(iso));
 }
 
 export function weekdayName(day: number) {
@@ -43,9 +67,14 @@ export function weekdayFull(day: number) {
   ][day];
 }
 
+export function weekdayToday() {
+  const { year, month, day } = civilParts(new Date());
+  return new Date(Date.UTC(year, month - 1, day)).getUTCDay();
+}
+
 export function currentMonth() {
-  const d = new Date();
-  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}`;
+  const { year, month } = civilParts(new Date());
+  return `${year}-${String(month).padStart(2, "0")}`;
 }
 
 export function monthLabel(month: string) {
@@ -53,27 +82,29 @@ export function monthLabel(month: string) {
   return new Intl.DateTimeFormat("pt-BR", {
     month: "long",
     year: "numeric",
-  }).format(new Date(y, m - 1, 1));
+    timeZone: TZ,
+  }).format(new Date(Date.UTC(y, (m ?? 1) - 1, 1, 12)));
 }
 
 export function monthsBetween(fromIso: string, to = new Date()) {
-  const from = new Date(fromIso);
-  return (
-    (to.getFullYear() - from.getFullYear()) * 12 +
-    (to.getMonth() - from.getMonth())
-  );
+  const from = civilParts(parseDate(fromIso));
+  const now = civilParts(to);
+  return (now.year - from.year) * 12 + (now.month - from.month);
 }
 
 export function daysSince(iso: string) {
-  const ms = Date.now() - new Date(iso).getTime();
-  return Math.floor(ms / (1000 * 60 * 60 * 24));
+  const from = civilParts(parseDate(iso));
+  const now = civilParts(new Date());
+  const a = Date.UTC(from.year, from.month - 1, from.day);
+  const b = Date.UTC(now.year, now.month - 1, now.day);
+  return Math.round((b - a) / 86_400_000);
 }
 
 export function isoDate(offsetDays = 0) {
-  const d = new Date();
-  d.setHours(12, 0, 0, 0);
-  d.setDate(d.getDate() + offsetDays);
-  return d.toISOString().slice(0, 10);
+  const { year, month, day } = civilParts(new Date());
+  return new Date(Date.UTC(year, month - 1, day + offsetDays))
+    .toISOString()
+    .slice(0, 10);
 }
 
 export function initials(name: string) {
@@ -92,8 +123,8 @@ export function uid(prefix = "id") {
 
 export function shiftMonth(month: string, delta: number) {
   const [y, m] = month.split("-").map(Number);
-  const d = new Date(y, (m ?? 1) - 1 + delta, 1);
-  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}`;
+  const d = new Date(Date.UTC(y, (m ?? 1) - 1 + delta, 1));
+  return `${d.getUTCFullYear()}-${String(d.getUTCMonth() + 1).padStart(2, "0")}`;
 }
 
 export function downloadCsv(filename: string, rows: (string | number)[][]) {

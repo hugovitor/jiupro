@@ -164,10 +164,7 @@ export default function AcademiaDashboard() {
                 <span>{s.name}</span>
                 <span className="flex items-center gap-2">
                   <span className="text-muted-foreground">
-                    {new Date(s.birthDate).toLocaleDateString("pt-BR", {
-                      day: "2-digit",
-                      month: "short",
-                    })}
+                    {formatDay(s.birthDate)}
                   </span>
                   <Button
                     size="sm"
