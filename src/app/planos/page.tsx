@@ -1,9 +1,8 @@
 "use client";
 
-import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
-import { Logo } from "@/components/logo";
+import { MarketingChrome } from "@/components/marketing-chrome";
 import { Button } from "@/components/ui/button";
 import { brl } from "@/lib/format";
 import { PLANS } from "@/lib/plans";
@@ -40,31 +39,21 @@ export default function PlanosPage() {
   }
 
   return (
-    <div className="flex min-h-full flex-col">
-      <header className="border-b border-border">
-        <div className="mx-auto flex h-14 max-w-5xl items-center justify-between px-4">
-          <Link href="/">
-            <Logo />
-          </Link>
-          <Button variant="ghost" size="sm" render={<Link href="/login" />}>
-            Entrar
-          </Button>
-        </div>
-      </header>
-      <main className="mx-auto w-full max-w-5xl px-4 py-12">
-        <h1 className="font-display text-4xl">Planos mensais</h1>
+    <MarketingChrome>
+      <main className="mx-auto w-full max-w-6xl px-4 py-12">
+        <h1 className="font-display text-4xl uppercase">Planos mensais</h1>
         <p className="mt-2 max-w-xl text-muted-foreground">
           Uma assinatura por academia. Alunos não pagam o JiuPro — pagam a
           mensalidade para você.
         </p>
-        <div className="mt-10 grid gap-4 lg:grid-cols-3">
-          {PLANS.map((plan) => (
-            <article
-              key={plan.id}
-              className={`flex flex-col border p-6 ${
-                plan.popular ? "border-primary" : "border-border"
-              }`}
-            >
+          <div className="mt-10 grid gap-px bg-white/10 lg:grid-cols-3">
+            {PLANS.map((plan) => (
+              <article
+                key={plan.id}
+                className={`flex flex-col bg-background p-6 ${
+                  plan.popular ? "ring-1 ring-inset ring-primary" : ""
+                }`}
+              >
               <h2 className="font-display text-2xl">{plan.name}</h2>
               <p className="mt-1 text-sm text-muted-foreground">{plan.blurb}</p>
               <p className="mt-4 font-display text-3xl">
@@ -89,6 +78,6 @@ export default function PlanosPage() {
           ))}
         </div>
       </main>
-    </div>
+    </MarketingChrome>
   );
 }

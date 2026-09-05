@@ -24,19 +24,15 @@ export default function AlunoHome() {
 
   return (
     <div className="space-y-6">
-      <div>
-        <p className="text-sm text-muted-foreground">
-          {store.academy.name}
-        </p>
-        <h1 className="font-display text-3xl">
-          Olá, {student?.name.split(" ")[0] ?? "aluno"}
-        </h1>
-        {student && (
-          <div className="mt-2">
-            <BeltBadge belt={student.belt} stripes={student.stripes} />
+        <div className="flex items-center justify-between border-b border-border pb-4">
+          <div>
+            <p className="text-sm text-muted-foreground">{store.academy.name}</p>
+            <h1 className="font-display text-3xl uppercase">
+              {student?.name.split(" ")[0] ?? "aluno"}
+            </h1>
           </div>
-        )}
-      </div>
+          {student && <BeltBadge belt={student.belt} stripes={student.stripes} />}
+        </div>
 
       <section className="border border-border bg-card p-4">
         <p className="text-xs text-muted-foreground">Hoje no tatame</p>

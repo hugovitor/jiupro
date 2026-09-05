@@ -2,129 +2,147 @@
 
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
-import { useState } from "react";
-import {
-  Calendar,
-  CalendarDays,
-  ClipboardCheck,
-  FileSpreadsheet,
-  GraduationCap,
-  LayoutDashboard,
-  LogOut,
-  Menu,
-  MessageCircle,
-  MessageSquare,
-  Package,
-  Settings,
-  UserPlus,
-  Users,
-  Wallet,
-} from "lucide-react";
+import { LogOut } from "lucide-react";
 import { Logo } from "@/components/logo";
 import { Button } from "@/components/ui/button";
-import { Sheet, SheetContent, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
 import { useStore } from "@/lib/store";
 import { cn } from "@/lib/utils";
 
-const NAV = [
-  { href: "/academia", label: "Painel", icon: LayoutDashboard },
-  { href: "/academia/alunos", label: "Alunos", icon: Users },
-  { href: "/academia/graduacoes", label: "Graduações", icon: GraduationCap },
-  { href: "/academia/turmas", label: "Turmas", icon: CalendarDays },
-  { href: "/academia/agenda", label: "Agenda", icon: Calendar },
-  { href: "/academia/presenca", label: "Presença", icon: ClipboardCheck },
-  { href: "/academia/cobrancas", label: "Cobranças", icon: MessageCircle },
-  { href: "/academia/financeiro", label: "Financeiro", icon: Wallet },
-  { href: "/academia/fechamento", label: "Fechamento", icon: FileSpreadsheet },
-  { href: "/academia/experimentais", label: "Experimentais", icon: UserPlus },
-  { href: "/academia/estoque", label: "Estoque", icon: Package },
-  { href: "/academia/mural", label: "Mural", icon: MessageSquare },
-  { href: "/academia/configuracoes", label: "Configurações", icon: Settings },
+type NavItem = { href: string; label: string };
+
+type NavGroup = {
+  id: string;
+  label: string;
+  href?: string;
+  items: NavItem[];
+};
+
+const GROUPS: NavGroup[] = [
+  { id: "hoje", label: "Hoje", href: "/academia", items: [] },
+  {
+    id: "gente",
+    label: "Gente",
+    items: [
+      { href: "/academia/alunos", label: "Alunos" },
+      { href: "/academia/experimentais", label: "Experimentais" },
+      { href: "/academia/graduacoes", label: "Graduações" },
+    ],
+  },
+  {
+    id: "tatame",
+    label: "Tatame",
+    items: [
+      { href: "/academia/turmas", label: "Turmas" },
+      { href: "/academia/presenca", label: "Presença" },
+      { href: "/academia/agenda", label: "Agenda" },
+    ],
+  },
+  {
+    id: "caixa",
+    label: "Caixa",
+    items: [
+      { href: "/academia/cobrancas", label: "Cobranças" },
+      { href: "/academia/financeiro", label: "Financeiro" },
+      { href: "/academia/fechamento", label: "Fechamento" },
+      { href: "/academia/estoque", label: "Estoque" },
+    ],
+  },
+  {
+    id: "casa",
+    label: "Casa",
+    items: [
+      { href: "/academia/mural", label: "Mural" },
+      { href: "/academia/configuracoes", label: "Configurações" },
+    ],
+  },
 ];
 
-function NavLinks({
-  pathname,
-  onNavigate,
-}: {
-  pathname: string;
-  onNavigate?: () => void;
-}) {
-  return (
-    <nav className="flex flex-col gap-0.5">
-      {NAV.map((item) => {
-        const active =
-          item.href === "/academia"
-            ? pathname === "/academia"
-            : pathname.startsWith(item.href);
-        return (
-          <Link
-            key={item.href}
-            href={item.href}
-            onClick={onNavigate}
-            className={cn(
-              "flex items-center gap-2 border-l-2 px-3 py-2 text-sm",
-              active
-                ? "border-primary bg-sidebar-accent text-foreground"
-                : "border-transparent text-muted-foreground hover:bg-sidebar-accent/60 hover:text-foreground",
-            )}
-          >
-            <item.icon className="size-4" />
-            {item.label}
-          </Link>
-        );
-      })}
-    </nav>
-  );
+function groupIsActive(group: NavGroup, pathname: string) {
+  if (group.href) return pathname === group.href;
+  return group.items.some((item) => pathname.startsWith(item.href));
+}
+
+function itemIsActive(href: string, pathname: string) {
+  if (href === "/academia") return pathname === "/academia";
+  return pathname.startsWith(href);
 }
 
 export function AcademiaShell({ children }: { children: React.ReactNode }) {
   const store = useStore();
   const router = useRouter();
   const pathname = usePathname();
-  const [open, setOpen] = useState(false);
   const user = store.users.find((u) => u.id === store.session?.userId);
+  const activeGroup = GROUPS.find((g) => groupIsActive(g, pathname)) ?? GROUPS[0];
 
   return (
-    <div className="flex min-h-screen bg-background">
-      <aside className="hidden w-60 shrink-0 border-r border-sidebar-border bg-sidebar p-4 md:flex md:flex-col">
-        <Link href="/academia" className="mb-6">
-          <Logo />
-        </Link>
-        <NavLinks pathname={pathname} />
-        <div className="mt-auto border-t border-sidebar-border pt-4">
-          <p className="truncate text-sm font-medium">{store.academy.name}</p>
-          <p className="truncate text-xs text-muted-foreground">{user?.name}</p>
+    <div className="flex min-h-screen flex-col bg-background">
+      <header className="sticky top-0 z-40 bg-[#080808]">
+        <div className="flex h-14 items-center gap-3 px-4 lg:px-6">
+          <Link href="/academia" className="shrink-0">
+            <Logo />
+          </Link>
+          <div className="min-w-0 flex-1">
+            <p className="truncate font-display text-sm uppercase tracking-wide sm:text-base">
+              {store.academy.name}
+            </p>
+            <p className="truncate text-[11px] text-neutral-500">
+              {store.academy.city}/{store.academy.state}
+              {user?.name ? ` · ${user.name}` : ""}
+            </p>
+          </div>
           <Button
             variant="ghost"
             size="sm"
-            className="mt-2 w-full justify-start"
             onClick={() => {
               store.logout();
               router.push("/");
             }}
           >
             <LogOut className="size-4" />
-            Sair
+            <span className="hidden sm:inline">Sair</span>
           </Button>
         </div>
-      </aside>
-
-      <div className="flex min-w-0 flex-1 flex-col">
-        <header className="flex h-14 items-center gap-3 border-b border-border px-4 md:hidden">
-          <Sheet open={open} onOpenChange={setOpen}>
-            <SheetTrigger render={<Button variant="ghost" size="icon" />}>
-              <Menu />
-            </SheetTrigger>
-            <SheetContent side="left" className="w-64 bg-sidebar p-4">
-              <SheetTitle className="sr-only">Menu</SheetTitle>
-              <Logo className="mb-6" />
-              <NavLinks pathname={pathname} onNavigate={() => setOpen(false)} />
-            </SheetContent>
-          </Sheet>
-          <span className="truncate text-sm font-medium">{store.academy.name}</span>
-        </header>
-        <main className="flex-1 p-4 md:p-8">{children}</main>
-      </div>
+        <div className="ponteira" />
+        <nav className="flex gap-1 overflow-x-auto px-2 lg:px-6">
+          {GROUPS.map((group) => {
+            const active = groupIsActive(group, pathname);
+            const href = group.href ?? group.items[0]?.href ?? "/academia";
+            return (
+              <Link
+                key={group.id}
+                href={href}
+                className={cn(
+                  "shrink-0 border-b-2 px-3 py-2.5 font-display text-sm uppercase tracking-wide",
+                  active
+                    ? "border-primary text-white"
+                    : "border-transparent text-neutral-500 hover:text-white",
+                )}
+              >
+                {group.label}
+              </Link>
+            );
+          })}
+        </nav>
+        {activeGroup.items.length > 0 && (
+          <div className="flex gap-1 overflow-x-auto bg-[#0e0e0e] px-3 py-2 lg:px-6">
+            {activeGroup.items.map((item) => (
+              <Link
+                key={item.href}
+                href={item.href}
+                className={cn(
+                  "shrink-0 px-2.5 py-1 text-xs",
+                  itemIsActive(item.href, pathname)
+                    ? "bg-primary text-white"
+                    : "text-neutral-400 hover:bg-white/5 hover:text-white",
+                )}
+              >
+                {item.label}
+              </Link>
+            ))}
+          </div>
+        )}
+      </header>
+      <main className="flex-1 p-4 md:p-8">{children}</main>
     </div>
   );
 }

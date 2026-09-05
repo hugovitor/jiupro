@@ -17,10 +17,11 @@ export function AlunoShell({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
 
   return (
-    <div className="flex min-h-screen justify-center bg-black/40">
-      <div className="flex min-h-screen w-full max-w-md flex-col border-x border-border bg-background pb-20">
+    <div className="flex min-h-screen justify-center bg-black">
+      <div className="flex min-h-screen w-full max-w-md flex-col bg-background pb-20 shadow-[0_0_80px_rgba(196,30,58,0.08)]">
+        <div className="ponteira" />
         <main className="flex-1 p-4">{children}</main>
-        <nav className="fixed bottom-0 left-1/2 z-20 flex w-full max-w-md -translate-x-1/2 border-t border-border bg-background/95 backdrop-blur-md">
+        <nav className="fixed bottom-0 left-1/2 z-20 flex w-full max-w-md -translate-x-1/2 border-t border-border bg-[#0a0a0a]/95 backdrop-blur-md">
           {NAV.map((item) => {
             const active =
               item.href === "/aluno"
