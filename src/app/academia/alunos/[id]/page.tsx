@@ -201,6 +201,7 @@ export default function AlunoDetalhePage() {
       </Card>
 
       <Avaliacao studentId={student.id} />
+      <Compras studentId={student.id} />
     </div>
   );
 }
@@ -260,6 +261,31 @@ function Avaliacao({ studentId }: { studentId: string }) {
             <p className="text-xs text-muted-foreground">
               {e.date} · {e.notes}
             </p>
+          </div>
+        ))}
+      </CardContent>
+    </Card>
+  );
+}
+
+function Compras({ studentId }: { studentId: string }) {
+  const store = useStore();
+  const rows = (store.sales ?? []).filter((s) => s.studentId === studentId);
+  return (
+    <Card>
+      <CardHeader>
+        <CardTitle>Compras na loja</CardTitle>
+      </CardHeader>
+      <CardContent className="space-y-2 text-sm">
+        {rows.length === 0 && (
+          <p className="text-muted-foreground">Nada vendido neste aluno.</p>
+        )}
+        {rows.map((s) => (
+          <div key={s.id} className="flex justify-between">
+            <span>
+              {s.itemName} · {s.quantity} un.
+            </span>
+            <span>{brl(s.amount)}</span>
           </div>
         ))}
       </CardContent>

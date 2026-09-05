@@ -1,5 +1,5 @@
-import { brl, monthLabel } from "./format";
-import type { Academy, Payment, Student } from "./types";
+import { brl, formatDay, monthLabel } from "./format";
+import type { Academy, AcademyEvent, Payment, Student } from "./types";
 
 export function digitsBR(phone: string) {
   const d = phone.replace(/\D/g, "");
@@ -37,6 +37,20 @@ export function trialMessage(academy: Academy, student: Student) {
 
 export function birthdayMessage(academy: Academy, student: Student) {
   return `Parabéns, ${firstName(student.name)}! A ${academy.name} deseja um ótimo aniversário. Oss.`;
+}
+
+export function eventInviteMessage(
+  academy: Academy,
+  student: Student,
+  event: AcademyEvent,
+) {
+  const who = student.guardianName
+    ? firstName(student.guardianName)
+    : firstName(student.name);
+  const fee = event.fee
+    ? ` Inscrição ${brl(event.fee)}. Pix: ${academy.pixKey}.`
+    : "";
+  return `Oi ${who}, a ${academy.name} confirma: ${event.title} em ${formatDay(event.date)} às ${event.time} (${event.place}).${fee} Confirma se vem? Oss.`;
 }
 
 /** Código de 4 dígitos estável no dia — o mesmo na recepção e no PWA. */

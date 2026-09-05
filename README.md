@@ -13,7 +13,9 @@ Feito para o dono que treina de manhã e administra de noite: mensalidades em at
 - **Código do dia** — recepção mostra, aluno confirma no PWA
 - **Avaliação no tatame** — nota do professor na ficha, com indicação de graduação
 - **Retenção** — aluno que some ganha WhatsApp de volta no painel
-- **PWA do aluno** — check-in do dia, mural, evolução, Pix e perfil (instalável no celular)
+- **Agenda** — seminário, campeonato, open mat; confirmação no PWA e Zap para quem falta
+- **Loja** — venda no nome do aluno, baixa o estoque, entra no financeiro
+- **PWA do aluno** — check-in do dia, agenda, mural, evolução, Pix e perfil (instalável no celular)
 - **Planos mensais** — Essencial, Academia e Equipe, com checkout Stripe quando as chaves existem
 - **Demo completa** — Equipe Origem (Campinas) preenchida, sem precisar de conta
 - **Supabase** — schema multi-tenant com RLS em `supabase/schema.sql`
@@ -35,6 +37,7 @@ Abre em [http://localhost:43123](http://localhost:43123).
 | Quem | E-mail | Senha |
 | --- | --- | --- |
 | Dona da academia (Carla Mendes) | `carla@origem.jj` | `demo` |
+| Professor (Rafael Costa) | `rafael@origem.jj` | `demo` |
 | Aluno no PWA (João Pedro, faixa azul) | `joao@aluno.origem` | `demo` |
 
 ## Supabase

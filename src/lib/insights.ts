@@ -99,3 +99,17 @@ export function monthChargeStats(state: AppState, month: string) {
 export function monthAttendanceCount(state: AppState, month: string) {
   return state.attendance.filter((a) => a.date.startsWith(month)).length;
 }
+
+export function monthStoreSales(state: AppState, month: string) {
+  return (state.sales ?? [])
+    .filter((s) => s.date.startsWith(month))
+    .reduce((sum, s) => sum + s.amount, 0);
+}
+
+export const EVENT_KIND_LABEL: Record<string, string> = {
+  seminar: "Seminário",
+  championship: "Campeonato",
+  openmat: "Open mat",
+  extra: "Aula extra",
+  graduation: "Graduação",
+};

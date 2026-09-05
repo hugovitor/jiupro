@@ -1,6 +1,7 @@
 import { isoDate } from "./format";
 import type {
   Academy,
+  AcademyEvent,
   AppState,
   Attendance,
   ClassSession,
@@ -10,6 +11,7 @@ import type {
   Evaluation,
   Payment,
   Post,
+  Sale,
   Student,
   User,
 } from "./types";
@@ -778,8 +780,54 @@ export function createSeed(): AppState {
     },
   ];
 
+  const rash = inventory.find((i) => i.sku === "RG-P");
+  const events: AcademyEvent[] = [
+    {
+      id: "evt_seminario",
+      academyId: ACADEMY_ID,
+      title: "Seminário com professor Marcos",
+      kind: "seminar",
+      date: isoDate(14),
+      time: "10:00",
+      place: "Tatame principal",
+      notes: "Kimono obrigatório. Vagas limitadas — confirma no app ou no Zap.",
+      fee: 80,
+      goingIds: ["s_joao", "s_marina", "s_andre"],
+    },
+    {
+      id: "evt_estadual",
+      academyId: ACADEMY_ID,
+      title: "Estadual SP — equipe Origem",
+      kind: "championship",
+      date: isoDate(28),
+      time: "08:00",
+      place: "Ginásio do Ibirapuera",
+      notes: "Carona saindo de Campinas sábado 6h. Inscrição pela academia.",
+      fee: 120,
+      goingIds: ["s_joao", "s_ana"],
+    },
+  ];
+
+  const sales: Sale[] = rash
+    ? [
+        {
+          id: "sale_joao_rg",
+          academyId: ACADEMY_ID,
+          studentId: "s_joao",
+          itemId: rash.id,
+          itemName: `${rash.name}${rash.size ? ` ${rash.size}` : ""}`,
+          quantity: 1,
+          amount: rash.price,
+          date: isoDate(-3),
+          method: "pix",
+        },
+      ]
+    : [];
+
+  if (rash) rash.quantity = Math.max(0, rash.quantity - 1);
+
   return {
-    version: 4,
+    version: 5,
     academy,
     users,
     students,
@@ -791,6 +839,8 @@ export function createSeed(): AppState {
     graduations,
     evaluations,
     posts,
+    events,
+    sales,
     session,
   };
 }
@@ -802,6 +852,13 @@ export const DEMO_ACCOUNTS = [
     role: "owner" as const,
     label: "Dona da academia",
     hint: "Carla Mendes · faixa preta",
+  },
+  {
+    email: "rafael@origem.jj",
+    password: "demo",
+    role: "instructor" as const,
+    label: "Professor",
+    hint: "Rafael Costa · kids e no-gi",
   },
   {
     email: "joao@aluno.origem",

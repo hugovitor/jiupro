@@ -1,10 +1,11 @@
 "use client";
 
+import Link from "next/link";
 import { toast } from "sonner";
 import { BeltBadge } from "@/components/belt-badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { isoDate } from "@/lib/format";
+import { formatDay, isoDate } from "@/lib/format";
 import { attendanceInDays } from "@/lib/insights";
 import { currentStudent, useStore } from "@/lib/store";
 import { useState } from "react";
@@ -110,6 +111,29 @@ export default function AlunoHome() {
           <p className="font-display text-xl capitalize">{store.academy.plan}</p>
         </div>
       </div>
+
+      <ProximoEvento />
     </div>
+  );
+}
+
+function ProximoEvento() {
+  const store = useStore();
+  const today = isoDate(0);
+  const next = [...(store.events ?? [])]
+    .filter((e) => e.date >= today)
+    .sort((a, b) => a.date.localeCompare(b.date))[0];
+  if (!next) return null;
+  return (
+    <Link
+      href="/aluno/agenda"
+      className="block rounded-2xl border border-border bg-card p-4"
+    >
+      <p className="text-xs text-muted-foreground">Próximo da casa</p>
+      <p className="mt-1 font-medium">{next.title}</p>
+      <p className="text-xs text-muted-foreground">
+        {formatDay(next.date)} · {next.time} · {next.place}
+      </p>
+    </Link>
   );
 }

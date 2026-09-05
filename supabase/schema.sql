@@ -210,3 +210,53 @@ create policy "likes by academy" on public.post_likes
       where p.id = post_id and p.academy_id = public.current_academy_id()
     )
   );
+
+create table if not exists public.events (
+  id uuid primary key default gen_random_uuid(),
+  academy_id uuid not null references public.academies(id) on delete cascade,
+  title text not null,
+  kind text not null,
+  date date not null,
+  time text,
+  place text,
+  notes text,
+  fee numeric not null default 0
+);
+
+create table if not exists public.event_rsvps (
+  event_id uuid not null references public.events(id) on delete cascade,
+  student_id uuid not null references public.students(id) on delete cascade,
+  primary key (event_id, student_id)
+);
+
+create table if not exists public.sales (
+  id uuid primary key default gen_random_uuid(),
+  academy_id uuid not null references public.academies(id) on delete cascade,
+  student_id uuid not null references public.students(id) on delete cascade,
+  item_id uuid references public.inventory(id) on delete set null,
+  item_name text not null,
+  quantity int not null default 1,
+  amount numeric not null,
+  date date not null default current_date,
+  method text
+);
+
+alter table public.events enable row level security;
+alter table public.event_rsvps enable row level security;
+alter table public.sales enable row level security;
+
+create policy "events by academy" on public.events
+  for all using (academy_id = public.current_academy_id())
+  with check (academy_id = public.current_academy_id());
+
+create policy "event rsvps by academy" on public.event_rsvps
+  for all using (
+    exists (
+      select 1 from public.events e
+      where e.id = event_id and e.academy_id = public.current_academy_id()
+    )
+  );
+
+create policy "sales by academy" on public.sales
+  for all using (academy_id = public.current_academy_id())
+  with check (academy_id = public.current_academy_id());

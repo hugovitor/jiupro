@@ -4,7 +4,7 @@ import { toast } from "sonner";
 import { BeltBadge, PersonAvatar } from "@/components/belt-badge";
 import { Button } from "@/components/ui/button";
 import { beltLabel } from "@/lib/belts";
-import { monthsBetween } from "@/lib/format";
+import { monthsBetween, isoDate } from "@/lib/format";
 import { attendanceInDays, isPromotionCandidate } from "@/lib/insights";
 import { useStore } from "@/lib/store";
 
@@ -28,6 +28,27 @@ export default function GraduacoesPage() {
         <h2 className="mb-3 text-sm tracking-[0.16em] text-primary uppercase">
           Prontos agora
         </h2>
+        {ready.length > 0 && (
+          <Button
+            className="mb-3"
+            variant="outline"
+            onClick={() => {
+              store.addEvent({
+                title: "Seminário de faixas",
+                kind: "graduation",
+                date: isoDate(14),
+                time: "11:00",
+                place: "Tatame principal",
+                notes: `Fila: ${ready.map((s) => s.name.split(" ")[0]).join(", ")}.`,
+                fee: 0,
+                goingIds: ready.map((s) => s.id),
+              });
+              toast.success("Seminário de faixas na agenda.");
+            }}
+          >
+            Marcar seminário de faixas
+          </Button>
+        )}
         <div className="space-y-2">
           {ready.length === 0 && (
             <p className="text-sm text-muted-foreground">Ninguém na fila hoje.</p>

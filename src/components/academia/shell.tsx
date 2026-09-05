@@ -4,6 +4,8 @@ import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { useState } from "react";
 import {
+  Calendar,
+  CalendarDays,
   ClipboardCheck,
   FileSpreadsheet,
   GraduationCap,
@@ -17,7 +19,6 @@ import {
   UserPlus,
   Users,
   Wallet,
-  CalendarDays,
 } from "lucide-react";
 import { Logo } from "@/components/logo";
 import { Button } from "@/components/ui/button";
@@ -30,6 +31,7 @@ const NAV = [
   { href: "/academia/alunos", label: "Alunos", icon: Users },
   { href: "/academia/graduacoes", label: "Graduações", icon: GraduationCap },
   { href: "/academia/turmas", label: "Turmas", icon: CalendarDays },
+  { href: "/academia/agenda", label: "Agenda", icon: Calendar },
   { href: "/academia/presenca", label: "Presença", icon: ClipboardCheck },
   { href: "/academia/cobrancas", label: "Cobranças", icon: MessageCircle },
   { href: "/academia/financeiro", label: "Financeiro", icon: Wallet },

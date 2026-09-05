@@ -156,6 +156,38 @@ export type Post = {
   likedBy: string[];
 };
 
+export type EventKind =
+  | "seminar"
+  | "championship"
+  | "openmat"
+  | "extra"
+  | "graduation";
+
+export type AcademyEvent = {
+  id: string;
+  academyId: string;
+  title: string;
+  kind: EventKind;
+  date: string;
+  time: string;
+  place: string;
+  notes: string;
+  fee: number;
+  goingIds: string[];
+};
+
+export type Sale = {
+  id: string;
+  academyId: string;
+  studentId: string;
+  itemId: string;
+  itemName: string;
+  quantity: number;
+  amount: number;
+  date: string;
+  method: "pix" | "cash" | "card";
+};
+
 export type AppState = {
   version: number;
   academy: Academy;
@@ -169,5 +201,7 @@ export type AppState = {
   graduations: Graduation[];
   evaluations: Evaluation[];
   posts: Post[];
+  events: AcademyEvent[];
+  sales: Sale[];
   session: Session | null;
 };

@@ -13,6 +13,7 @@ import { currentMonth, isoDate, uid } from "./format";
 import { createSeed } from "./seed";
 import { dayCode } from "./whatsapp";
 import type {
+  AcademyEvent,
   AppState,
   Attendance,
   ClassSession,
@@ -24,6 +25,7 @@ import type {
   PlanId,
   Post,
   Role,
+  Sale,
   Student,
 } from "./types";
 
@@ -64,6 +66,19 @@ type Store = AppState & {
     date: string;
   }) => void;
   waivePayment: (id: string) => void;
+  addEvent: (
+    input: Omit<AcademyEvent, "id" | "academyId" | "goingIds"> & {
+      goingIds?: string[];
+    },
+  ) => void;
+  toggleRsvp: (eventId: string, studentId: string) => void;
+  removeEvent: (id: string) => void;
+  sellItem: (
+    studentId: string,
+    itemId: string,
+    quantity: number,
+    method: Sale["method"],
+  ) => boolean;
 };
 
 const StoreContext = createContext<Store | null>(null);
@@ -87,13 +102,15 @@ function persist(state: AppState) {
 function migrate(state: AppState): AppState {
   return {
     ...state,
-    version: 4,
+    version: 5,
     academy: {
       ...state.academy,
       pixKey: state.academy.pixKey || "origemjj@pix.com.br",
       pixName: state.academy.pixName || state.academy.name,
     },
     evaluations: state.evaluations ?? [],
+    events: state.events ?? [],
+    sales: state.sales ?? [],
   };
 }
 
@@ -544,6 +561,73 @@ export function StoreProvider({ children }: { children: ReactNode }) {
     }));
   }, []);
 
+  const addEvent: Store["addEvent"] = useCallback((input) => {
+    commit((prev) => ({
+      ...prev,
+      events: [
+        {
+          ...input,
+          id: uid("evt"),
+          academyId: prev.academy.id,
+          goingIds: input.goingIds ?? [],
+        },
+        ...(prev.events ?? []),
+      ],
+    }));
+  }, []);
+
+  const toggleRsvp: Store["toggleRsvp"] = useCallback((eventId, studentId) => {
+    commit((prev) => ({
+      ...prev,
+      events: (prev.events ?? []).map((evt) => {
+        if (evt.id !== eventId) return evt;
+        const going = evt.goingIds.includes(studentId)
+          ? evt.goingIds.filter((id) => id !== studentId)
+          : [...evt.goingIds, studentId];
+        return { ...evt, goingIds: going };
+      }),
+    }));
+  }, []);
+
+  const removeEvent: Store["removeEvent"] = useCallback((id) => {
+    commit((prev) => ({
+      ...prev,
+      events: (prev.events ?? []).filter((evt) => evt.id !== id),
+    }));
+  }, []);
+
+  const sellItem: Store["sellItem"] = useCallback(
+    (studentId, itemId, quantity, method) => {
+      const current = getSnapshot();
+      const item = current.inventory.find((i) => i.id === itemId);
+      if (!item || quantity < 1 || item.quantity < quantity) return false;
+      commit((prev) => {
+        const row = prev.inventory.find((i) => i.id === itemId);
+        if (!row || row.quantity < quantity) return prev;
+        const sale: Sale = {
+          id: uid("sale"),
+          academyId: prev.academy.id,
+          studentId,
+          itemId,
+          itemName: `${row.name}${row.size ? ` ${row.size}` : ""}`,
+          quantity,
+          amount: row.price * quantity,
+          date: isoDate(0),
+          method,
+        };
+        return {
+          ...prev,
+          inventory: prev.inventory.map((i) =>
+            i.id === itemId ? { ...i, quantity: i.quantity - quantity } : i,
+          ),
+          sales: [sale, ...(prev.sales ?? [])],
+        };
+      });
+      return true;
+    },
+    [],
+  );
+
   const value = useMemo<Store>(
     () => ({
       ...state,
@@ -575,6 +659,10 @@ export function StoreProvider({ children }: { children: ReactNode }) {
       generateMonthCharges,
       addExpense,
       waivePayment,
+      addEvent,
+      toggleRsvp,
+      removeEvent,
+      sellItem,
     }),
     [
       state,
@@ -605,6 +693,10 @@ export function StoreProvider({ children }: { children: ReactNode }) {
       generateMonthCharges,
       addExpense,
       waivePayment,
+      addEvent,
+      toggleRsvp,
+      removeEvent,
+      sellItem,
     ],
   );
 

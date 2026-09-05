@@ -8,6 +8,7 @@ import { brl, currentMonth, daysSince, formatDay, monthLabel } from "@/lib/forma
 import {
   attendanceInDays,
   birthdaysSoon,
+  EVENT_KIND_LABEL,
   isAtRisk,
   isPromotionCandidate,
   monthExpenses,
@@ -33,6 +34,10 @@ export default function AcademiaDashboard() {
   const lowStock = store.inventory.filter((i) => i.quantity <= i.minQuantity);
   const birthdays = birthdaysSoon(store.students);
   const code = dayCode(today, store.academy.slug);
+  const upcoming = [...(store.events ?? [])]
+    .filter((e) => e.date >= today)
+    .sort((a, b) => a.date.localeCompare(b.date))
+    .slice(0, 3);
 
   return (
     <div className="mx-auto max-w-6xl space-y-6">
@@ -185,6 +190,28 @@ export default function AcademiaDashboard() {
             ))}
           </CardContent>
         </Card>
+        <Card>
+          <CardHeader>
+            <CardTitle>Agenda</CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-2 text-sm">
+            {upcoming.length === 0 && (
+              <p className="text-muted-foreground">Nada marcado. Abre a agenda.</p>
+            )}
+            {upcoming.map((e) => (
+              <Link
+                key={e.id}
+                href="/academia/agenda"
+                className="flex justify-between gap-2 hover:underline"
+              >
+                <span>
+                  {EVENT_KIND_LABEL[e.kind]} · {e.title}
+                </span>
+                <span className="text-muted-foreground">{formatDay(e.date)}</span>
+              </Link>
+            ))}
+          </CardContent>
+        </Card>
       </div>
 
       <div className="grid gap-4 lg:grid-cols-2">
@@ -224,6 +251,9 @@ export default function AcademiaDashboard() {
             </Link>
             <Link className="rounded-lg border border-border p-3 hover:bg-muted/40" href="/academia/fechamento">
               Fechamento do mês
+            </Link>
+            <Link className="rounded-lg border border-border p-3 hover:bg-muted/40" href="/academia/agenda">
+              Agenda da casa
             </Link>
           </CardContent>
         </Card>

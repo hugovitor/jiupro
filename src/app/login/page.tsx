@@ -18,14 +18,15 @@ export default function LoginPage() {
   const [password, setPassword] = useState("demo");
 
   function enter(nextEmail = email) {
+    const user = store.users.find(
+      (u) => u.email.toLowerCase() === nextEmail.toLowerCase(),
+    );
     const ok = store.login(nextEmail);
     if (!ok) {
       toast.error("Conta não encontrada nesta academia.");
       return;
     }
-    const role =
-      DEMO_ACCOUNTS.find((a) => a.email === nextEmail)?.role ?? "owner";
-    router.push(role === "student" ? "/aluno" : "/academia");
+    router.push(user?.role === "student" ? "/aluno" : "/academia");
   }
 
   return (

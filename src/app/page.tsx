@@ -1,6 +1,7 @@
 import Link from "next/link";
 import {
   Bell,
+  Calendar,
   ClipboardCheck,
   CreditCard,
   GraduationCap,
@@ -62,8 +63,13 @@ const features = [
   },
   {
     icon: Package,
-    title: "Estoque",
-    body: "Kimonos, faixas, patches e material. Alerta quando chega no mínimo. Preço de custo e venda.",
+    title: "Estoque e loja",
+    body: "Kimono, faixa e rashguard. Venda no nome do aluno, baixa o estoque e entra no caixa do mês.",
+  },
+  {
+    icon: Calendar,
+    title: "Agenda da casa",
+    body: "Seminário, estadual, open mat. Quem confirmou, quem ainda não — Zap na hora.",
   },
   {
     icon: Bell,

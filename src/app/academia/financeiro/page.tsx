@@ -10,7 +10,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { brl, currentMonth, isoDate, monthLabel } from "@/lib/format";
-import { monthExpenses, monthRevenue, overdueTotal } from "@/lib/insights";
+import { monthExpenses, monthRevenue, monthStoreSales, overdueTotal } from "@/lib/insights";
 import { useStore } from "@/lib/store";
 import type { ExpenseCategory } from "@/lib/types";
 import { overdueMessage, waHref } from "@/lib/whatsapp";
@@ -29,6 +29,7 @@ export default function FinanceiroPage() {
   const month = currentMonth();
   const revenue = monthRevenue(store, month);
   const expenses = monthExpenses(store, month);
+  const shop = monthStoreSales(store, month);
   const overdue = overdueTotal(store);
   const openPays = store.payments.filter(
     (p) => p.status === "overdue" || p.status === "pending",
@@ -51,10 +52,11 @@ export default function FinanceiroPage() {
         </div>
       </div>
 
-      <div className="grid gap-3 sm:grid-cols-3">
+      <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
         <Tile k="Recebido" v={brl(revenue)} />
+        <Tile k="Loja" v={brl(shop)} />
         <Tile k="Despesas" v={brl(expenses)} />
-        <Tile k="Saldo do mês" v={brl(revenue - expenses)} />
+        <Tile k="Saldo do mês" v={brl(revenue + shop - expenses)} />
       </div>
 
       <div className="grid gap-3 sm:grid-cols-2">
