@@ -12,6 +12,7 @@ import type {
   Payment,
   Post,
   Sale,
+  DropIn,
   Student,
   User,
 } from "./types";
@@ -53,6 +54,7 @@ export function createSeed(): AppState {
     pixName: "Equipe Origem Jiu-Jitsu",
     plan: "academia",
     monthlyGoal: 18000,
+    dropInFee: 40,
     createdAt: "2021-03-08T12:00:00.000Z",
   };
 
@@ -826,8 +828,22 @@ export function createSeed(): AppState {
 
   if (rash) rash.quantity = Math.max(0, rash.quantity - 1);
 
+  const giDate = dateOnWeekday(1, 0) <= isoDate(0) ? dateOnWeekday(1, 0) : dateOnWeekday(1, 1);
+  const dropIns: DropIn[] = [
+    {
+      id: "di_caio",
+      academyId: ACADEMY_ID,
+      name: "Caio Mendes",
+      phone: "(19) 98877-0101",
+      classId: "c_gi",
+      date: giDate,
+      amount: 40,
+      method: "pix",
+    },
+  ];
+
   return {
-    version: 5,
+    version: 6,
     academy,
     users,
     students,
@@ -841,6 +857,7 @@ export function createSeed(): AppState {
     posts,
     events,
     sales,
+    dropIns,
     session,
   };
 }

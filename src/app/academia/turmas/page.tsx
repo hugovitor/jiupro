@@ -7,11 +7,12 @@ import { FormDialog } from "@/components/form-dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { weekdayFull, weekdayName } from "@/lib/format";
+import { weekdayFull, weekdayName, isoDate } from "@/lib/format";
 import { useStore } from "@/lib/store";
 
 export default function TurmasPage() {
   const store = useStore();
+  const today = isoDate(0);
   const grouped = [0, 1, 2, 3, 4, 5, 6]
     .map((day) => ({
       day,
@@ -37,6 +38,12 @@ export default function TurmasPage() {
             <div className="space-y-2">
               {g.classes.map((c) => {
                 const instructor = store.users.find((u) => u.id === c.instructorId);
+                const todayCount =
+                  store.attendance.filter((a) => a.classId === c.id && a.date === today)
+                    .length +
+                  (store.dropIns ?? []).filter(
+                    (d) => d.classId === c.id && d.date === today,
+                  ).length;
                 return (
                   <article
                     key={c.id}
@@ -53,6 +60,7 @@ export default function TurmasPage() {
                       <div>
                         <p>
                           {weekdayName(c.weekday).toUpperCase()} · até {c.capacity}
+                          {c.weekday === new Date().getDay() ? ` · ${todayCount} hoje` : ""}
                         </p>
                         <BeltBadge
                           belt={c.division === "kids" ? "yellow" : "blue"}

@@ -34,6 +34,7 @@ export type Academy = {
   pixName: string;
   plan: PlanId;
   monthlyGoal: number;
+  dropInFee: number;
   createdAt: string;
 };
 
@@ -188,6 +189,17 @@ export type Sale = {
   method: "pix" | "cash" | "card";
 };
 
+export type DropIn = {
+  id: string;
+  academyId: string;
+  name: string;
+  phone: string;
+  classId: string;
+  date: string;
+  amount: number;
+  method: "pix" | "cash";
+};
+
 export type AppState = {
   version: number;
   academy: Academy;
@@ -203,5 +215,6 @@ export type AppState = {
   posts: Post[];
   events: AcademyEvent[];
   sales: Sale[];
+  dropIns: DropIn[];
   session: Session | null;
 };

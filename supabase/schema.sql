@@ -18,6 +18,7 @@ create table if not exists public.academies (
   stripe_customer_id text,
   stripe_subscription_id text,
   monthly_goal numeric not null default 0,
+  drop_in_fee numeric not null default 40,
   created_at timestamptz not null default now()
 );
 
@@ -258,5 +259,22 @@ create policy "event rsvps by academy" on public.event_rsvps
   );
 
 create policy "sales by academy" on public.sales
+  for all using (academy_id = public.current_academy_id())
+  with check (academy_id = public.current_academy_id());
+
+create table if not exists public.drop_ins (
+  id uuid primary key default gen_random_uuid(),
+  academy_id uuid not null references public.academies(id) on delete cascade,
+  name text not null,
+  phone text,
+  class_id uuid references public.classes(id) on delete set null,
+  date date not null default current_date,
+  amount numeric not null,
+  method text
+);
+
+alter table public.drop_ins enable row level security;
+
+create policy "drop ins by academy" on public.drop_ins
   for all using (academy_id = public.current_academy_id())
   with check (academy_id = public.current_academy_id());

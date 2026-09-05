@@ -26,6 +26,7 @@ import type {
   Post,
   Role,
   Sale,
+  DropIn,
   Student,
 } from "./types";
 
@@ -79,6 +80,7 @@ type Store = AppState & {
     quantity: number,
     method: Sale["method"],
   ) => boolean;
+  addDropIn: (input: Omit<DropIn, "id" | "academyId">) => void;
 };
 
 const StoreContext = createContext<Store | null>(null);
@@ -102,15 +104,17 @@ function persist(state: AppState) {
 function migrate(state: AppState): AppState {
   return {
     ...state,
-    version: 5,
+    version: 6,
     academy: {
       ...state.academy,
       pixKey: state.academy.pixKey || "origemjj@pix.com.br",
       pixName: state.academy.pixName || state.academy.name,
+      dropInFee: state.academy.dropInFee || 40,
     },
     evaluations: state.evaluations ?? [],
     events: state.events ?? [],
     sales: state.sales ?? [],
+    dropIns: state.dropIns ?? [],
   };
 }
 
@@ -628,6 +632,20 @@ export function StoreProvider({ children }: { children: ReactNode }) {
     [],
   );
 
+  const addDropIn: Store["addDropIn"] = useCallback((input) => {
+    commit((prev) => ({
+      ...prev,
+      dropIns: [
+        {
+          ...input,
+          id: uid("di"),
+          academyId: prev.academy.id,
+        },
+        ...(prev.dropIns ?? []),
+      ],
+    }));
+  }, []);
+
   const value = useMemo<Store>(
     () => ({
       ...state,
@@ -663,6 +681,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
       toggleRsvp,
       removeEvent,
       sellItem,
+      addDropIn,
     }),
     [
       state,
@@ -697,6 +716,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
       toggleRsvp,
       removeEvent,
       sellItem,
+      addDropIn,
     ],
   );
 

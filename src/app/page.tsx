@@ -59,7 +59,7 @@ const features = [
   {
     icon: ClipboardCheck,
     title: "Presença",
-    body: "Chamada na hora da aula ou check-in pelo PWA do aluno. Histórico que alimenta a evolução.",
+    body: "Chamada com vaga da turma, visitante na porta e check-in pelo PWA. Código do dia no quadro.",
   },
   {
     icon: Package,

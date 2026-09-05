@@ -21,26 +21,40 @@ import { brl, currentMonth, isoDate } from "@/lib/format";
 import { useStore } from "@/lib/store";
 import type { Student, StudentStatus } from "@/lib/types";
 
-const STATUS: { id: StudentStatus | "all"; label: string }[] = [
+const STATUS: { id: StudentStatus | "all" | "overdue"; label: string }[] = [
   { id: "all", label: "Todos" },
   { id: "active", label: "Ativos" },
   { id: "trial", label: "Experimental" },
+  { id: "overdue", label: "Em atraso" },
   { id: "inactive", label: "Inativos" },
 ];
 
 export default function AlunosPage() {
   const store = useStore();
   const [q, setQ] = useState("");
-  const [status, setStatus] = useState<StudentStatus | "all">("all");
+  const [status, setStatus] = useState<StudentStatus | "all" | "overdue">("all");
   const month = currentMonth();
 
   const rows = useMemo(() => {
     return store.students.filter((s) => {
-      if (status !== "all" && s.status !== status) return false;
-      if (q && !s.name.toLowerCase().includes(q.toLowerCase())) return false;
+      if (status === "overdue") {
+        const late = store.payments.some(
+          (p) => p.studentId === s.id && p.status === "overdue",
+        );
+        if (!late) return false;
+      } else if (status !== "all" && s.status !== status) {
+        return false;
+      }
+      if (
+        q &&
+        !s.name.toLowerCase().includes(q.toLowerCase()) &&
+        !s.phone.includes(q)
+      ) {
+        return false;
+      }
       return true;
     });
-  }, [store.students, q, status]);
+  }, [store.students, store.payments, q, status]);
 
   return (
     <div className="mx-auto max-w-6xl space-y-6">
@@ -56,7 +70,7 @@ export default function AlunosPage() {
 
       <div className="flex flex-col gap-3 sm:flex-row">
         <Input
-          placeholder="Buscar por nome"
+          placeholder="Buscar nome ou WhatsApp"
           value={q}
           onChange={(e) => setQ(e.target.value)}
           className="sm:max-w-xs"

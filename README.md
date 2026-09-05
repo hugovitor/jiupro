@@ -11,6 +11,8 @@ Feito para o dono que treina de manhã e administra de noite: mensalidades em at
 - **Fechamento do mês** — recebido × despesa, gerar mensalidades do próximo mês, CSV
 - **Experimentais** — captar aula experimental e converter em mensalista
 - **Código do dia** — recepção mostra, aluno confirma no PWA
+- **Visitante / aula avulsa** — quem aparece na porta entra na chamada e no caixa
+- **Grade da semana** — o aluno vê os horários da divisão no PWA
 - **Avaliação no tatame** — nota do professor na ficha, com indicação de graduação
 - **Retenção** — aluno que some ganha WhatsApp de volta no painel
 - **Agenda** — seminário, campeonato, open mat; confirmação no PWA e Zap para quem falta

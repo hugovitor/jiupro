@@ -106,6 +106,12 @@ export function monthStoreSales(state: AppState, month: string) {
     .reduce((sum, s) => sum + s.amount, 0);
 }
 
+export function monthDropInRevenue(state: AppState, month: string) {
+  return (state.dropIns ?? [])
+    .filter((d) => d.date.startsWith(month))
+    .reduce((sum, d) => sum + d.amount, 0);
+}
+
 export const EVENT_KIND_LABEL: Record<string, string> = {
   seminar: "Seminário",
   championship: "Campeonato",

@@ -5,7 +5,7 @@ import { toast } from "sonner";
 import { BeltBadge } from "@/components/belt-badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { formatDay, isoDate } from "@/lib/format";
+import { formatDay, isoDate, weekdayFull } from "@/lib/format";
 import { attendanceInDays } from "@/lib/insights";
 import { currentStudent, useStore } from "@/lib/store";
 import { useState } from "react";
@@ -112,8 +112,47 @@ export default function AlunoHome() {
         </div>
       </div>
 
+      <GradeSemana />
       <ProximoEvento />
     </div>
+  );
+}
+
+function GradeSemana() {
+  const store = useStore();
+  const student = currentStudent(store);
+  const week = store.classes
+    .filter((c) => {
+      if (!student) return true;
+      if (c.division === "kids") return student.division === "kids";
+      if (c.division === "adult") return student.division === "adult";
+      return true;
+    })
+    .slice()
+    .sort((a, b) => a.weekday - b.weekday || a.startTime.localeCompare(b.startTime));
+  const today = new Date().getDay();
+
+  return (
+    <section className="rounded-2xl border border-border bg-card p-4">
+      <p className="text-xs text-muted-foreground">Sua grade</p>
+      <div className="mt-3 space-y-2">
+        {week.map((c) => (
+          <div
+            key={c.id}
+            className={`flex justify-between text-sm ${
+              c.weekday === today ? "text-primary" : ""
+            }`}
+          >
+            <span>
+              {weekdayFull(c.weekday)} · {c.startTime}
+            </span>
+            <span className="text-muted-foreground">
+              {c.name} · {c.gi ? "Gi" : "No-Gi"}
+            </span>
+          </div>
+        ))}
+      </div>
+    </section>
   );
 }
 

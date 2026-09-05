@@ -76,6 +76,8 @@ function ConfigInner() {
 
       <PixForm />
 
+      <DropInFeeForm />
+
       <section className="rounded-xl border border-border bg-card p-5">
         <h2 className="font-medium">Plano atual · {plan.name}</h2>
         <p className="mt-1 text-sm text-muted-foreground">
@@ -158,6 +160,34 @@ function PixForm() {
           <Input value={pixName} onChange={(e) => setPixName(e.target.value)} />
         </div>
         <Button type="submit">Salvar Pix</Button>
+      </form>
+    </section>
+  );
+}
+
+function DropInFeeForm() {
+  const store = useStore();
+  const [fee, setFee] = useState(String(store.academy.dropInFee || 40));
+
+  return (
+    <section className="rounded-xl border border-border bg-card p-5">
+      <h2 className="font-medium">Aula avulsa</h2>
+      <p className="mt-1 text-sm text-muted-foreground">
+        O que o visitante paga na porta.
+      </p>
+      <form
+        className="mt-4 grid gap-3"
+        onSubmit={(e) => {
+          e.preventDefault();
+          store.updateAcademy({ dropInFee: Number(fee.replace(",", ".")) || 40 });
+          toast.success("Taxa de visitante atualizada.");
+        }}
+      >
+        <div className="space-y-1.5">
+          <Label>Valor (R$)</Label>
+          <Input value={fee} onChange={(e) => setFee(e.target.value)} />
+        </div>
+        <Button type="submit">Salvar taxa</Button>
       </form>
     </section>
   );
