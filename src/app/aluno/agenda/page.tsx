@@ -35,9 +35,9 @@ export default function AlunoAgendaPage() {
         return (
           <article
             key={evt.id}
-            className="rounded-2xl border border-border bg-card p-4"
+            className="border border-border bg-card p-4"
           >
-            <p className="text-xs tracking-[0.16em] text-primary uppercase">
+            <p className="text-xs text-primary">
               {EVENT_KIND_LABEL[evt.kind] ?? evt.kind}
             </p>
             <h2 className="mt-1 font-display text-2xl">{evt.title}</h2>

@@ -295,7 +295,7 @@ function Compras({ studentId }: { studentId: string }) {
 
 function Mini({ k, v }: { k: string; v: string }) {
   return (
-    <div className="rounded-xl border border-border bg-card p-4">
+    <div className="border border-border bg-card p-4">
       <p className="text-xs text-muted-foreground">{k}</p>
       <p className="mt-1 font-display text-2xl">{v}</p>
     </div>

@@ -25,7 +25,7 @@ export default function GraduacoesPage() {
       </div>
 
       <section>
-        <h2 className="mb-3 text-sm tracking-[0.16em] text-primary uppercase">
+        <h2 className="mb-3 font-display text-sm text-primary">
           Prontos agora
         </h2>
         {ready.length > 0 && (
@@ -56,7 +56,7 @@ export default function GraduacoesPage() {
           {ready.map((s) => (
             <article
               key={s.id}
-              className="flex flex-col gap-3 rounded-xl border border-primary/40 bg-card p-4 sm:flex-row sm:items-center"
+              className="flex flex-col gap-3 border border-primary/40 bg-card p-4 sm:flex-row sm:items-center"
             >
               <PersonAvatar name={s.name} hue={s.avatarHue} />
               <div className="min-w-0 flex-1">
@@ -83,14 +83,14 @@ export default function GraduacoesPage() {
       </section>
 
       <section>
-        <h2 className="mb-3 text-sm tracking-[0.16em] text-muted-foreground uppercase">
+        <h2 className="mb-3 font-display text-sm text-muted-foreground">
           Demais ativos
         </h2>
         <div className="space-y-2">
           {rest.map((s) => (
             <article
               key={s.id}
-              className="flex items-center gap-3 rounded-xl border border-border bg-card p-3"
+              className="flex items-center gap-3 border border-border bg-card p-3"
             >
               <PersonAvatar name={s.name} hue={s.avatarHue} size="sm" />
               <div className="min-w-0 flex-1">

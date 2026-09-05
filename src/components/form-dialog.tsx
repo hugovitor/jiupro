@@ -23,7 +23,7 @@ export function FormDialog({
       <div
         role="dialog"
         aria-modal="true"
-        className="relative z-10 w-full max-w-sm rounded-xl bg-popover p-4 text-sm text-popover-foreground shadow-lg ring-1 ring-foreground/10"
+        className="relative z-10 w-full max-w-sm bg-popover p-4 text-sm text-popover-foreground shadow-lg ring-1 ring-foreground/10"
       >
         <h2 className="font-heading text-base font-medium">{title}</h2>
         <div className="mt-3">{children}</div>

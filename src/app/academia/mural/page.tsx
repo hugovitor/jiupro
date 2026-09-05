@@ -40,7 +40,7 @@ export default function MuralPage() {
 
       <div className="space-y-3">
         {store.posts.map((p) => (
-          <article key={p.id} className="rounded-xl border border-border bg-card p-4">
+          <article key={p.id} className="border border-border bg-card p-4">
             <div className="flex items-center justify-between gap-2 text-xs text-muted-foreground">
               <span>
                 {p.authorName}

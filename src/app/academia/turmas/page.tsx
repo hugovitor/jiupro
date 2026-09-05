@@ -47,7 +47,7 @@ export default function TurmasPage() {
                 return (
                   <article
                     key={c.id}
-                    className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-border bg-card p-4"
+                    className="flex flex-wrap items-center justify-between gap-3 border border-border bg-card p-4"
                   >
                     <div>
                       <p className="font-medium">{c.name}</p>

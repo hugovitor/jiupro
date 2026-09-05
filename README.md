@@ -1,6 +1,6 @@
-# Tatame
+# JiuPro
 
-Sistema de gestão para academias de Jiu-Jitsu. Cada academia tem a sua conta. Os alunos usam um PWA para marcar presença, acompanhar a faixa e falar no mural da casa.
+Sistema de gestão para academias de Jiu-Jitsu. Preto, vermelho e branco — a paleta da faixa preta. Cada academia tem a sua conta. Os alunos usam um PWA para marcar presença, acompanhar a faixa e falar no mural da casa.
 
 Feito para o dono que treina de manhã e administra de noite: mensalidades em atraso, aluno que some, graduação com critério (tempo + presença) e estoque de kimono.
 

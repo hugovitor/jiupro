@@ -10,7 +10,7 @@ export const ADULT_BELTS: {
   { id: "blue", label: "Azul", swatch: "#1e4fd7", ink: "#f8fafc" },
   { id: "purple", label: "Roxa", swatch: "#6d28d9", ink: "#f8fafc" },
   { id: "brown", label: "Marrom", swatch: "#7c3f16", ink: "#f8fafc" },
-  { id: "black", label: "Preta", swatch: "#14110e", ink: "#f8fafc" },
+  { id: "black", label: "Preta", swatch: "#111111", ink: "#f8fafc" },
 ];
 
 export const KIDS_BELTS: {
@@ -29,6 +29,11 @@ export const ALL_BELTS = [...ADULT_BELTS, ...KIDS_BELTS];
 
 export function beltMeta(id: string) {
   return ALL_BELTS.find((b) => b.id === id) ?? ADULT_BELTS[0];
+}
+
+/** Ponteira da faixa: preta tem ponta vermelha; as demais, ponta preta. Graus são brancos. */
+export function beltTipColor(id: string) {
+  return id === "black" ? "#c41e3a" : "#111111";
 }
 
 export function beltLabel(id: string, stripes: number) {

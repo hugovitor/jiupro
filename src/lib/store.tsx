@@ -30,8 +30,8 @@ import type {
   Student,
 } from "./types";
 
-const STORAGE_KEY = "tatame.demo.v3";
-const SESSION_KEY = "tatame.session.v3";
+const STORAGE_KEY = "jiupro.demo.v1";
+const SESSION_KEY = "jiupro.session.v1";
 
 type Store = AppState & {
   ready: boolean;

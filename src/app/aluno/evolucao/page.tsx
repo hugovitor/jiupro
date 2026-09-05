@@ -23,7 +23,7 @@ export default function EvolucaoPage() {
   return (
     <div className="space-y-6">
       <h1 className="font-display text-3xl">Evolução</h1>
-      <div className="rounded-2xl border border-border bg-card p-5">
+      <div className="border border-border bg-card p-5">
         <BeltBadge belt={student.belt} stripes={student.stripes} />
         <p className="mt-3 font-display text-2xl">
           {beltLabel(student.belt, student.stripes)}
@@ -33,7 +33,7 @@ export default function EvolucaoPage() {
         </p>
       </div>
 
-      <div className="space-y-4 rounded-2xl border border-border bg-card p-5">
+      <div className="space-y-4 border border-border bg-card p-5">
         <div>
           <div className="mb-1 flex justify-between text-sm">
             <span>Tempo no grau</span>
@@ -55,7 +55,7 @@ export default function EvolucaoPage() {
       </div>
 
       <section>
-        <h2 className="mb-3 text-sm tracking-[0.16em] text-muted-foreground uppercase">
+        <h2 className="mb-3 font-display text-sm text-muted-foreground">
           Histórico
         </h2>
         <div className="space-y-3">

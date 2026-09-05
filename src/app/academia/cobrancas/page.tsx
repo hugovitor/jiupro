@@ -24,7 +24,7 @@ export default function CobrancasPage() {
         </p>
       </div>
 
-      <div className="rounded-xl border border-border bg-card p-4">
+      <div className="border border-border bg-card p-4">
         <p className="text-xs text-muted-foreground">Pix da academia</p>
         <p className="mt-1 font-mono text-lg">{store.academy.pixKey}</p>
         <p className="text-sm text-muted-foreground">{store.academy.pixName}</p>
@@ -56,7 +56,7 @@ export default function CobrancasPage() {
           return (
             <article
               key={p.id}
-              className="flex flex-col gap-3 rounded-xl border border-border bg-card p-4 sm:flex-row sm:items-center"
+              className="flex flex-col gap-3 border border-border bg-card p-4 sm:flex-row sm:items-center"
             >
               <PersonAvatar name={s.name} hue={s.avatarHue} />
               <div className="min-w-0 flex-1">

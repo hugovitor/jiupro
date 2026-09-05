@@ -35,7 +35,7 @@ export default function AlunoMural() {
       </form>
       <div className="space-y-3">
         {store.posts.map((p) => (
-          <article key={p.id} className="rounded-xl border border-border bg-card p-4">
+          <article key={p.id} className="border border-border bg-card p-4">
             <p className="text-xs text-muted-foreground">
               {p.authorName}
               {p.pinned ? " · aviso da academia" : ""} · {formatDay(p.createdAt)}{" "}

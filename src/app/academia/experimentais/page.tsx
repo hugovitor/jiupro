@@ -37,7 +37,7 @@ export default function ExperimentaisPage() {
         {trials.map((s) => (
           <article
             key={s.id}
-            className="flex flex-col gap-3 rounded-xl border border-border bg-card p-4 sm:flex-row sm:items-center"
+            className="flex flex-col gap-3 border border-border bg-card p-4 sm:flex-row sm:items-center"
           >
             <PersonAvatar name={s.name} hue={s.avatarHue} />
             <div className="min-w-0 flex-1">

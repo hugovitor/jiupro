@@ -75,7 +75,7 @@ export default function FechamentoPage() {
         ];
       }),
     ];
-    downloadCsv(`tatame-${store.academy.slug}-${month}.csv`, rows);
+    downloadCsv(`jiupro-${store.academy.slug}-${month}.csv`, rows);
     toast.success("Planilha baixada.");
   }
 
@@ -292,7 +292,7 @@ function Tile({
   warn?: boolean;
 }) {
   return (
-    <div className="rounded-xl border border-border bg-card p-4">
+    <div className="border border-border bg-card p-4">
       <p className="text-xs text-muted-foreground">{k}</p>
       <p className={`mt-1 font-display text-2xl ${warn ? "text-destructive" : ""}`}>
         {v}

@@ -1,4 +1,4 @@
--- Tatame — schema multi-tenant para academias de Jiu-Jitsu
+-- JiuPro — schema multi-tenant para academias de Jiu-Jitsu
 -- Rode no SQL Editor do Supabase. RLS isolada por academia.
 
 create extension if not exists "pgcrypto";

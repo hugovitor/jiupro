@@ -40,7 +40,7 @@ export default function EstoquePage() {
           return (
             <article
               key={item.id}
-              className={`rounded-xl border bg-card p-4 ${
+              className={`border bg-card p-4 ${
                 low ? "border-destructive/50" : "border-border"
               }`}
             >

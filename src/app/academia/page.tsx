@@ -42,7 +42,7 @@ export default function AcademiaDashboard() {
   return (
     <div className="mx-auto max-w-6xl space-y-6">
       <div>
-        <p className="text-xs tracking-[0.18em] text-primary uppercase">
+        <p className="text-sm text-muted-foreground">
           {store.academy.city} · {monthLabel(month)}
         </p>
         <h1 className="font-display text-3xl">{store.academy.name}</h1>
@@ -274,7 +274,7 @@ function Kpi({
   warn?: boolean;
 }) {
   return (
-    <div className="rounded-xl border border-border bg-card p-4">
+    <div className="border border-border bg-card p-4">
       <p className="text-xs text-muted-foreground">{label}</p>
       <p className={`mt-1 font-display text-2xl ${warn ? "text-destructive" : ""}`}>
         {value}

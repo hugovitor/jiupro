@@ -62,10 +62,10 @@ function NavLinks({
             href={item.href}
             onClick={onNavigate}
             className={cn(
-              "flex items-center gap-2 rounded-lg px-3 py-2 text-sm",
+              "flex items-center gap-2 border-l-2 px-3 py-2 text-sm",
               active
-                ? "bg-sidebar-accent text-foreground"
-                : "text-muted-foreground hover:bg-sidebar-accent/60 hover:text-foreground",
+                ? "border-primary bg-sidebar-accent text-foreground"
+                : "border-transparent text-muted-foreground hover:bg-sidebar-accent/60 hover:text-foreground",
             )}
           >
             <item.icon className="size-4" />

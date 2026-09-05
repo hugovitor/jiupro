@@ -54,14 +54,14 @@ export default function PlanosPage() {
       <main className="mx-auto w-full max-w-5xl px-4 py-12">
         <h1 className="font-display text-4xl">Planos mensais</h1>
         <p className="mt-2 max-w-xl text-muted-foreground">
-          Uma assinatura por academia. Alunos não pagam o Tatame — pagam a
+          Uma assinatura por academia. Alunos não pagam o JiuPro — pagam a
           mensalidade para você.
         </p>
         <div className="mt-10 grid gap-4 lg:grid-cols-3">
           {PLANS.map((plan) => (
             <article
               key={plan.id}
-              className={`flex flex-col rounded-xl border p-6 ${
+              className={`flex flex-col border p-6 ${
                 plan.popular ? "border-primary" : "border-border"
               }`}
             >

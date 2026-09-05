@@ -50,7 +50,7 @@ function ConfigInner() {
         </p>
       </div>
 
-      <section className="rounded-xl border border-border bg-card p-5">
+      <section className="border border-border bg-card p-5">
         <h2 className="font-medium">Academia</h2>
         <dl className="mt-3 space-y-2 text-sm">
           <div className="flex justify-between gap-4">
@@ -78,7 +78,7 @@ function ConfigInner() {
 
       <DropInFeeForm />
 
-      <section className="rounded-xl border border-border bg-card p-5">
+      <section className="border border-border bg-card p-5">
         <h2 className="font-medium">Plano atual · {plan.name}</h2>
         <p className="mt-1 text-sm text-muted-foreground">
           {brl(plan.price)}/mês · {plan.students} alunos
@@ -96,7 +96,7 @@ function ConfigInner() {
         </div>
       </section>
 
-      <section className="rounded-xl border border-border bg-card p-5 text-sm">
+      <section className="border border-border bg-card p-5 text-sm">
         <h2 className="font-medium">Integrações</h2>
         <p className="mt-2 text-muted-foreground">
           Supabase: {isSupabaseConfigured() ? "conectado" : "modo demo (local)"}
@@ -138,7 +138,7 @@ function PixForm() {
   const [pixName, setPixName] = useState(store.academy.pixName);
 
   return (
-    <section className="rounded-xl border border-border bg-card p-5">
+    <section className="border border-border bg-card p-5">
       <h2 className="font-medium">Pix para mensalidade</h2>
       <p className="mt-1 text-sm text-muted-foreground">
         Entra na mensagem de cobrança do WhatsApp.
@@ -170,7 +170,7 @@ function DropInFeeForm() {
   const [fee, setFee] = useState(String(store.academy.dropInFee || 40));
 
   return (
-    <section className="rounded-xl border border-border bg-card p-5">
+    <section className="border border-border bg-card p-5">
       <h2 className="font-medium">Aula avulsa</h2>
       <p className="mt-1 text-sm text-muted-foreground">
         O que o visitante paga na porta.

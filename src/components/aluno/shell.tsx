@@ -6,7 +6,7 @@ import { CalendarDays, Home, LineChart, MessageSquare, User } from "lucide-react
 import { cn } from "@/lib/utils";
 
 const NAV = [
-  { href: "/aluno", label: "Tatame", icon: Home },
+  { href: "/aluno", label: "Hoje", icon: Home },
   { href: "/aluno/agenda", label: "Agenda", icon: CalendarDays },
   { href: "/aluno/mural", label: "Mural", icon: MessageSquare },
   { href: "/aluno/evolucao", label: "Evolução", icon: LineChart },

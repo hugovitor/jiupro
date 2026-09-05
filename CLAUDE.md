@@ -1,3 +1,3 @@
-# Tatame
+# JiuPro
 
 See README.md.

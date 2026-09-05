@@ -20,7 +20,7 @@ export default function PerfilAluno() {
     <div className="space-y-6">
       <h1 className="font-display text-3xl">Perfil</h1>
       {student && (
-        <div className="flex items-center gap-3 rounded-2xl border border-border bg-card p-4">
+        <div className="flex items-center gap-3 border border-border bg-card p-4">
           <PersonAvatar name={student.name} hue={student.avatarHue} size="lg" />
           <div>
             <p className="font-medium">{student.name}</p>
@@ -32,7 +32,7 @@ export default function PerfilAluno() {
         </div>
       )}
 
-      <div className="rounded-2xl border border-border bg-card p-4 text-sm">
+      <div className="border border-border bg-card p-4 text-sm">
         <p className="text-muted-foreground">Mensalidade deste mês</p>
         <p className="mt-1 font-display text-2xl">
           {student?.monthlyFee ? brl(student.monthlyFee) : "Isento"}
@@ -52,7 +52,7 @@ export default function PerfilAluno() {
             Pague no Pix abaixo e avise a secretaria.
           </p>
         )}
-        <div className="mt-4 rounded-xl bg-background p-3">
+        <div className="mt-4 bg-background p-3">
           <p className="text-xs text-muted-foreground">Pix da academia</p>
           <p className="mt-1 font-mono text-sm">{store.academy.pixKey}</p>
           <p className="text-xs text-muted-foreground">{store.academy.pixName}</p>
@@ -70,7 +70,7 @@ export default function PerfilAluno() {
         </div>
       </div>
 
-      <div className="rounded-2xl border border-border bg-card p-4 text-sm">
+      <div className="border border-border bg-card p-4 text-sm">
         <p className="font-medium">{store.academy.name}</p>
         <p className="text-muted-foreground">
           {store.academy.address}

@@ -89,7 +89,7 @@ export default function AlunosPage() {
         </div>
       </div>
 
-      <div className="overflow-hidden rounded-xl border border-border">
+      <div className="overflow-hidden border border-border">
         <Table>
           <TableHeader>
             <TableRow>
@@ -148,7 +148,7 @@ export default function AlunosPage() {
 
 function PayPill({ status }: { status?: string }) {
   const map: Record<string, { label: string; className: string }> = {
-    paid: { label: "Pago", className: "text-tatami" },
+    paid: { label: "Pago", className: "text-foreground" },
     overdue: { label: "Atraso", className: "text-destructive" },
     pending: { label: "Aberto", className: "text-primary" },
     waived: { label: "Isento", className: "text-muted-foreground" },

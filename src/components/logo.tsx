@@ -8,23 +8,24 @@ export function Logo({
   markClassName?: string;
 }) {
   return (
-    <span className={cn("inline-flex items-center gap-2", className)}>
+    <span className={cn("inline-flex items-center gap-2.5", className)}>
       <span
         className={cn(
-          "relative flex size-8 items-center justify-center rounded-md bg-primary text-primary-foreground",
+          "relative h-5 w-9 overflow-hidden ring-1 ring-white/15",
           markClassName,
         )}
+        aria-hidden
       >
-        <svg viewBox="0 0 24 24" className="size-5" aria-hidden>
-          <path
-            fill="currentColor"
-            d="M4 7.5h16v2.2H4zm2.2 3.4h11.6v2.2H6.2zm2.3 3.4h7v2.2h-7zM12 4.2 9.4 7.5h5.2z"
-          />
-          <circle cx="12" cy="18.6" r="1.4" fill="currentColor" />
-        </svg>
+        <span className="absolute inset-y-0 left-0 w-[62%] bg-neutral-950" />
+        <span className="absolute inset-y-0 right-0 w-[38%] bg-primary" />
+        <span className="absolute inset-y-[3px] right-[3px] flex gap-[2px]">
+          <span className="h-full w-[2px] bg-white" />
+          <span className="h-full w-[2px] bg-white" />
+          <span className="h-full w-[2px] bg-white" />
+        </span>
       </span>
-      <span className="font-display text-lg font-bold tracking-[0.18em]">
-        TATAME
+      <span className="font-display text-[1.35rem] font-semibold leading-none">
+        JIU<span className="text-primary">PRO</span>
       </span>
     </span>
   );

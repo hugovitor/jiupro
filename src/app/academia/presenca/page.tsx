@@ -60,10 +60,8 @@ export default function PresencaPage() {
         <Visitante classId={classId} />
       </div>
 
-      <div className="rounded-2xl border border-primary/40 bg-card p-5 text-center">
-        <p className="text-xs tracking-[0.18em] text-muted-foreground uppercase">
-          Código do dia
-        </p>
+      <div className="border border-primary/50 bg-card p-5 text-center">
+        <p className="text-xs text-muted-foreground">Código do dia</p>
         <p className="mt-1 font-display text-5xl tracking-[0.2em] text-primary">
           {dayCode(today, store.academy.slug)}
         </p>
@@ -73,7 +71,7 @@ export default function PresencaPage() {
       </div>
 
       {classes.length === 0 ? (
-        <p className="rounded-xl border border-border bg-card p-4 text-sm text-muted-foreground">
+        <p className="border border-border bg-card p-4 text-sm text-muted-foreground">
           Não há turma na grade para hoje. Você ainda pode lançar em qualquer
           horário da semana.
         </p>
@@ -116,7 +114,7 @@ export default function PresencaPage() {
           {visitors.map((v) => (
             <div
               key={v.id}
-              className="flex items-center justify-between rounded-xl border border-primary/40 bg-card p-3 text-sm"
+              className="flex items-center justify-between border border-primary/40 bg-card p-3 text-sm"
             >
               <span>
                 {v.name}
@@ -136,7 +134,7 @@ export default function PresencaPage() {
           return (
             <div
               key={s.id}
-              className="flex items-center gap-3 rounded-xl border border-border bg-card p-3"
+              className="flex items-center gap-3 border border-border bg-card p-3"
             >
               <PersonAvatar name={s.name} hue={s.avatarHue} size="sm" />
               <div className="min-w-0 flex-1">

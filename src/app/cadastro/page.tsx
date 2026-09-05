@@ -88,7 +88,7 @@ function CadastroForm() {
                   key={p.id}
                   type="button"
                   onClick={() => setPlan(p.id)}
-                  className={`rounded-xl border px-3 py-2 text-left text-sm ${
+                  className={`border px-3 py-2 text-left text-sm ${
                     plan === p.id
                       ? "border-primary bg-primary/10"
                       : "border-border"

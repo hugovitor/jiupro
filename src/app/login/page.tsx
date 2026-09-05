@@ -81,7 +81,7 @@ export default function LoginPage() {
         </form>
 
         <div className="mt-8 space-y-2">
-          <p className="text-xs tracking-[0.16em] text-muted-foreground uppercase">
+          <p className="text-xs text-muted-foreground">
             Atalhos da demo
           </p>
           {DEMO_ACCOUNTS.map((a) => (
@@ -92,7 +92,7 @@ export default function LoginPage() {
                 setEmail(a.email);
                 enter(a.email);
               }}
-              className="flex w-full items-center justify-between rounded-xl border border-border bg-card px-4 py-3 text-left hover:bg-muted/40"
+              className="flex w-full items-center justify-between border border-border bg-card px-4 py-3 text-left hover:bg-muted/40"
             >
               <span>
                 <span className="block text-sm font-medium">{a.label}</span>
