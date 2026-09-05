@@ -18,6 +18,7 @@ import type {
 } from "./types";
 
 const ACADEMY_ID = "ac_origem";
+export const DEMO_ACADEMY_ID = ACADEMY_ID;
 
 function monthOffset(n: number) {
   return shiftMonth(currentMonth(), n);

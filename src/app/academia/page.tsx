@@ -46,9 +46,23 @@ export default function AcademiaDashboard() {
           {store.academy.city} · {monthLabel(month)}
         </p>
         <h1 className="font-display text-3xl">{store.academy.name}</h1>
-        <p className="mt-1 text-sm text-muted-foreground">
-          O que precisa da sua atenção hoje, não um gráfico bonito.
-        </p>
+        {store.isDemo ? (
+          <p className="mt-1 text-sm text-muted-foreground">
+            Esta é a Equipe Origem (demonstração).{" "}
+            <Link href="/cadastro" className="text-foreground underline">
+              Abra a sua academia
+            </Link>{" "}
+            para começar do zero.
+          </p>
+        ) : store.students.length === 0 ? (
+          <p className="mt-1 text-sm text-muted-foreground">
+            Casa nova. Cadastre o primeiro aluno — a demo continua em Entrar.
+          </p>
+        ) : (
+          <p className="mt-1 text-sm text-muted-foreground">
+            O que precisa da sua atenção hoje, não um gráfico bonito.
+          </p>
+        )}
       </div>
 
       <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">

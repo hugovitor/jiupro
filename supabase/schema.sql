@@ -278,3 +278,48 @@ alter table public.drop_ins enable row level security;
 create policy "drop ins by academy" on public.drop_ins
   for all using (academy_id = public.current_academy_id())
   with check (academy_id = public.current_academy_id());
+
+-- Snapshot da academia (cadastro real). A demo Equipe Origem não usa isto.
+alter table public.academies add column if not exists app_state jsonb;
+
+drop policy if exists "academy update" on public.academies;
+create policy "academy update" on public.academies
+  for update using (id = public.current_academy_id())
+  with check (id = public.current_academy_id());
+
+create or replace function public.register_academy(
+  p_name text,
+  p_slug text,
+  p_city text,
+  p_state text,
+  p_plan text,
+  p_owner_name text
+) returns uuid
+language plpgsql
+security definer
+set search_path = public
+as $$
+declare
+  v_id uuid;
+  v_slug text := p_slug;
+begin
+  if auth.uid() is null then
+    raise exception 'not authenticated';
+  end if;
+  if exists (select 1 from public.profiles where id = auth.uid()) then
+    return (select academy_id from public.profiles where id = auth.uid());
+  end if;
+  if exists (select 1 from public.academies where slug = v_slug) then
+    v_slug := v_slug || '-' || substr(replace(gen_random_uuid()::text, '-', ''), 1, 6);
+  end if;
+  insert into public.academies (name, slug, city, state, plan, pix_name)
+  values (p_name, v_slug, p_city, p_state, coalesce(p_plan, 'essencial'), p_name)
+  returning id into v_id;
+  insert into public.profiles (id, academy_id, name, role)
+  values (auth.uid(), v_id, p_owner_name, 'owner');
+  return v_id;
+end;
+$$;
+
+revoke all on function public.register_academy(text, text, text, text, text, text) from public;
+grant execute on function public.register_academy(text, text, text, text, text, text) to authenticated;

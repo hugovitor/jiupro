@@ -98,7 +98,7 @@ export default function HomePage() {
               celular e vê a própria faixa caminhar.
             </p>
             <div className="mt-8 flex flex-col gap-3 sm:flex-row">
-              <Button size="lg" render={<Link href="/academia" />}>
+              <Button size="lg" render={<Link href="/demo" />}>
                 Ver a academia de demonstração
               </Button>
               <Button variant="outline" size="lg" render={<Link href="/planos" />}>
@@ -106,7 +106,8 @@ export default function HomePage() {
               </Button>
             </div>
             <p className="mt-4 text-xs text-neutral-500">
-              Demo completa, sem cartão. Depois você liga Supabase e Stripe.
+              Demo da Equipe Origem, sem cartão. Cadastro abre a sua casa, não a
+              Origem.
             </p>
           </div>
 
@@ -189,7 +190,7 @@ export default function HomePage() {
               <li>Evolução: tempo de faixa, presenças, histórico de graus.</li>
               <li>Pix da casa na mensalidade, sem perguntar no Zap.</li>
             </ul>
-            <Button className="mt-6" render={<Link href="/aluno" />}>
+            <Button className="mt-6" render={<Link href="/demo?as=aluno" />}>
               Entrar como aluno
             </Button>
           </div>
@@ -276,7 +277,7 @@ export default function HomePage() {
           <p className="mt-3 text-neutral-400">
             O dono vê o painel. O aluno vê o PWA. Sem enrolação de plataforma.
           </p>
-          <Button className="mt-6" size="lg" render={<Link href="/academia" />}>
+          <Button className="mt-6" size="lg" render={<Link href="/demo" />}>
             Abrir a demo agora
           </Button>
         </div>

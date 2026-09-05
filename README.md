@@ -19,10 +19,11 @@ Feito para o dono que treina de manhã e administra de noite: mensalidades em at
 - **Loja** — venda no nome do aluno, baixa o estoque, entra no financeiro
 - **PWA do aluno** — check-in do dia, agenda, mural, evolução, Pix e perfil (instalável no celular)
 - **Planos mensais** — Essencial, Academia e Equipe, com checkout Stripe quando as chaves existem
-- **Demo completa** — Equipe Origem (Campinas) preenchida, sem precisar de conta
-- **Supabase** — schema multi-tenant com RLS em `supabase/schema.sql`
+- **Cadastro real** — abre a sua academia, vazia, isolada da Equipe Origem. Sem Supabase fica neste navegador; com as chaves, Auth + `register_academy` grava na nuvem
+- **Demo completa** — Equipe Origem (Campinas) nos atalhos de Entrar ou em `/demo`
+- **Supabase** — schema multi-tenant com RLS e snapshot `app_state` em `supabase/schema.sql`
 
-A demo roda 100% no navegador (localStorage). Quando você ligar Supabase e Stripe, o mesmo produto passa a persistir de verdade.
+A demo da Equipe Origem continua no navegador. **Cadastro** cria outra academia (não entra como Carla). Sem chaves de Supabase, a casa nova fica no `localStorage` deste browser. Com `NEXT_PUBLIC_SUPABASE_URL` e a anon key, o cadastro também cria usuário no Auth e uma linha em `academies`.
 
 ## Como rodar
 
@@ -53,7 +54,7 @@ NEXT_PUBLIC_SUPABASE_URL=
 NEXT_PUBLIC_SUPABASE_ANON_KEY=
 ```
 
-O schema isola dados por `academy_id` (RLS). Auth de produção usa `auth.users` + `profiles`.
+O schema isola dados por `academy_id` (RLS). O cadastro chama `register_academy` (função security definer) e grava o painel em `academies.app_state`. Auth usa `auth.users` + `profiles`. No painel do Auth, desative “Confirm email” se quiser entrar na hora.
 
 ## Stripe
 

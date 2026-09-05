@@ -9,6 +9,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { PLANS } from "@/lib/plans";
+import { isSupabaseConfigured } from "@/lib/supabase/client";
 import { useStore } from "@/lib/store";
 import type { PlanId } from "@/lib/types";
 
@@ -20,9 +21,13 @@ function CadastroForm() {
   const [name, setName] = useState("");
   const [academy, setAcademy] = useState("");
   const [city, setCity] = useState("");
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [busy, setBusy] = useState(false);
   const [plan, setPlan] = useState<PlanId>(
     PLANS.some((p) => p.id === preset) ? preset : "academia",
   );
+  const remote = isSupabaseConfigured();
 
   return (
     <div className="flex min-h-full flex-col">
@@ -36,20 +41,33 @@ function CadastroForm() {
       <main className="mx-auto flex w-full max-w-md flex-1 flex-col justify-center px-4 py-10">
         <h1 className="font-display text-3xl">Abrir academia</h1>
         <p className="mt-2 text-sm text-muted-foreground">
-          Na demo, o cadastro entra na Equipe Origem para você ver o produto
-          cheio. Com Supabase ligado, cada academia vira uma conta isolada.
+          {remote
+            ? "Cria a sua casa no JiuPro, isolada das outras. A Equipe Origem continua nos atalhos de Entrar."
+            : "Cria a sua casa neste navegador, isolada da demo. Com Supabase nas variáveis de ambiente, a conta também fica na nuvem."}
         </p>
         <form
           className="mt-8 space-y-4"
-          onSubmit={(e) => {
+          onSubmit={async (e) => {
             e.preventDefault();
-            if (!name.trim() || !academy.trim()) {
-              toast.error("Preencha o seu nome e o da academia.");
+            if (!name.trim() || !academy.trim() || !email.trim() || !password) {
+              toast.error("Preencha nome, academia, e-mail e senha.");
               return;
             }
-            store.changePlan(plan);
-            store.login("carla@origem.jj");
-            toast.success(`${academy} pronta. Entrando no painel.`);
+            setBusy(true);
+            const result = await store.registerAcademy({
+              ownerName: name,
+              academyName: academy,
+              city,
+              email,
+              password,
+              plan,
+            });
+            setBusy(false);
+            if (!result.ok) {
+              toast.error(result.error);
+              return;
+            }
+            toast.success(`${academy.trim()} aberta. Cadastre o primeiro aluno.`);
             router.push("/academia");
           }}
         >
@@ -60,6 +78,7 @@ function CadastroForm() {
               value={name}
               onChange={(e) => setName(e.target.value)}
               placeholder="Carla Mendes"
+              autoComplete="name"
             />
           </div>
           <div className="space-y-1.5">
@@ -78,6 +97,27 @@ function CadastroForm() {
               value={city}
               onChange={(e) => setCity(e.target.value)}
               placeholder="Campinas, SP"
+            />
+          </div>
+          <div className="space-y-1.5">
+            <Label htmlFor="email">E-mail</Label>
+            <Input
+              id="email"
+              type="email"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              placeholder="voce@academia.com"
+              autoComplete="username"
+            />
+          </div>
+          <div className="space-y-1.5">
+            <Label htmlFor="password">Senha</Label>
+            <Input
+              id="password"
+              type="password"
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              autoComplete="new-password"
             />
           </div>
           <div className="space-y-1.5">
@@ -100,8 +140,8 @@ function CadastroForm() {
               ))}
             </div>
           </div>
-          <Button type="submit" className="w-full" size="lg">
-            Criar e entrar
+          <Button type="submit" className="w-full" size="lg" disabled={busy}>
+            {busy ? "Criando a casa…" : "Criar e entrar"}
           </Button>
         </form>
         <p className="mt-6 text-center text-sm text-muted-foreground">
@@ -109,6 +149,13 @@ function CadastroForm() {
           <Link href="/login" className="text-foreground underline">
             Entrar
           </Link>
+        </p>
+        <p className="mt-3 text-center text-xs text-muted-foreground">
+          Quer ver o produto cheio?{" "}
+          <Link href="/login" className="underline">
+            Entre na demo
+          </Link>
+          .
         </p>
       </main>
     </div>

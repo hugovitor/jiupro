@@ -99,7 +99,13 @@ function ConfigInner() {
       <section className="border border-border bg-card p-5 text-sm">
         <h2 className="font-medium">Integrações</h2>
         <p className="mt-2 text-muted-foreground">
-          Supabase: {isSupabaseConfigured() ? "conectado" : "modo demo (local)"}
+          Conta:{" "}
+          {store.isDemo
+            ? "Equipe Origem (demonstração)"
+            : "sua academia neste navegador"}
+        </p>
+        <p className="mt-1 text-muted-foreground">
+          Supabase: {isSupabaseConfigured() ? "conectado" : "modo local (sem nuvem)"}
         </p>
         <p className="mt-1 text-muted-foreground">
           Stripe: as chaves no servidor ligam o checkout real. Sem elas, o plano
@@ -111,6 +117,7 @@ function ConfigInner() {
         </p>
       </section>
 
+      {store.isDemo && (
       <Button
         variant="outline"
         onClick={() => {
@@ -120,6 +127,7 @@ function ConfigInner() {
       >
         Restaurar dados de demonstração
       </Button>
+      )}
     </div>
   );
 }
