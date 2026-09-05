@@ -10,7 +10,6 @@ import {
   DialogContent,
   DialogHeader,
   DialogTitle,
-  DialogTrigger,
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -164,8 +163,11 @@ function NovoAluno() {
   const belts = form.division === "kids" ? KIDS_BELTS : ADULT_BELTS;
 
   return (
-    <Dialog open={open} onOpenChange={setOpen}>
-      <DialogTrigger render={<Button />}>Novo aluno</DialogTrigger>
+    <>
+      <Button type="button" onClick={() => setOpen(true)}>
+        Novo aluno
+      </Button>
+      <Dialog open={open} onOpenChange={setOpen}>
       <DialogContent className="sm:max-w-md">
         <DialogHeader>
           <DialogTitle>Cadastrar aluno</DialogTitle>
@@ -272,5 +274,6 @@ function NovoAluno() {
         </form>
       </DialogContent>
     </Dialog>
+    </>
   );
 }

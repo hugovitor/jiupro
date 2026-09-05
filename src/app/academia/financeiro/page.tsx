@@ -11,7 +11,6 @@ import {
   DialogContent,
   DialogHeader,
   DialogTitle,
-  DialogTrigger,
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -170,8 +169,11 @@ function NovaDespesa() {
   const [category, setCategory] = useState<ExpenseCategory>("other");
 
   return (
-    <Dialog open={open} onOpenChange={setOpen}>
-      <DialogTrigger render={<Button />}>Lançar despesa</DialogTrigger>
+    <>
+      <Button type="button" onClick={() => setOpen(true)}>
+        Lançar despesa
+      </Button>
+      <Dialog open={open} onOpenChange={setOpen}>
       <DialogContent>
         <DialogHeader>
           <DialogTitle>Nova despesa</DialogTitle>
@@ -230,5 +232,6 @@ function NovaDespesa() {
         </form>
       </DialogContent>
     </Dialog>
+    </>
   );
 }

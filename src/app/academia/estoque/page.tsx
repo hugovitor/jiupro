@@ -8,7 +8,6 @@ import {
   DialogContent,
   DialogHeader,
   DialogTitle,
-  DialogTrigger,
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -98,8 +97,11 @@ function NovoItem() {
   const [price, setPrice] = useState("100");
 
   return (
-    <Dialog open={open} onOpenChange={setOpen}>
-      <DialogTrigger render={<Button />}>Novo item</DialogTrigger>
+    <>
+      <Button type="button" onClick={() => setOpen(true)}>
+        Novo item
+      </Button>
+      <Dialog open={open} onOpenChange={setOpen}>
       <DialogContent>
         <DialogHeader>
           <DialogTitle>Entrada no estoque</DialogTitle>
@@ -146,5 +148,6 @@ function NovoItem() {
         </form>
       </DialogContent>
     </Dialog>
+    </>
   );
 }

@@ -9,7 +9,6 @@ import {
   DialogContent,
   DialogHeader,
   DialogTitle,
-  DialogTrigger,
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -97,8 +96,11 @@ function NovaTurma() {
   const [time, setTime] = useState("19:30");
 
   return (
-    <Dialog open={open} onOpenChange={setOpen}>
-      <DialogTrigger render={<Button />}>Nova turma</DialogTrigger>
+    <>
+      <Button type="button" onClick={() => setOpen(true)}>
+        Nova turma
+      </Button>
+      <Dialog open={open} onOpenChange={setOpen}>
       <DialogContent>
         <DialogHeader>
           <DialogTitle>Incluir na grade</DialogTitle>
@@ -149,5 +151,6 @@ function NovaTurma() {
         </form>
       </DialogContent>
     </Dialog>
+    </>
   );
 }

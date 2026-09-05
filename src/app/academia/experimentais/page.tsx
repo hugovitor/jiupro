@@ -10,7 +10,6 @@ import {
   DialogContent,
   DialogHeader,
   DialogTitle,
-  DialogTrigger,
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -98,8 +97,11 @@ function NovoExperimental() {
   const [fee, setFee] = useState("180");
 
   return (
-    <Dialog open={open} onOpenChange={setOpen}>
-      <DialogTrigger render={<Button />}>Nova aula experimental</DialogTrigger>
+    <>
+      <Button type="button" onClick={() => setOpen(true)}>
+        Nova aula experimental
+      </Button>
+      <Dialog open={open} onOpenChange={setOpen}>
       <DialogContent>
         <DialogHeader>
           <DialogTitle>Agendar experimental</DialogTitle>
@@ -147,5 +149,6 @@ function NovoExperimental() {
         </form>
       </DialogContent>
     </Dialog>
+    </>
   );
 }

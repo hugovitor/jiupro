@@ -4,9 +4,8 @@ import {
   createContext,
   useCallback,
   useContext,
-  useEffect,
   useMemo,
-  useState,
+  useSyncExternalStore,
   type ReactNode,
 } from "react";
 import { nextAdultBelt } from "./belts";
@@ -132,6 +131,12 @@ function getSnapshot(): AppState {
   return cached;
 }
 
+let serverCached: AppState | null = null;
+function getServerSnapshot(): AppState {
+  if (!serverCached) serverCached = createSeed();
+  return serverCached;
+}
+
 function write(next: AppState) {
   cached = next;
   persist(next);
@@ -148,12 +153,7 @@ export function peekSession() {
 }
 
 export function StoreProvider({ children }: { children: ReactNode }) {
-  const [state, setState] = useState<AppState>(createSeed);
-
-  useEffect(() => {
-    return subscribe(() => setState(getSnapshot()));
-  }, []);
-
+  const state = useSyncExternalStore(subscribe, getSnapshot, getServerSnapshot);
   const hydrated = true;
 
   const login = useCallback((email: string) => {
