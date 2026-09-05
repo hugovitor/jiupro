@@ -1,5 +1,17 @@
-import { ibjjfAge } from "./format";
 import type { BeltId, Student } from "./types";
+
+function ibjjfAge(birthDate: string) {
+  if (!birthDate) return null;
+  const y = Number(birthDate.slice(0, 4));
+  if (!Number.isFinite(y) || y < 1920) return null;
+  const year = Number(
+    new Intl.DateTimeFormat("en-US", {
+      timeZone: "America/Sao_Paulo",
+      year: "numeric",
+    }).format(new Date()),
+  );
+  return year - y;
+}
 
 export type BeltMeta = {
   id: BeltId;

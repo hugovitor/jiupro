@@ -92,14 +92,6 @@ export function monthsBetween(fromIso: string, to = new Date()) {
   return (now.year - from.year) * 12 + (now.month - from.month);
 }
 
-/** Idade IBJJF: ano corrente − ano de nascimento. */
-export function ibjjfAge(birthDate: string) {
-  if (!birthDate) return null;
-  const y = Number(birthDate.slice(0, 4));
-  if (!Number.isFinite(y) || y < 1920) return null;
-  return civilParts(new Date()).year - y;
-}
-
 export function daysSince(iso: string) {
   const from = civilParts(parseDate(iso));
   const now = civilParts(new Date());
