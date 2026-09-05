@@ -1,9 +1,8 @@
-import { readFile } from "node:fs/promises";
-import { join } from "node:path";
+import { readJiuProSchema } from "@/lib/supabase/schema-file";
 
 export async function GET() {
   try {
-    const sql = await readFile(join(process.cwd(), "supabase/schema.sql"), "utf8");
+    const sql = await readJiuProSchema();
     return new Response(sql, {
       headers: {
         "Content-Type": "text/plain; charset=utf-8",

@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import { useSyncExternalStore } from "react";
 import { BeltBadge, PersonAvatar } from "@/components/belt-badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -15,12 +16,18 @@ import {
   monthRevenue,
   overdueTotal,
 } from "@/lib/insights";
+import { isSupabaseConfigured, subscribeSupabaseConfig } from "@/lib/supabase/config";
 import { useStore } from "@/lib/store";
 import { isoDate } from "@/lib/format";
 import { birthdayMessage, comebackMessage, dayCode, waHref } from "@/lib/whatsapp";
 
 export default function AcademiaDashboard() {
   const store = useStore();
+  const cloudReady = useSyncExternalStore(
+    subscribeSupabaseConfig,
+    isSupabaseConfigured,
+    () => false,
+  );
   const month = currentMonth();
   const active = store.students.filter((s) => s.status === "active");
   const trials = store.students.filter((s) => s.status === "trial");
@@ -64,6 +71,19 @@ export default function AcademiaDashboard() {
           </p>
         )}
       </div>
+
+      {!store.isDemo && !cloudReady && (
+        <div className="border border-border bg-card p-4 text-sm">
+          <p className="font-medium">Projeto Supabase ainda vazio</p>
+          <p className="mt-1 text-muted-foreground">
+            Não tem tabela no Dashboard — o JiuPro cria. Abra Configurações,
+            cole a URL e a anon key, e aplique o schema.
+          </p>
+          <Button className="mt-3" size="sm" render={<Link href="/academia/configuracoes" />}>
+            Configurar nuvem
+          </Button>
+        </div>
+      )}
 
       <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
         <Kpi label="Alunos ativos" value={String(active.length)} hint={`${trials.length} em experimental`} />

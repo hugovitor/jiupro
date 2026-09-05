@@ -4,6 +4,7 @@ const nextConfig: NextConfig = {
   reactStrictMode: true,
   outputFileTracingIncludes: {
     "/api/schema": ["./supabase/schema.sql"],
+    "/api/supabase/bootstrap": ["./supabase/schema.sql"],
   },
   allowedDevOrigins: [
     "127.0.0.1",

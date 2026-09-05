@@ -41,3 +41,13 @@ export function configSource(): "env" | "local" | null {
   if (getSupabasePublicConfig()) return "local";
   return null;
 }
+
+export function subscribeSupabaseConfig(onChange: () => void) {
+  if (typeof window === "undefined") return () => undefined;
+  window.addEventListener("jiupro-supabase", onChange);
+  window.addEventListener("storage", onChange);
+  return () => {
+    window.removeEventListener("jiupro-supabase", onChange);
+    window.removeEventListener("storage", onChange);
+  };
+}

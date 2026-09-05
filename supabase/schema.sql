@@ -382,3 +382,6 @@ alter table public.profiles add column if not exists avatar_hue int not null def
 alter table public.students add column if not exists avatar_hue int not null default 40;
 alter table public.posts add column if not exists author_name text;
 alter table public.posts add column if not exists author_role text;
+
+-- Faz o PostgREST (API) enxergar as tabelas novas neste projeto vazio.
+notify pgrst, 'reload schema';

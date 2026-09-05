@@ -215,7 +215,7 @@ export async function testSupabaseConnection() {
   if (/does not exist|schema cache|42P01/i.test(msg) || error.code === "PGRST205") {
     return {
       ok: false as const,
-      error: "Projeto alcançado, mas o schema JiuPro ainda não foi aplicado. Cole supabase/schema.sql no SQL Editor.",
+      error: "Projeto alcançado, mas ainda vazio. Aplique o schema do JiuPro (passo 2).",
       needsSchema: true as const,
     };
   }

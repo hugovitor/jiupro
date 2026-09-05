@@ -47,22 +47,25 @@ Abre em [http://localhost:43123](http://localhost:43123).
 
 ## Supabase
 
+Projeto **novo e vazio** é o esperado. O Dashboard não cria as tabelas do JiuPro — o schema faz isso.
+
 1. Crie um projeto no [Supabase](https://supabase.com)
-2. Dashboard → Project Settings → API: copie a **Project URL** e a **anon public** key (nunca a service role)
-3. Cole as duas em **Configurações** no painel, ou no `.env.local`:
+2. Dashboard → Project Settings → API: **Project URL** + **anon public** (nunca a service role)
+3. No JiuPro: **Configurações** → colar as duas → Salvar → Testar conexão
+4. Criar tabelas, uma destas:
+   - **Mostrar SQL** / **Copiar SQL** e Run no SQL Editor, ou
+   - Database → Connect → URI (session pooler) em **Aplicar schema agora**
+5. Authentication → Providers → Email: desligue **Confirm email** para entrar na hora
+6. Na sua academia (não na demo): **Enviar esta academia**
+
+Também dá para colocar no `.env.local`:
 
 ```
 NEXT_PUBLIC_SUPABASE_URL=
 NEXT_PUBLIC_SUPABASE_ANON_KEY=
 ```
 
-4. SQL Editor: cole `supabase/schema.sql` (o botão “Copiar schema.sql” nas Configurações copia o arquivo). Pode rodar de novo.
-5. Auth → Providers → Email: desligue “Confirm email” se quiser entrar na hora
-6. Na sua academia (não na demo), use **Enviar esta academia** para subir o que já está neste navegador
-
-O schema isola dados por `academy_id` (RLS). O cadastro chama `register_academy` e o painel grava em tabelas (`students`, `classes`, `payments`, `posts`, …). Login com o mesmo e-mail baixa o estado da nuvem. A Equipe Origem não sincroniza.
-
-`SUPABASE_SERVICE_ROLE_KEY` no `.env.example` é só para scripts no servidor no futuro. O app no browser usa só a anon key.
+O schema isola dados por `academy_id` (RLS). O cadastro chama `register_academy` e o painel grava em tabelas. A Equipe Origem não sincroniza. A URI do banco não fica salva no navegador.
 
 ## Stripe
 

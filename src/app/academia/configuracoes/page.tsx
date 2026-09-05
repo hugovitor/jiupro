@@ -46,7 +46,7 @@ function ConfigInner() {
       <div>
         <h1 className="font-display text-3xl">Configurações</h1>
         <p className="mt-1 text-sm text-muted-foreground">
-          Conta da academia, plano e ligações com Supabase / Stripe.
+          Projeto Supabase vazio, plano e ligações com Stripe.
         </p>
       </div>
 
@@ -74,9 +74,7 @@ function ConfigInner() {
         </dl>
       </section>
 
-      <PixForm />
-
-      <DropInFeeForm />
+      <SupabaseConnect />
 
       <section className="border border-border bg-card p-5">
         <h2 className="font-medium">Plano atual · {plan.name}</h2>
@@ -96,7 +94,9 @@ function ConfigInner() {
         </div>
       </section>
 
-      <SupabaseConnect />
+      <PixForm />
+
+      <DropInFeeForm />
 
       <section className="border border-border bg-card p-5 text-sm">
         <h2 className="font-medium">Stripe</h2>
