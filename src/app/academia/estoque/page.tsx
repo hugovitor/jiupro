@@ -2,13 +2,8 @@
 
 import { useState } from "react";
 import { toast } from "sonner";
+import { FormDialog } from "@/components/form-dialog";
 import { Button } from "@/components/ui/button";
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { brl } from "@/lib/format";
@@ -101,11 +96,11 @@ function NovoItem() {
       <Button type="button" onClick={() => setOpen(true)}>
         Novo item
       </Button>
-      <Dialog open={open} onOpenChange={setOpen}>
-      <DialogContent>
-        <DialogHeader>
-          <DialogTitle>Entrada no estoque</DialogTitle>
-        </DialogHeader>
+      <FormDialog
+        open={open}
+        onClose={() => setOpen(false)}
+        title="Entrada no estoque"
+      >
         <form
           className="grid gap-3"
           onSubmit={(e) => {
@@ -146,8 +141,7 @@ function NovoItem() {
           </div>
           <Button type="submit">Salvar</Button>
         </form>
-      </DialogContent>
-    </Dialog>
+      </FormDialog>
     </>
   );
 }

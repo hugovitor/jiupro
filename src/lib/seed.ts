@@ -1,4 +1,4 @@
-import { isoDate, uid } from "./format";
+import { isoDate } from "./format";
 import type {
   Academy,
   AppState,
@@ -32,6 +32,12 @@ function dateOnWeekday(weekday: number, weeksAgo: number) {
 }
 
 export function createSeed(): AppState {
+  let seq = 0;
+  const seedId = (prefix: string) => {
+    seq += 1;
+    return `${prefix}_${String(seq).padStart(4, "0")}`;
+  };
+
   const academy: Academy = {
     id: ACADEMY_ID,
     name: "Equipe Origem Jiu-Jitsu",
@@ -441,7 +447,7 @@ export function createSeed(): AppState {
         if (sid === "s_larissa" && weeksAgo > 1) continue;
         if (sid === "s_ana" && weeksAgo === 2 && weekday === 5) continue;
         attendance.push({
-          id: uid("at"),
+          id: seedId("at"),
           academyId: ACADEMY_ID,
           studentId: sid,
           classId: giClassByWeekday[weekday],
@@ -456,7 +462,7 @@ export function createSeed(): AppState {
       if (date > isoDate(0)) continue;
       for (const sid of kidsIds) {
         attendance.push({
-          id: uid("at"),
+          id: seedId("at"),
           academyId: ACADEMY_ID,
           studentId: sid,
           classId: weekday === 2 ? "c_kids_t" : "c_kids_th",
@@ -468,7 +474,7 @@ export function createSeed(): AppState {
       if (weeksAgo < 4) {
         for (const sid of ["s_joao", "s_andre", "s_marina"]) {
           attendance.push({
-            id: uid("at"),
+            id: seedId("at"),
             academyId: ACADEMY_ID,
             studentId: sid,
             classId: weekday === 2 ? "c_nogi_t" : "c_nogi_th",
@@ -483,7 +489,7 @@ export function createSeed(): AppState {
 
   const camilaLast = dateOnWeekday(1, 4);
   attendance.push({
-    id: uid("at"),
+    id: seedId("at"),
     academyId: ACADEMY_ID,
     studentId: "s_camila",
     classId: "c_gi",
@@ -499,7 +505,7 @@ export function createSeed(): AppState {
   for (const s of students) {
     if (s.monthlyFee === 0) {
       payments.push({
-        id: uid("pay"),
+        id: seedId("pay"),
         academyId: ACADEMY_ID,
         studentId: s.id,
         month: thisMonth,
@@ -511,7 +517,7 @@ export function createSeed(): AppState {
     if (s.status === "inactive") continue;
     if (s.id === "s_lucas" || s.id === "s_camila") {
       payments.push({
-        id: uid("pay"),
+        id: seedId("pay"),
         academyId: ACADEMY_ID,
         studentId: s.id,
         month: thisMonth,
@@ -520,7 +526,7 @@ export function createSeed(): AppState {
       });
       if (s.id === "s_camila") {
         payments.push({
-          id: uid("pay"),
+          id: seedId("pay"),
           academyId: ACADEMY_ID,
           studentId: s.id,
           month: lastMonth,
@@ -532,7 +538,7 @@ export function createSeed(): AppState {
     }
     if (s.status === "trial") {
       payments.push({
-        id: uid("pay"),
+        id: seedId("pay"),
         academyId: ACADEMY_ID,
         studentId: s.id,
         month: thisMonth,
@@ -542,7 +548,7 @@ export function createSeed(): AppState {
       continue;
     }
     payments.push({
-      id: uid("pay"),
+      id: seedId("pay"),
       academyId: ACADEMY_ID,
       studentId: s.id,
       month: thisMonth,
@@ -552,7 +558,7 @@ export function createSeed(): AppState {
       method: "pix",
     });
     payments.push({
-      id: uid("pay"),
+      id: seedId("pay"),
       academyId: ACADEMY_ID,
       studentId: s.id,
       month: lastMonth,
@@ -565,7 +571,7 @@ export function createSeed(): AppState {
 
   const expenses: Expense[] = [
     {
-      id: uid("ex"),
+      id: seedId("ex"),
       academyId: ACADEMY_ID,
       description: "Aluguel do salão",
       category: "rent",
@@ -573,7 +579,7 @@ export function createSeed(): AppState {
       date: `${thisMonth}-05`,
     },
     {
-      id: uid("ex"),
+      id: seedId("ex"),
       academyId: ACADEMY_ID,
       description: "Energia e água",
       category: "utilities",
@@ -581,7 +587,7 @@ export function createSeed(): AppState {
       date: `${thisMonth}-08`,
     },
     {
-      id: uid("ex"),
+      id: seedId("ex"),
       academyId: ACADEMY_ID,
       description: "Rafael Costa — aulas kids",
       category: "instructor",
@@ -589,7 +595,7 @@ export function createSeed(): AppState {
       date: `${thisMonth}-01`,
     },
     {
-      id: uid("ex"),
+      id: seedId("ex"),
       academyId: ACADEMY_ID,
       description: "Reposição de faixas e patches",
       category: "supplies",
@@ -600,7 +606,7 @@ export function createSeed(): AppState {
 
   const inventory: InventoryItem[] = [
     {
-      id: uid("inv"),
+      id: seedId("inv"),
       academyId: ACADEMY_ID,
       name: "Kimono Origem",
       sku: "KIM-A2",
@@ -612,7 +618,7 @@ export function createSeed(): AppState {
       price: 420,
     },
     {
-      id: uid("inv"),
+      id: seedId("inv"),
       academyId: ACADEMY_ID,
       name: "Kimono Origem",
       sku: "KIM-A3",
@@ -624,7 +630,7 @@ export function createSeed(): AppState {
       price: 440,
     },
     {
-      id: uid("inv"),
+      id: seedId("inv"),
       academyId: ACADEMY_ID,
       name: "Faixa azul",
       sku: "FX-AZ",
@@ -635,7 +641,7 @@ export function createSeed(): AppState {
       price: 65,
     },
     {
-      id: uid("inv"),
+      id: seedId("inv"),
       academyId: ACADEMY_ID,
       name: "Faixa branca",
       sku: "FX-BR",
@@ -646,7 +652,7 @@ export function createSeed(): AppState {
       price: 45,
     },
     {
-      id: uid("inv"),
+      id: seedId("inv"),
       academyId: ACADEMY_ID,
       name: "Rashguard preta",
       sku: "RG-P",
@@ -658,7 +664,7 @@ export function createSeed(): AppState {
       price: 129,
     },
     {
-      id: uid("inv"),
+      id: seedId("inv"),
       academyId: ACADEMY_ID,
       name: "Protetor bucal",
       sku: "PB-01",
@@ -672,7 +678,7 @@ export function createSeed(): AppState {
 
   const graduations: Graduation[] = [
     {
-      id: uid("gr"),
+      id: seedId("gr"),
       academyId: ACADEMY_ID,
       studentId: "s_joao",
       fromBelt: "white",
@@ -682,7 +688,7 @@ export function createSeed(): AppState {
       notes: "Boa guarda fechada. Promovido no seminário de setembro.",
     },
     {
-      id: uid("gr"),
+      id: seedId("gr"),
       academyId: ACADEMY_ID,
       studentId: "s_joao",
       fromBelt: "blue",
@@ -692,7 +698,7 @@ export function createSeed(): AppState {
       notes: "Dois graus. Consistência nas terças de no-gi.",
     },
     {
-      id: uid("gr"),
+      id: seedId("gr"),
       academyId: ACADEMY_ID,
       studentId: "s_marina",
       fromBelt: "white",
@@ -702,7 +708,7 @@ export function createSeed(): AppState {
       notes: "Primeira faixa colorida.",
     },
     {
-      id: uid("gr"),
+      id: seedId("gr"),
       academyId: ACADEMY_ID,
       studentId: "s_ana",
       fromBelt: "blue",
@@ -715,7 +721,7 @@ export function createSeed(): AppState {
 
   const posts: Post[] = [
     {
-      id: uid("po"),
+      id: seedId("po"),
       academyId: ACADEMY_ID,
       authorId: "u_carla",
       authorName: "Carla Mendes",
@@ -727,7 +733,7 @@ export function createSeed(): AppState {
       likedBy: ["s_joao", "s_ana", "s_marina", "s_andre"],
     },
     {
-      id: uid("po"),
+      id: seedId("po"),
       academyId: ACADEMY_ID,
       authorId: "u_joao",
       authorName: "João Pedro Almeida",
@@ -738,7 +744,7 @@ export function createSeed(): AppState {
       likedBy: ["s_andre", "s_marina"],
     },
     {
-      id: uid("po"),
+      id: seedId("po"),
       academyId: ACADEMY_ID,
       authorId: "u_rafael",
       authorName: "Rafael Costa",

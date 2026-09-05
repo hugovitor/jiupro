@@ -3,13 +3,8 @@
 import { useState } from "react";
 import { toast } from "sonner";
 import { BeltBadge } from "@/components/belt-badge";
+import { FormDialog } from "@/components/form-dialog";
 import { Button } from "@/components/ui/button";
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { weekdayFull, weekdayName } from "@/lib/format";
@@ -100,11 +95,11 @@ function NovaTurma() {
       <Button type="button" onClick={() => setOpen(true)}>
         Nova turma
       </Button>
-      <Dialog open={open} onOpenChange={setOpen}>
-      <DialogContent>
-        <DialogHeader>
-          <DialogTitle>Incluir na grade</DialogTitle>
-        </DialogHeader>
+      <FormDialog
+        open={open}
+        onClose={() => setOpen(false)}
+        title="Incluir na grade"
+      >
         <form
           className="grid gap-3"
           onSubmit={(e) => {
@@ -149,8 +144,7 @@ function NovaTurma() {
           </div>
           <Button type="submit">Salvar</Button>
         </form>
-      </DialogContent>
-    </Dialog>
+      </FormDialog>
     </>
   );
 }

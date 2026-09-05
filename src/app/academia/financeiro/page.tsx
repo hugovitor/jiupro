@@ -4,14 +4,9 @@ import { useState } from "react";
 import Link from "next/link";
 import { toast } from "sonner";
 import { PersonAvatar } from "@/components/belt-badge";
+import { FormDialog } from "@/components/form-dialog";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { brl, currentMonth, isoDate, monthLabel } from "@/lib/format";
@@ -173,11 +168,11 @@ function NovaDespesa() {
       <Button type="button" onClick={() => setOpen(true)}>
         Lançar despesa
       </Button>
-      <Dialog open={open} onOpenChange={setOpen}>
-      <DialogContent>
-        <DialogHeader>
-          <DialogTitle>Nova despesa</DialogTitle>
-        </DialogHeader>
+      <FormDialog
+        open={open}
+        onClose={() => setOpen(false)}
+        title="Nova despesa"
+      >
         <form
           className="grid gap-3"
           onSubmit={(e) => {
@@ -230,8 +225,7 @@ function NovaDespesa() {
           </div>
           <Button type="submit">Salvar</Button>
         </form>
-      </DialogContent>
-    </Dialog>
+      </FormDialog>
     </>
   );
 }

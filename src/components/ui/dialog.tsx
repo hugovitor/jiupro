@@ -7,8 +7,10 @@ import { cn } from "cn"
 import { Button } from "@/components/ui/button"
 import { XIcon } from "lucide-react"
 
-function Dialog({ ...props }: DialogPrimitive.Root.Props) {
-  return <DialogPrimitive.Root data-slot="dialog" {...props} />
+function Dialog({ triggerId = null, ...props }: DialogPrimitive.Root.Props) {
+  return (
+    <DialogPrimitive.Root data-slot="dialog" triggerId={triggerId} {...props} />
+  )
 }
 
 function DialogTrigger({ ...props }: DialogPrimitive.Trigger.Props) {

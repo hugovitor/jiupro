@@ -4,13 +4,8 @@ import Link from "next/link";
 import { useMemo, useState } from "react";
 import { toast } from "sonner";
 import { BeltBadge, PersonAvatar } from "@/components/belt-badge";
+import { FormDialog } from "@/components/form-dialog";
 import { Button } from "@/components/ui/button";
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import {
@@ -167,11 +162,11 @@ function NovoAluno() {
       <Button type="button" onClick={() => setOpen(true)}>
         Novo aluno
       </Button>
-      <Dialog open={open} onOpenChange={setOpen}>
-      <DialogContent className="sm:max-w-md">
-        <DialogHeader>
-          <DialogTitle>Cadastrar aluno</DialogTitle>
-        </DialogHeader>
+      <FormDialog
+        open={open}
+        onClose={() => setOpen(false)}
+        title="Cadastrar aluno"
+      >
         <form
           className="grid gap-3"
           onSubmit={(e) => {
@@ -272,8 +267,7 @@ function NovoAluno() {
           </div>
           <Button type="submit">Salvar</Button>
         </form>
-      </DialogContent>
-    </Dialog>
+      </FormDialog>
     </>
   );
 }

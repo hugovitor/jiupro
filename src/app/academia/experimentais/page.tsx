@@ -4,13 +4,8 @@ import { useState } from "react";
 import Link from "next/link";
 import { toast } from "sonner";
 import { PersonAvatar } from "@/components/belt-badge";
+import { FormDialog } from "@/components/form-dialog";
 import { Button } from "@/components/ui/button";
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { brl, isoDate } from "@/lib/format";
@@ -101,11 +96,11 @@ function NovoExperimental() {
       <Button type="button" onClick={() => setOpen(true)}>
         Nova aula experimental
       </Button>
-      <Dialog open={open} onOpenChange={setOpen}>
-      <DialogContent>
-        <DialogHeader>
-          <DialogTitle>Agendar experimental</DialogTitle>
-        </DialogHeader>
+      <FormDialog
+        open={open}
+        onClose={() => setOpen(false)}
+        title="Agendar experimental"
+      >
         <form
           className="grid gap-3"
           onSubmit={(e) => {
@@ -147,8 +142,7 @@ function NovoExperimental() {
           </div>
           <Button type="submit">Salvar</Button>
         </form>
-      </DialogContent>
-    </Dialog>
+      </FormDialog>
     </>
   );
 }
