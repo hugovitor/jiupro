@@ -4,6 +4,7 @@ import {
   ClipboardCheck,
   CreditCard,
   GraduationCap,
+  MessageCircle,
   Package,
   Smartphone,
   Users,
@@ -42,7 +43,12 @@ const features = [
   {
     icon: Wallet,
     title: "Financeiro",
-    body: "Mensalidades do mês, atrasados, isentos e despesas da academia. Meta de faturamento visível.",
+    body: "Mensalidades do mês, atrasados, isentos, despesas e fechamento com CSV. Meta de faturamento visível.",
+  },
+  {
+    icon: MessageCircle,
+    title: "Cobrança no WhatsApp",
+    body: "Mensagem pronta com Pix da casa. Um toque para cobrar, outro para baixar quando cair.",
   },
   {
     icon: GraduationCap,
@@ -193,9 +199,10 @@ export default function HomePage() {
               caminhar.
             </h2>
             <ul className="mt-6 space-y-3 text-sm text-muted-foreground">
-              <li>— Check-in na turma do dia, mesmo offline.</li>
+              <li>— Check-in com o código do dia, mesmo offline.</li>
               <li>— Mural da academia: seminário, carona, horário.</li>
               <li>— Evolução: tempo de faixa, presenças, histórico de graus.</li>
+              <li>— Pix da casa na mensalidade, sem perguntar no Zap.</li>
             </ul>
             <Button className="mt-6" render={<Link href="/aluno" />}>
               Entrar como aluno

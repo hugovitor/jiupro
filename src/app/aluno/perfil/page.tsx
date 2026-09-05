@@ -1,6 +1,7 @@
 "use client";
 
 import { useRouter } from "next/navigation";
+import { toast } from "sonner";
 import { BeltBadge, PersonAvatar } from "@/components/belt-badge";
 import { Button } from "@/components/ui/button";
 import { brl, currentMonth, formatDate } from "@/lib/format";
@@ -41,11 +42,32 @@ export default function PerfilAluno() {
           {pay?.status === "paid"
             ? "pago"
             : pay?.status === "overdue"
-              ? "em atraso — fale com a secretaria"
+              ? "em atraso"
               : pay?.status === "waived"
                 ? "isento"
                 : "em aberto"}
         </p>
+        {pay?.status !== "paid" && pay?.status !== "waived" && (
+          <p className="mt-2 text-xs text-destructive">
+            Pague no Pix abaixo e avise a secretaria.
+          </p>
+        )}
+        <div className="mt-4 rounded-xl bg-background p-3">
+          <p className="text-xs text-muted-foreground">Pix da academia</p>
+          <p className="mt-1 font-mono text-sm">{store.academy.pixKey}</p>
+          <p className="text-xs text-muted-foreground">{store.academy.pixName}</p>
+          <Button
+            className="mt-2"
+            size="sm"
+            variant="outline"
+            onClick={async () => {
+              await navigator.clipboard.writeText(store.academy.pixKey);
+              toast.success("Chave Pix copiada.");
+            }}
+          >
+            Copiar Pix
+          </Button>
+        </div>
       </div>
 
       <div className="rounded-2xl border border-border bg-card p-4 text-sm">

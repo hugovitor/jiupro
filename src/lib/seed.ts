@@ -7,6 +7,7 @@ import type {
   Expense,
   Graduation,
   InventoryItem,
+  Evaluation,
   Payment,
   Post,
   Student,
@@ -40,6 +41,8 @@ export function createSeed(): AppState {
     address: "Rua Barão de Jaguara, 412 — Centro",
     phone: "(19) 98812-4400",
     instagram: "@origemjj",
+    pixKey: "origemjj@pix.com.br",
+    pixName: "Equipe Origem Jiu-Jitsu",
     plan: "academia",
     monthlyGoal: 18000,
     createdAt: "2021-03-08T12:00:00.000Z",
@@ -747,8 +750,30 @@ export function createSeed(): AppState {
     },
   ];
 
+  const evaluations: Evaluation[] = [
+    {
+      id: "ev_marina",
+      academyId: ACADEMY_ID,
+      studentId: "s_marina",
+      date: isoDate(-4),
+      instructorName: "Carla Mendes",
+      notes:
+        "Passagem de guarda consistente. Pronto para faixa roxa no próximo seminário.",
+      recommendPromotion: true,
+    },
+    {
+      id: "ev_joao",
+      academyId: ACADEMY_ID,
+      studentId: "s_joao",
+      date: isoDate(-10),
+      instructorName: "Rafael Costa",
+      notes: "Melhorou o jogo de costas. Manter frequência no no-gi.",
+      recommendPromotion: false,
+    },
+  ];
+
   return {
-    version: 3,
+    version: 4,
     academy,
     users,
     students,
@@ -758,6 +783,7 @@ export function createSeed(): AppState {
     expenses,
     inventory,
     graduations,
+    evaluations,
     posts,
     session,
   };

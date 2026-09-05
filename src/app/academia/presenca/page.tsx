@@ -6,6 +6,7 @@ import { PersonAvatar } from "@/components/belt-badge";
 import { Button } from "@/components/ui/button";
 import { isoDate } from "@/lib/format";
 import { useStore } from "@/lib/store";
+import { dayCode } from "@/lib/whatsapp";
 
 export default function PresencaPage() {
   const store = useStore();
@@ -36,6 +37,18 @@ export default function PresencaPage() {
         <h1 className="font-display text-3xl">Presença</h1>
         <p className="mt-1 text-sm text-muted-foreground">
           Chamada de hoje. O aluno também marca pelo PWA.
+        </p>
+      </div>
+
+      <div className="rounded-2xl border border-primary/40 bg-card p-5 text-center">
+        <p className="text-xs tracking-[0.18em] text-muted-foreground uppercase">
+          Código do dia
+        </p>
+        <p className="mt-1 font-display text-5xl tracking-[0.2em] text-primary">
+          {dayCode(today, store.academy.slug)}
+        </p>
+        <p className="mt-2 text-xs text-muted-foreground">
+          Anote no quadro. O aluno confirma no PWA com este número.
         </p>
       </div>
 
@@ -98,6 +111,35 @@ export default function PresencaPage() {
           );
         })}
       </div>
+
+      <FrequenciaMes />
     </div>
+  );
+}
+
+function FrequenciaMes() {
+  const store = useStore();
+  const month = new Date().toISOString().slice(0, 7);
+  const rows = store.students
+    .filter((s) => s.status !== "inactive")
+    .map((s) => ({
+      s,
+      n: store.attendance.filter((a) => a.studentId === s.id && a.date.startsWith(month))
+        .length,
+    }))
+    .sort((a, b) => b.n - a.n);
+
+  return (
+    <section className="space-y-2">
+      <h2 className="font-display text-xl">Frequência do mês</h2>
+      {rows.map(({ s, n }) => (
+        <div key={s.id} className="flex items-center justify-between text-sm">
+          <span>{s.name}</span>
+          <span className={n === 0 ? "text-destructive" : "text-muted-foreground"}>
+            {n} treino{n === 1 ? "" : "s"}
+          </span>
+        </div>
+      ))}
+    </section>
   );
 }

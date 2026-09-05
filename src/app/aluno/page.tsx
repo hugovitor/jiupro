@@ -3,9 +3,11 @@
 import { toast } from "sonner";
 import { BeltBadge } from "@/components/belt-badge";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 import { isoDate } from "@/lib/format";
 import { attendanceInDays } from "@/lib/insights";
 import { currentStudent, useStore } from "@/lib/store";
+import { useState } from "react";
 
 export default function AlunoHome() {
   const store = useStore();
@@ -17,6 +19,7 @@ export default function AlunoHome() {
     return true;
   });
   const att = student ? attendanceInDays(store, student.id, 30) : 0;
+  const [code, setCode] = useState("");
 
   return (
     <div className="space-y-6">
@@ -55,6 +58,16 @@ export default function AlunoHome() {
                 <p className="text-sm text-muted-foreground">
                   {c.name} · {c.durationMin} min · {c.gi ? "Gi" : "No-Gi"}
                 </p>
+                {!already && (
+                  <Input
+                    className="mt-3 text-center tracking-[0.4em]"
+                    inputMode="numeric"
+                    maxLength={4}
+                    placeholder="Código do dia"
+                    value={code}
+                    onChange={(e) => setCode(e.target.value.replace(/\D/g, "").slice(0, 4))}
+                  />
+                )}
                 <Button
                   className="mt-3 w-full"
                   size="lg"
@@ -62,6 +75,13 @@ export default function AlunoHome() {
                   disabled={!student}
                   onClick={() => {
                     if (!student) return;
+                    if (already) return;
+                    if (code.length === 4) {
+                      const ok = store.checkInWithCode(student.id, c.id, code);
+                      if (ok) toast.success("Presença confirmada. Bom treino.");
+                      else toast.error("Código de hoje não confere. Olhe o quadro.");
+                      return;
+                    }
                     const ok = store.checkIn(student.id, c.id, "app");
                     if (ok) toast.success("Presença marcada. Bom treino.");
                     else toast.message("Você já marcou esta aula.");
@@ -69,6 +89,11 @@ export default function AlunoHome() {
                 >
                   {already ? "Você já está na lista" : "Estou no tatame"}
                 </Button>
+                {!already && (
+                  <p className="mt-2 text-center text-xs text-muted-foreground">
+                    Com o código da recepção, ou um toque se o professor liberar.
+                  </p>
+                )}
               </div>
             );
           })}

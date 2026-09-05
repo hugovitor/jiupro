@@ -1,14 +1,27 @@
 "use client";
 
+import { useState } from "react";
+import Link from "next/link";
 import { toast } from "sonner";
 import { PersonAvatar } from "@/components/belt-badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { brl, currentMonth, monthLabel } from "@/lib/format";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "@/components/ui/dialog";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { brl, currentMonth, isoDate, monthLabel } from "@/lib/format";
 import { monthExpenses, monthRevenue, overdueTotal } from "@/lib/insights";
 import { useStore } from "@/lib/store";
+import type { ExpenseCategory } from "@/lib/types";
+import { overdueMessage, waHref } from "@/lib/whatsapp";
 
-const EXPENSE_LABEL: Record<string, string> = {
+const EXPENSE_LABEL: Record<ExpenseCategory, string> = {
   rent: "Aluguel",
   utilities: "Contas",
   instructor: "Professor",
@@ -29,11 +42,19 @@ export default function FinanceiroPage() {
 
   return (
     <div className="mx-auto max-w-5xl space-y-6">
-      <div>
-        <h1 className="font-display text-3xl">Financeiro</h1>
-        <p className="mt-1 text-sm text-muted-foreground">
-          {monthLabel(month)} · o que entrou, o que saiu, o que está parado.
-        </p>
+      <div className="flex flex-wrap items-end justify-between gap-3">
+        <div>
+          <h1 className="font-display text-3xl">Financeiro</h1>
+          <p className="mt-1 text-sm text-muted-foreground">
+            {monthLabel(month)} · o que entrou, o que saiu, o que está parado.
+          </p>
+        </div>
+        <div className="flex gap-2">
+          <NovaDespesa />
+          <Button variant="outline" render={<Link href="/academia/fechamento" />}>
+            Fechamento
+          </Button>
+        </div>
       </div>
 
       <div className="grid gap-3 sm:grid-cols-3">
@@ -76,6 +97,19 @@ export default function FinanceiroPage() {
                 <span className="text-sm">{brl(p.amount)}</span>
                 <Button
                   size="sm"
+                  variant="outline"
+                  render={
+                    <a
+                      href={waHref(s.phone, overdueMessage(store.academy, s, p))}
+                      target="_blank"
+                      rel="noreferrer"
+                    />
+                  }
+                >
+                  WhatsApp
+                </Button>
+                <Button
+                  size="sm"
                   onClick={() => {
                     store.recordPayment(s.id, p.month, "pix");
                     toast.success("Baixado via Pix.");
@@ -94,7 +128,7 @@ export default function FinanceiroPage() {
           <CardTitle>Despesas do mês</CardTitle>
         </CardHeader>
         <CardContent className="space-y-2 text-sm">
-          {store.expenses
+            {store.expenses
             .filter((e) => e.date.startsWith(month))
             .map((e) => (
               <div key={e.id} className="flex justify-between">
@@ -108,6 +142,9 @@ export default function FinanceiroPage() {
                 <span>{brl(e.amount)}</span>
               </div>
             ))}
+          {store.expenses.filter((e) => e.date.startsWith(month)).length === 0 && (
+            <p className="text-sm text-muted-foreground">Nenhuma despesa neste mês.</p>
+          )}
         </CardContent>
       </Card>
     </div>
@@ -122,5 +159,76 @@ function Tile({ k, v, warn }: { k: string; v: string; warn?: boolean }) {
         {v}
       </p>
     </div>
+  );
+}
+
+function NovaDespesa() {
+  const store = useStore();
+  const [open, setOpen] = useState(false);
+  const [description, setDescription] = useState("");
+  const [amount, setAmount] = useState("");
+  const [category, setCategory] = useState<ExpenseCategory>("other");
+
+  return (
+    <Dialog open={open} onOpenChange={setOpen}>
+      <DialogTrigger render={<Button />}>Lançar despesa</DialogTrigger>
+      <DialogContent>
+        <DialogHeader>
+          <DialogTitle>Nova despesa</DialogTitle>
+        </DialogHeader>
+        <form
+          className="grid gap-3"
+          onSubmit={(e) => {
+            e.preventDefault();
+            const value = Number(amount.replace(",", "."));
+            if (!description.trim() || !value) return;
+            store.addExpense({
+              description: description.trim(),
+              category,
+              amount: value,
+              date: isoDate(0),
+            });
+            toast.success("Despesa lançada.");
+            setOpen(false);
+            setDescription("");
+            setAmount("");
+          }}
+        >
+          <div className="space-y-1.5">
+            <Label>Descrição</Label>
+            <Input
+              value={description}
+              onChange={(e) => setDescription(e.target.value)}
+              placeholder="Conta de luz, kimono para estoque…"
+            />
+          </div>
+          <div className="grid grid-cols-2 gap-2">
+            <div className="space-y-1.5">
+              <Label>Valor</Label>
+              <Input
+                value={amount}
+                onChange={(e) => setAmount(e.target.value)}
+                inputMode="decimal"
+              />
+            </div>
+            <div className="space-y-1.5">
+              <Label>Categoria</Label>
+              <select
+                className="h-8 w-full rounded-lg border border-input bg-transparent px-2 text-sm"
+                value={category}
+                onChange={(e) => setCategory(e.target.value as ExpenseCategory)}
+              >
+                {(Object.keys(EXPENSE_LABEL) as ExpenseCategory[]).map((k) => (
+                  <option key={k} value={k}>
+                    {EXPENSE_LABEL[k]}
+                  </option>
+                ))}
+              </select>
+            </div>
+          </div>
+          <Button type="submit">Salvar</Button>
+        </form>
+      </DialogContent>
+    </Dialog>
   );
 }

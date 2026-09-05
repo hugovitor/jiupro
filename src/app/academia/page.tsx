@@ -2,10 +2,12 @@
 
 import Link from "next/link";
 import { BeltBadge, PersonAvatar } from "@/components/belt-badge";
+import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { brl, currentMonth, daysSince, formatDay, monthLabel } from "@/lib/format";
 import {
   attendanceInDays,
+  birthdaysSoon,
   isAtRisk,
   isPromotionCandidate,
   monthExpenses,
@@ -14,6 +16,7 @@ import {
 } from "@/lib/insights";
 import { useStore } from "@/lib/store";
 import { isoDate } from "@/lib/format";
+import { birthdayMessage, comebackMessage, dayCode, waHref } from "@/lib/whatsapp";
 
 export default function AcademiaDashboard() {
   const store = useStore();
@@ -28,6 +31,8 @@ export default function AcademiaDashboard() {
   const candidates = store.students.filter((s) => isPromotionCandidate(store, s));
   const risk = store.students.filter((s) => isAtRisk(store, s));
   const lowStock = store.inventory.filter((i) => i.quantity <= i.minQuantity);
+  const birthdays = birthdaysSoon(store.students);
+  const code = dayCode(today, store.academy.slug);
 
   return (
     <div className="mx-auto max-w-6xl space-y-6">
@@ -46,7 +51,7 @@ export default function AcademiaDashboard() {
         <Kpi
           label="Recebido no mês"
           value={brl(revenue)}
-          hint={`Meta ${brl(store.academy.monthlyGoal)}`}
+          hint={`Despesas ${brl(expenses)} · meta ${brl(store.academy.monthlyGoal)}`}
         />
         <Kpi
           label="Em atraso"
@@ -57,7 +62,7 @@ export default function AcademiaDashboard() {
         <Kpi
           label="Presenças hoje"
           value={String(todayCount)}
-          hint={`Despesas ${brl(expenses)}`}
+          hint={`Código ${code}`}
         />
       </div>
 
@@ -75,22 +80,39 @@ export default function AcademiaDashboard() {
             {risk.map((s) => {
               const last = store.lastAttendance(s.id);
               return (
-                <Link
+                <div
                   key={s.id}
-                  href={`/academia/alunos/${s.id}`}
-                  className="flex items-center gap-3 rounded-lg p-1 hover:bg-muted/40"
+                  className="flex items-center gap-3 rounded-lg p-1"
                 >
-                  <PersonAvatar name={s.name} hue={s.avatarHue} size="sm" />
-                  <div className="min-w-0 flex-1">
-                    <p className="truncate text-sm font-medium">{s.name}</p>
-                    <p className="text-xs text-muted-foreground">
-                      {last
-                        ? `último treino ${formatDay(last.date)} · ${daysSince(last.date)} dias`
-                        : "sem presença registrada"}
-                    </p>
-                  </div>
-                  <BeltBadge belt={s.belt} stripes={s.stripes} compact />
-                </Link>
+                  <Link
+                    href={`/academia/alunos/${s.id}`}
+                    className="flex min-w-0 flex-1 items-center gap-3 hover:bg-muted/40"
+                  >
+                    <PersonAvatar name={s.name} hue={s.avatarHue} size="sm" />
+                    <div className="min-w-0 flex-1">
+                      <p className="truncate text-sm font-medium">{s.name}</p>
+                      <p className="text-xs text-muted-foreground">
+                        {last
+                          ? `último treino ${formatDay(last.date)} · ${daysSince(last.date)} dias`
+                          : "sem presença registrada"}
+                      </p>
+                    </div>
+                    <BeltBadge belt={s.belt} stripes={s.stripes} compact />
+                  </Link>
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    render={
+                      <a
+                        href={waHref(s.phone, comebackMessage(store.academy, s))}
+                        target="_blank"
+                        rel="noreferrer"
+                      />
+                    }
+                  >
+                    WhatsApp
+                  </Button>
+                </div>
               );
             })}
           </CardContent>
@@ -121,6 +143,45 @@ export default function AcademiaDashboard() {
                 </div>
                 <BeltBadge belt={s.belt} stripes={s.stripes} compact />
               </Link>
+            ))}
+          </CardContent>
+        </Card>
+        <Card>
+          <CardHeader>
+            <CardTitle>Aniversários na semana</CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-2 text-sm">
+            {birthdays.length === 0 && (
+              <p className="text-muted-foreground">Ninguém nesta janela de 7 dias.</p>
+            )}
+            {birthdays.map((s) => (
+              <div key={s.id} className="flex items-center justify-between gap-2">
+                <span>{s.name}</span>
+                <span className="flex items-center gap-2">
+                  <span className="text-muted-foreground">
+                    {new Date(s.birthDate).toLocaleDateString("pt-BR", {
+                      day: "2-digit",
+                      month: "short",
+                    })}
+                  </span>
+                  <Button
+                    size="sm"
+                    variant="ghost"
+                    render={
+                      <a
+                        href={waHref(
+                          s.phone,
+                          birthdayMessage(store.academy, s),
+                        )}
+                        target="_blank"
+                        rel="noreferrer"
+                      />
+                    }
+                  >
+                    Zap
+                  </Button>
+                </span>
+              </div>
             ))}
           </CardContent>
         </Card>
@@ -155,14 +216,14 @@ export default function AcademiaDashboard() {
             <Link className="rounded-lg border border-border p-3 hover:bg-muted/40" href="/academia/presenca">
               Fazer chamada
             </Link>
-            <Link className="rounded-lg border border-border p-3 hover:bg-muted/40" href="/academia/financeiro">
-              Baixar mensalidade
+            <Link className="rounded-lg border border-border p-3 hover:bg-muted/40" href="/academia/cobrancas">
+              Cobrar no WhatsApp
             </Link>
-            <Link className="rounded-lg border border-border p-3 hover:bg-muted/40" href="/academia/alunos">
-              Novo aluno
+            <Link className="rounded-lg border border-border p-3 hover:bg-muted/40" href="/academia/experimentais">
+              Experimentais
             </Link>
-            <Link className="rounded-lg border border-border p-3 hover:bg-muted/40" href="/academia/mural">
-              Aviso no mural
+            <Link className="rounded-lg border border-border p-3 hover:bg-muted/40" href="/academia/fechamento">
+              Fechamento do mês
             </Link>
           </CardContent>
         </Card>

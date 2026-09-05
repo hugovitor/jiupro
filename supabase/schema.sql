@@ -12,6 +12,8 @@ create table if not exists public.academies (
   address text,
   phone text,
   instagram text,
+  pix_key text,
+  pix_name text,
   plan text not null default 'essencial',
   stripe_customer_id text,
   stripe_subscription_id text,
@@ -116,6 +118,16 @@ create table if not exists public.graduations (
   notes text
 );
 
+create table if not exists public.evaluations (
+  id uuid primary key default gen_random_uuid(),
+  academy_id uuid not null references public.academies(id) on delete cascade,
+  student_id uuid not null references public.students(id) on delete cascade,
+  date date not null default current_date,
+  instructor_name text,
+  notes text not null,
+  recommend_promotion boolean not null default false
+);
+
 create table if not exists public.posts (
   id uuid primary key default gen_random_uuid(),
   academy_id uuid not null references public.academies(id) on delete cascade,
@@ -140,6 +152,7 @@ alter table public.payments enable row level security;
 alter table public.expenses enable row level security;
 alter table public.inventory enable row level security;
 alter table public.graduations enable row level security;
+alter table public.evaluations enable row level security;
 alter table public.posts enable row level security;
 alter table public.post_likes enable row level security;
 
@@ -179,6 +192,10 @@ create policy "inventory by academy" on public.inventory
   with check (academy_id = public.current_academy_id());
 
 create policy "graduations by academy" on public.graduations
+  for all using (academy_id = public.current_academy_id())
+  with check (academy_id = public.current_academy_id());
+
+create policy "evaluations by academy" on public.evaluations
   for all using (academy_id = public.current_academy_id())
   with check (academy_id = public.current_academy_id());
 

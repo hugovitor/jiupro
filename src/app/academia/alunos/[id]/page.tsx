@@ -6,6 +6,7 @@ import { toast } from "sonner";
 import { BeltBadge, PersonAvatar } from "@/components/belt-badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Textarea } from "@/components/ui/textarea";
 import { beltLabel } from "@/lib/belts";
 import {
   brl,
@@ -16,6 +17,8 @@ import {
 } from "@/lib/format";
 import { attendanceInDays } from "@/lib/insights";
 import { useStore } from "@/lib/store";
+import { overdueMessage, waHref } from "@/lib/whatsapp";
+import { useState } from "react";
 
 export default function AlunoDetalhePage() {
   const { id } = useParams<{ id: string }>();
@@ -52,6 +55,27 @@ export default function AlunoDetalhePage() {
           </div>
         </div>
         <div className="flex flex-wrap gap-2">
+          <Button
+            variant="outline"
+            render={
+              <a
+                href={waHref(
+                  student.phone,
+                  pays.find((p) => p.status === "overdue" || p.status === "pending")
+                    ? overdueMessage(
+                        store.academy,
+                        student,
+                        pays.find((p) => p.status === "overdue" || p.status === "pending")!,
+                      )
+                    : `Oi, aqui é a ${store.academy.name}. Oss.`,
+                )}
+                target="_blank"
+                rel="noreferrer"
+              />
+            }
+          >
+            WhatsApp
+          </Button>
           <Button
             variant="outline"
             onClick={() => {
@@ -175,7 +199,71 @@ export default function AlunoDetalhePage() {
           ))}
         </CardContent>
       </Card>
+
+      <Avaliacao studentId={student.id} />
     </div>
+  );
+}
+
+function Avaliacao({ studentId }: { studentId: string }) {
+  const store = useStore();
+  const [notes, setNotes] = useState("");
+  const [promo, setPromo] = useState(false);
+  const rows = (store.evaluations ?? []).filter((e) => e.studentId === studentId);
+
+  return (
+    <Card>
+      <CardHeader>
+        <CardTitle>Avaliações no tatame</CardTitle>
+      </CardHeader>
+      <CardContent className="space-y-3">
+        <form
+          className="space-y-2"
+          onSubmit={(e) => {
+            e.preventDefault();
+            if (!notes.trim()) return;
+            store.addEvaluation({
+              studentId,
+              date: new Date().toISOString().slice(0, 10),
+              instructorName:
+                store.users.find((u) => u.id === store.session?.userId)?.name ??
+                "Professor",
+              notes: notes.trim(),
+              recommendPromotion: promo,
+            });
+            setNotes("");
+            setPromo(false);
+            toast.success("Avaliação lançada.");
+          }}
+        >
+          <Textarea
+            value={notes}
+            onChange={(e) => setNotes(e.target.value)}
+            placeholder="Guarda, passagem, atitude, o que falta para o próximo grau…"
+          />
+          <label className="flex items-center gap-2 text-sm">
+            <input
+              type="checkbox"
+              checked={promo}
+              onChange={(e) => setPromo(e.target.checked)}
+            />
+            Recomendar promoção
+          </label>
+          <Button type="submit">Salvar avaliação</Button>
+        </form>
+        {rows.map((e) => (
+          <div key={e.id} className="border-l-2 border-primary/40 pl-3 text-sm">
+            <p className="font-medium">
+              {e.instructorName}
+              {e.recommendPromotion ? " · indicar graduação" : ""}
+            </p>
+            <p className="text-xs text-muted-foreground">
+              {e.date} · {e.notes}
+            </p>
+          </div>
+        ))}
+      </CardContent>
+    </Card>
   );
 }
 

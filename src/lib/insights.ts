@@ -56,3 +56,46 @@ export function overdueTotal(state: AppState) {
     .filter((p) => p.status === "overdue")
     .reduce((sum, p) => sum + p.amount, 0);
 }
+
+export function birthdaysSoon(students: Student[], withinDays = 7) {
+  const start = new Date();
+  start.setHours(0, 0, 0, 0);
+  return students.filter((s) => {
+    if (!s.birthDate) return false;
+    const born = new Date(s.birthDate);
+    const next = new Date(start.getFullYear(), born.getMonth(), born.getDate());
+    if (next < start) next.setFullYear(next.getFullYear() + 1);
+    const diff = Math.round((next.getTime() - start.getTime()) / 86400000);
+    return diff >= 0 && diff <= withinDays;
+  });
+}
+
+export function attendanceThisMonth(state: AppState, studentId: string) {
+  const month = new Date().toISOString().slice(0, 7);
+  return state.attendance.filter(
+    (a) => a.studentId === studentId && a.date.startsWith(month),
+  ).length;
+}
+
+export function newStudentsInMonth(state: AppState, month: string) {
+  return state.students.filter((s) => s.joinDate.startsWith(month));
+}
+
+export function monthChargeStats(state: AppState, month: string) {
+  const rows = state.payments.filter(
+    (p) => p.month === month && p.status !== "waived",
+  );
+  const paid = rows.filter((p) => p.status === "paid");
+  const open = rows.filter((p) => p.status !== "paid");
+  return {
+    billed: rows.reduce((sum, p) => sum + p.amount, 0),
+    collected: paid.reduce((sum, p) => sum + p.amount, 0),
+    open: open.reduce((sum, p) => sum + p.amount, 0),
+    paidCount: paid.length,
+    totalCount: rows.length,
+  };
+}
+
+export function monthAttendanceCount(state: AppState, month: string) {
+  return state.attendance.filter((a) => a.date.startsWith(month)).length;
+}

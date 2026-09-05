@@ -7,7 +7,13 @@ Feito para o dono que treina de manhã e administra de noite: mensalidades em at
 ## O que já funciona nesta fatia
 
 - **Painel da academia** — alunos, faixas/graus, turmas, chamada, financeiro, estoque, mural e plano
-- **PWA do aluno** — check-in do dia, mural, evolução e perfil (instalável no celular)
+- **Cobranças** — mensagem pronta no WhatsApp + chave Pix + baixa ou isenção
+- **Fechamento do mês** — recebido × despesa, gerar mensalidades do próximo mês, CSV
+- **Experimentais** — captar aula experimental e converter em mensalista
+- **Código do dia** — recepção mostra, aluno confirma no PWA
+- **Avaliação no tatame** — nota do professor na ficha, com indicação de graduação
+- **Retenção** — aluno que some ganha WhatsApp de volta no painel
+- **PWA do aluno** — check-in do dia, mural, evolução, Pix e perfil (instalável no celular)
 - **Planos mensais** — Essencial, Academia e Equipe, com checkout Stripe quando as chaves existem
 - **Demo completa** — Equipe Origem (Campinas) preenchida, sem precisar de conta
 - **Supabase** — schema multi-tenant com RLS em `supabase/schema.sql`

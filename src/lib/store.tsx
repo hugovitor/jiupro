@@ -12,9 +12,14 @@ import {
 import { nextAdultBelt } from "./belts";
 import { currentMonth, isoDate, uid } from "./format";
 import { createSeed } from "./seed";
+import { dayCode } from "./whatsapp";
 import type {
   AppState,
   Attendance,
+  ClassSession,
+  Evaluation,
+  Expense,
+  ExpenseCategory,
   InventoryItem,
   Payment,
   PlanId,
@@ -47,6 +52,19 @@ type Store = AppState & {
   attendanceCount: (studentId: string, days?: number) => number;
   overdueFor: (studentId: string) => Payment[];
   todayClasses: () => AppState["classes"];
+  updateAcademy: (patch: Partial<AppState["academy"]>) => void;
+  addClass: (input: Omit<ClassSession, "id" | "academyId">) => void;
+  removeClass: (id: string) => void;
+  addEvaluation: (input: Omit<Evaluation, "id" | "academyId">) => void;
+  checkInWithCode: (studentId: string, classId: string, code: string) => boolean;
+  generateMonthCharges: (month: string) => number;
+  addExpense: (input: {
+    description: string;
+    category: ExpenseCategory;
+    amount: number;
+    date: string;
+  }) => void;
+  waivePayment: (id: string) => void;
 };
 
 const StoreContext = createContext<Store | null>(null);
@@ -67,11 +85,24 @@ function persist(state: AppState) {
   }
 }
 
+function migrate(state: AppState): AppState {
+  return {
+    ...state,
+    version: 4,
+    academy: {
+      ...state.academy,
+      pixKey: state.academy.pixKey || "origemjj@pix.com.br",
+      pixName: state.academy.pixName || state.academy.name,
+    },
+    evaluations: state.evaluations ?? [],
+  };
+}
+
 function load(): AppState {
   try {
     const raw = localStorage.getItem(STORAGE_KEY);
     const seeded = raw ? (JSON.parse(raw) as AppState) : createSeed();
-    const parsed = seeded.version === 3 ? seeded : createSeed();
+    const parsed = migrate(seeded.version >= 3 ? seeded : createSeed());
     let session = parsed.session ?? null;
     try {
       const extra = localStorage.getItem(SESSION_KEY);
@@ -407,6 +438,112 @@ export function StoreProvider({ children }: { children: ReactNode }) {
     return state.classes.filter((c) => c.weekday === day);
   }, [state]);
 
+  const updateAcademy: Store["updateAcademy"] = useCallback((patch) => {
+    commit((prev) => ({
+      ...prev,
+      academy: { ...prev.academy, ...patch },
+    }));
+  }, []);
+
+  const addClass: Store["addClass"] = useCallback((input) => {
+    commit((prev) => ({
+      ...prev,
+      classes: [
+        ...prev.classes,
+        { ...input, id: uid("c"), academyId: prev.academy.id },
+      ],
+    }));
+  }, []);
+
+  const removeClass: Store["removeClass"] = useCallback((id) => {
+    commit((prev) => ({
+      ...prev,
+      classes: prev.classes.filter((c) => c.id !== id),
+    }));
+  }, []);
+
+  const addEvaluation: Store["addEvaluation"] = useCallback((input) => {
+    commit((prev) => ({
+      ...prev,
+        evaluations: [
+          {
+            ...input,
+            id: uid("ev"),
+            academyId: prev.academy.id,
+          },
+          ...(prev.evaluations ?? []),
+        ],
+    }));
+  }, []);
+
+  const checkInWithCode: Store["checkInWithCode"] = useCallback(
+    (studentId, classId, code) => {
+      const current = getSnapshot();
+      const expected = dayCode(isoDate(0), current.academy.slug);
+      if (code.replace(/\s/g, "") !== expected) return false;
+      return checkIn(studentId, classId, "code");
+    },
+    [checkIn],
+  );
+
+  const generateMonthCharges: Store["generateMonthCharges"] = useCallback(
+    (month) => {
+      let created = 0;
+      commit((prev) => {
+        const already = new Set(
+          prev.payments.filter((p) => p.month === month).map((p) => p.studentId),
+        );
+        const fresh: Payment[] = [];
+        for (const s of prev.students) {
+          if (s.status !== "active" || s.monthlyFee <= 0) continue;
+          if (already.has(s.id)) continue;
+          fresh.push({
+            id: uid("pay"),
+            academyId: prev.academy.id,
+            studentId: s.id,
+            month,
+            amount: s.monthlyFee,
+            status: "pending",
+          });
+        }
+        created = fresh.length;
+        return {
+          ...prev,
+          payments: [
+            ...fresh,
+            ...prev.payments.map((p) =>
+              p.status === "pending" && p.month < month
+                ? { ...p, status: "overdue" as const }
+                : p,
+            ),
+          ],
+        };
+      });
+      return created;
+    },
+    [],
+  );
+
+  const addExpense: Store["addExpense"] = useCallback((input) => {
+    commit((prev) => {
+      const row: Expense = {
+        ...input,
+        id: uid("ex"),
+        academyId: prev.academy.id,
+      };
+      return { ...prev, expenses: [row, ...prev.expenses] };
+    });
+  }, []);
+
+  const waivePayment: Store["waivePayment"] = useCallback((id) => {
+    commit((prev) => ({
+      ...prev,
+      payments: prev.payments.map((p) =>
+        p.id === id ? { ...p, status: "waived" as const } : p,
+      ),
+    }));
+  }, []);
+
   const value = useMemo<Store>(
     () => ({
       ...state,
@@ -430,6 +567,14 @@ export function StoreProvider({ children }: { children: ReactNode }) {
       attendanceCount,
       overdueFor,
       todayClasses,
+      updateAcademy,
+      addClass,
+      removeClass,
+      addEvaluation,
+      checkInWithCode,
+      generateMonthCharges,
+      addExpense,
+      waivePayment,
     }),
     [
       state,
@@ -452,6 +597,14 @@ export function StoreProvider({ children }: { children: ReactNode }) {
       attendanceCount,
       overdueFor,
       todayClasses,
+      updateAcademy,
+      addClass,
+      removeClass,
+      addEvaluation,
+      checkInWithCode,
+      generateMonthCharges,
+      addExpense,
+      waivePayment,
     ],
   );
 

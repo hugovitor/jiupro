@@ -1,6 +1,18 @@
 "use client";
 
+import { useState } from "react";
+import { toast } from "sonner";
 import { BeltBadge } from "@/components/belt-badge";
+import { Button } from "@/components/ui/button";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "@/components/ui/dialog";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 import { weekdayFull, weekdayName } from "@/lib/format";
 import { useStore } from "@/lib/store";
 
@@ -15,11 +27,14 @@ export default function TurmasPage() {
 
   return (
     <div className="mx-auto max-w-4xl space-y-6">
-      <div>
-        <h1 className="font-display text-3xl">Turmas</h1>
-        <p className="mt-1 text-sm text-muted-foreground">
-          Grade da semana. A chamada usa esta lista.
-        </p>
+      <div className="flex items-end justify-between gap-3">
+        <div>
+          <h1 className="font-display text-3xl">Turmas</h1>
+          <p className="mt-1 text-sm text-muted-foreground">
+            Grade da semana. A chamada e o PWA usam esta lista.
+          </p>
+        </div>
+        <NovaTurma />
       </div>
       <div className="space-y-6">
         {grouped.map((g) => (
@@ -40,16 +55,28 @@ export default function TurmasPage() {
                         {instructor?.name}
                       </p>
                     </div>
-                    <div className="text-right text-sm text-muted-foreground">
-                      <p>
-                        {weekdayName(c.weekday).toUpperCase()} · até {c.capacity} no tatame
-                      </p>
-                      <BeltBadge
-                        belt={c.division === "kids" ? "yellow" : "blue"}
-                        stripes={0}
-                        compact
-                        className="mt-1"
-                      />
+                    <div className="flex items-center gap-3 text-right text-sm text-muted-foreground">
+                      <div>
+                        <p>
+                          {weekdayName(c.weekday).toUpperCase()} · até {c.capacity}
+                        </p>
+                        <BeltBadge
+                          belt={c.division === "kids" ? "yellow" : "blue"}
+                          stripes={0}
+                          compact
+                          className="mt-1"
+                        />
+                      </div>
+                      <Button
+                        size="sm"
+                        variant="ghost"
+                        onClick={() => {
+                          store.removeClass(c.id);
+                          toast.message("Turma removida da grade.");
+                        }}
+                      >
+                        Tirar
+                      </Button>
                     </div>
                   </article>
                 );
@@ -59,5 +86,68 @@ export default function TurmasPage() {
         ))}
       </div>
     </div>
+  );
+}
+
+function NovaTurma() {
+  const store = useStore();
+  const [open, setOpen] = useState(false);
+  const [name, setName] = useState("Adultos Gi");
+  const [weekday, setWeekday] = useState("1");
+  const [time, setTime] = useState("19:30");
+
+  return (
+    <Dialog open={open} onOpenChange={setOpen}>
+      <DialogTrigger render={<Button />}>Nova turma</DialogTrigger>
+      <DialogContent>
+        <DialogHeader>
+          <DialogTitle>Incluir na grade</DialogTitle>
+        </DialogHeader>
+        <form
+          className="grid gap-3"
+          onSubmit={(e) => {
+            e.preventDefault();
+            store.addClass({
+              name,
+              weekday: Number(weekday),
+              startTime: time,
+              durationMin: 75,
+              instructorId: store.users.find((u) => u.role === "owner")?.id ?? "u_carla",
+              division: "adult",
+              gi: true,
+              capacity: 28,
+            });
+            toast.success("Turma na grade.");
+            setOpen(false);
+          }}
+        >
+          <div className="space-y-1.5">
+            <Label>Nome</Label>
+            <Input value={name} onChange={(e) => setName(e.target.value)} />
+          </div>
+          <div className="grid grid-cols-2 gap-2">
+            <div className="space-y-1.5">
+              <Label>Dia</Label>
+              <select
+                className="h-8 w-full rounded-lg border border-input bg-transparent px-2 text-sm"
+                value={weekday}
+                onChange={(e) => setWeekday(e.target.value)}
+              >
+                {["Dom", "Seg", "Ter", "Qua", "Qui", "Sex", "Sáb"].map((d, i) => (
+                  <option key={d} value={i}>
+                    {d}
+                  </option>
+                ))}
+              </select>
+            </div>
+            <div className="space-y-1.5">
+              <Label>Horário</Label>
+              <Input value={time} onChange={(e) => setTime(e.target.value)} />
+            </div>
+          </div>
+          <Button type="submit">Salvar</Button>
+        </form>
+      </DialogContent>
+    </Dialog>
   );
 }

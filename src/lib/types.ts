@@ -30,6 +30,8 @@ export type Academy = {
   address: string;
   phone: string;
   instagram: string;
+  pixKey: string;
+  pixName: string;
   plan: PlanId;
   monthlyGoal: number;
   createdAt: string;
@@ -85,7 +87,17 @@ export type Attendance = {
   classId: string;
   date: string;
   checkedInAt: string;
-  method: "app" | "manual";
+  method: "app" | "manual" | "code";
+};
+
+export type Evaluation = {
+  id: string;
+  academyId: string;
+  studentId: string;
+  date: string;
+  instructorName: string;
+  notes: string;
+  recommendPromotion: boolean;
 };
 
 export type Payment = {
@@ -155,6 +167,7 @@ export type AppState = {
   expenses: Expense[];
   inventory: InventoryItem[];
   graduations: Graduation[];
+  evaluations: Evaluation[];
   posts: Post[];
   session: Session | null;
 };

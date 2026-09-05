@@ -1,9 +1,11 @@
 "use client";
 
 import { useSearchParams } from "next/navigation";
-import { Suspense, useEffect } from "react";
+import { Suspense, useEffect, useState } from "react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 import { brl } from "@/lib/format";
 import { PLANS, planById } from "@/lib/plans";
 import { useStore } from "@/lib/store";
@@ -72,6 +74,8 @@ function ConfigInner() {
         </dl>
       </section>
 
+      <PixForm />
+
       <section className="rounded-xl border border-border bg-card p-5">
         <h2 className="font-medium">Plano atual · {plan.name}</h2>
         <p className="mt-1 text-sm text-muted-foreground">
@@ -123,5 +127,38 @@ export default function ConfigPage() {
     <Suspense>
       <ConfigInner />
     </Suspense>
+  );
+}
+
+function PixForm() {
+  const store = useStore();
+  const [pixKey, setPixKey] = useState(store.academy.pixKey);
+  const [pixName, setPixName] = useState(store.academy.pixName);
+
+  return (
+    <section className="rounded-xl border border-border bg-card p-5">
+      <h2 className="font-medium">Pix para mensalidade</h2>
+      <p className="mt-1 text-sm text-muted-foreground">
+        Entra na mensagem de cobrança do WhatsApp.
+      </p>
+      <form
+        className="mt-4 grid gap-3"
+        onSubmit={(e) => {
+          e.preventDefault();
+          store.updateAcademy({ pixKey, pixName });
+          toast.success("Pix atualizado.");
+        }}
+      >
+        <div className="space-y-1.5">
+          <Label>Chave</Label>
+          <Input value={pixKey} onChange={(e) => setPixKey(e.target.value)} />
+        </div>
+        <div className="space-y-1.5">
+          <Label>Nome no comprovante</Label>
+          <Input value={pixName} onChange={(e) => setPixName(e.target.value)} />
+        </div>
+        <Button type="submit">Salvar Pix</Button>
+      </form>
+    </section>
   );
 }
