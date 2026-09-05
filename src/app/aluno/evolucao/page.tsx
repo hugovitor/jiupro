@@ -2,7 +2,7 @@
 
 import { BeltBadge } from "@/components/belt-badge";
 import { Progress } from "@/components/ui/progress";
-import { beltLabel } from "@/lib/belts";
+import { beltLabel, monthsForNextStep } from "@/lib/belts";
 import { formatDate, monthsBetween } from "@/lib/format";
 import { attendanceInDays } from "@/lib/insights";
 import { currentStudent, useStore } from "@/lib/store";
@@ -17,8 +17,10 @@ export default function EvolucaoPage() {
   const months = monthsBetween(student.lastPromotionDate);
   const att = attendanceInDays(store, student.id, 90);
   const history = store.graduations.filter((g) => g.studentId === student.id);
-  const timeProgress = Math.min(100, Math.round((months / 8) * 100));
-  const attProgress = Math.min(100, Math.round((att / 24) * 100));
+  const need = monthsForNextStep(student);
+  const timeProgress = Math.min(100, Math.round((months / Math.max(need, 1)) * 100));
+  const attNeed = student.division === "kids" || student.stripes < 4 ? 12 : 20;
+  const attProgress = Math.min(100, Math.round((att / attNeed) * 100));
 
   return (
     <div className="space-y-6">
@@ -37,7 +39,9 @@ export default function EvolucaoPage() {
         <div>
           <div className="mb-1 flex justify-between text-sm">
             <span>Tempo no grau</span>
-            <span>{months} / 8 meses</span>
+            <span>
+              {months} / {need} {need === 1 ? "mês" : "meses"}
+            </span>
           </div>
           <Progress value={timeProgress} />
         </div>

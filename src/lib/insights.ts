@@ -1,4 +1,5 @@
 import { currentMonth, daysSince, isoDate, monthsBetween, parseDate } from "./format";
+import { maxDegrees, monthsForNextStep } from "./belts";
 import type { AppState, Student } from "./types";
 
 export function lastClassDate(state: AppState, studentId: string) {
@@ -22,17 +23,30 @@ export function isAtRisk(state: AppState, student: Student) {
   return days >= 14;
 }
 
+export function monthsAtCurrentBelt(state: AppState, student: Student) {
+  const gained = [...state.graduations]
+    .filter((g) => g.studentId === student.id && g.toBelt === student.belt && g.stripes === 0)
+    .sort((a, b) => b.date.localeCompare(a.date))[0];
+  return monthsBetween(gained?.date ?? student.joinDate);
+}
+
 export function isPromotionCandidate(state: AppState, student: Student) {
   if (student.status !== "active") return false;
-  const months = monthsBetween(student.lastPromotionDate);
   const att = attendanceInDays(state, student.id, 90);
+  const max = maxDegrees(student.belt);
+  const nextColor = max === 0 || student.stripes >= max;
+  const need = monthsForNextStep(student);
+
   if (student.division === "kids") {
-    return months >= 4 && att >= 12;
+    return monthsBetween(student.lastPromotionDate) >= need && att >= 12;
   }
-  if (student.stripes >= 4) {
-    return months >= 8 && att >= 20;
+  if (student.belt === "black" || student.belt.startsWith("coral") || student.belt === "red") {
+    return monthsBetween(student.lastPromotionDate) >= need;
   }
-  return months >= 3 && att >= 12;
+  if (nextColor) {
+    return monthsAtCurrentBelt(state, student) >= need && att >= 20;
+  }
+  return monthsBetween(student.lastPromotionDate) >= need && att >= 12;
 }
 
 export function monthRevenue(state: AppState, month: string) {

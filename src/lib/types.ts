@@ -1,7 +1,31 @@
 export type Role = "owner" | "instructor" | "student";
 
-export type BeltId = "white" | "blue" | "purple" | "brown" | "black";
-export type KidsBeltId = "grey" | "yellow" | "orange" | "green";
+export type AdultBeltId =
+  | "white"
+  | "blue"
+  | "purple"
+  | "brown"
+  | "black"
+  | "coral_red_black"
+  | "coral_red_white"
+  | "red";
+
+export type KidsBeltId =
+  | "white"
+  | "grey_white"
+  | "grey"
+  | "grey_black"
+  | "yellow_white"
+  | "yellow"
+  | "yellow_black"
+  | "orange_white"
+  | "orange"
+  | "orange_black"
+  | "green_white"
+  | "green"
+  | "green_black";
+
+export type BeltId = AdultBeltId | KidsBeltId;
 
 export type StudentStatus = "active" | "inactive" | "trial";
 export type PaymentStatus = "paid" | "pending" | "overdue" | "waived";
@@ -58,7 +82,7 @@ export type Student = {
   birthDate: string;
   guardianName?: string;
   division: "adult" | "kids";
-  belt: BeltId | KidsBeltId;
+  belt: BeltId;
   stripes: number;
   joinDate: string;
   lastPromotionDate: string;

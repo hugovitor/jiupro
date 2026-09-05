@@ -2,8 +2,9 @@
 
 import { toast } from "sonner";
 import { BeltBadge, PersonAvatar } from "@/components/belt-badge";
+import { IbjjfChart } from "@/components/ibjjf-chart";
 import { Button } from "@/components/ui/button";
-import { beltLabel } from "@/lib/belts";
+import { beltLabel, nextGraduation } from "@/lib/belts";
 import { monthsBetween, isoDate } from "@/lib/format";
 import { attendanceInDays, isPromotionCandidate } from "@/lib/insights";
 import { useStore } from "@/lib/store";
@@ -20,9 +21,12 @@ export default function GraduacoesPage() {
       <div>
         <h1 className="font-display text-3xl">Graduações</h1>
         <p className="mt-1 text-sm text-muted-foreground">
-          Critério da casa: tempo no grau + frequência. Você confirma no tatame.
+          Quadro IBJJF (kids, adulto e coral). A fila usa tempo + presença da
+          casa; você confirma no tatame.
         </p>
       </div>
+
+      <IbjjfChart />
 
       <section>
         <h2 className="mb-3 font-display text-sm text-primary">
@@ -71,8 +75,9 @@ export default function GraduacoesPage() {
               </div>
               <Button
                 onClick={() => {
+                  const next = nextGraduation(s);
                   store.promote(s.id, "Promovido pela lista de graduação.");
-                  toast.success(`${s.name}: ${beltLabel(s.belt, s.stripes)} atualizado.`);
+                  toast.success(`${s.name}: ${beltLabel(next.belt, next.stripes)}.`);
                 }}
               >
                 Promover

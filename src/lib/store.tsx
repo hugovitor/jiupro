@@ -9,7 +9,7 @@ import {
   useSyncExternalStore,
   type ReactNode,
 } from "react";
-import { nextAdultBelt } from "./belts";
+import { nextGraduation } from "./belts";
 import { createEmptyAcademy, uniqueSlug } from "./empty-academy";
 import { currentMonth, isoDate, uid, weekdayToday } from "./format";
 import { createSeed, DEMO_ACADEMY_ID, DEMO_ACCOUNTS } from "./seed";
@@ -502,33 +502,16 @@ export function StoreProvider({ children }: { children: ReactNode }) {
     commit((prev) => {
       const student = prev.students.find((s) => s.id === studentId);
       if (!student) return prev;
-      let toBelt = student.belt;
-      let stripes = student.stripes;
-      if (student.division === "adult") {
-        if (student.stripes < 4 && student.belt !== "black") {
-          stripes = student.stripes + 1;
-        } else {
-          const next = nextAdultBelt(
-            student.belt as "white" | "blue" | "purple" | "brown" | "black",
-          );
-          if (next) {
-            toBelt = next;
-            stripes = 0;
-          } else {
-            stripes = Math.min(student.stripes + 1, 6);
-          }
-        }
-      } else {
-        stripes = Math.min(student.stripes + 1, 4);
-      }
+      const next = nextGraduation(student);
       return {
         ...prev,
         students: prev.students.map((s) =>
           s.id === studentId
             ? {
                 ...s,
-                belt: toBelt,
-                stripes,
+                belt: next.belt,
+                stripes: next.stripes,
+                division: next.division,
                 lastPromotionDate: isoDate(0),
               }
             : s,
@@ -539,8 +522,8 @@ export function StoreProvider({ children }: { children: ReactNode }) {
             academyId: prev.academy.id,
             studentId,
             fromBelt: student.belt,
-            toBelt,
-            stripes,
+            toBelt: next.belt,
+            stripes: next.stripes,
             date: isoDate(0),
             notes,
           },

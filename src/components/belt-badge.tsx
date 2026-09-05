@@ -1,4 +1,4 @@
-import { beltLabel, beltMeta, beltTipColor } from "@/lib/belts";
+import { beltLabel, beltMeta } from "@/lib/belts";
 import { cn } from "@/lib/utils";
 
 export function BeltStrip({
@@ -11,26 +11,53 @@ export function BeltStrip({
   className?: string;
 }) {
   const meta = beltMeta(belt);
-  const tip = beltTipColor(belt);
-  const bars = Math.max(0, Math.min(4, stripes));
-  const light = meta.swatch === "#f4f1ea" || meta.swatch === "#eab308";
+  const bars = Math.max(0, Math.min(meta.maxDegrees || 4, stripes));
+  const light =
+    meta.body === "#f4f1ea" ||
+    meta.body === "#eab308" ||
+    meta.tip === "#f4f1ea";
 
   return (
     <span
       className={cn(
-        "relative inline-flex h-3.5 w-[4.25rem] overflow-hidden shadow-[inset_0_1px_0_rgba(255,255,255,0.18)]",
+        "relative inline-flex h-3.5 w-[4.5rem] overflow-hidden shadow-[inset_0_1px_0_rgba(255,255,255,0.18)]",
         light && "ring-1 ring-black/25",
         className,
       )}
       aria-hidden
     >
-      <span className="h-full flex-[2.4]" style={{ background: meta.swatch }} />
+      {meta.coral ? (
+        <span className="flex h-full flex-[2.6]">
+          {Array.from({ length: 6 }).map((_, i) => (
+            <span
+              key={i}
+              className="h-full flex-1"
+              style={{ background: meta.coral![i % 2] }}
+            />
+          ))}
+        </span>
+      ) : (
+        <span className="relative h-full flex-[2.4]" style={{ background: meta.body }}>
+          {meta.center && (
+            <span
+              className="absolute inset-y-[32%] right-0 left-0"
+              style={{ background: meta.center }}
+            />
+          )}
+        </span>
+      )}
       <span
-        className="relative flex h-full flex-1 items-center justify-end gap-[3px] pr-[4px]"
-        style={{ background: tip }}
+        className="relative flex h-full flex-1 items-center justify-end gap-[2px] pr-[3px]"
+        style={{ background: meta.tip }}
       >
         {Array.from({ length: bars }).map((_, i) => (
-          <span key={i} className="h-[11px] w-[3px] bg-white" />
+          <span
+            key={i}
+            className="h-[11px] w-[2.5px]"
+            style={{
+              background: meta.tip === "#f4f1ea" ? "#c41e3a" : "#ffffff",
+            }}
+          />
         ))}
       </span>
     </span>

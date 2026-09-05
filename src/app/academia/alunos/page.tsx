@@ -16,7 +16,7 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { ADULT_BELTS, KIDS_BELTS } from "@/lib/belts";
+import { beltsForDivision } from "@/lib/belts";
 import { brl, currentMonth, isoDate } from "@/lib/format";
 import { useStore } from "@/lib/store";
 import type { Student, StudentStatus } from "@/lib/types";
@@ -169,7 +169,7 @@ function NovoAluno() {
     monthlyFee: "180",
   });
 
-  const belts = form.division === "kids" ? KIDS_BELTS : ADULT_BELTS;
+  const belts = beltsForDivision(form.division);
 
   return (
     <>
@@ -248,7 +248,7 @@ function NovoAluno() {
                   setForm({
                     ...form,
                     division: e.target.value as Student["division"],
-                    belt: e.target.value === "kids" ? "grey" : "white",
+                    belt: "white",
                   })
                 }
               >
