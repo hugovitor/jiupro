@@ -10,7 +10,7 @@ import { brl } from "@/lib/format";
 import { PLANS, planById } from "@/lib/plans";
 import { useStore } from "@/lib/store";
 import type { PlanId } from "@/lib/types";
-import { isSupabaseConfigured } from "@/lib/supabase/client";
+import { SupabaseConnect } from "@/components/supabase-connect";
 
 function ConfigInner() {
   const store = useStore();
@@ -96,8 +96,10 @@ function ConfigInner() {
         </div>
       </section>
 
+      <SupabaseConnect />
+
       <section className="border border-border bg-card p-5 text-sm">
-        <h2 className="font-medium">Integrações</h2>
+        <h2 className="font-medium">Stripe</h2>
         <p className="mt-2 text-muted-foreground">
           Conta:{" "}
           {store.isDemo
@@ -105,15 +107,8 @@ function ConfigInner() {
             : "sua academia neste navegador"}
         </p>
         <p className="mt-1 text-muted-foreground">
-          Supabase: {isSupabaseConfigured() ? "conectado" : "modo local (sem nuvem)"}
-        </p>
-        <p className="mt-1 text-muted-foreground">
-          Stripe: as chaves no servidor ligam o checkout real. Sem elas, o plano
-          muda na demo.
-        </p>
-        <p className="mt-3 text-muted-foreground">
-          Schema SQL em <code>supabase/schema.sql</code>. Variáveis em{" "}
-          <code>.env.example</code>.
+          As chaves no servidor ligam o checkout real. Sem elas, o plano muda só
+          neste navegador.
         </p>
       </section>
 

@@ -26,8 +26,10 @@ create table if not exists public.profiles (
   id uuid primary key references auth.users(id) on delete cascade,
   academy_id uuid references public.academies(id) on delete cascade,
   name text not null,
+  email text,
   role text not null check (role in ('owner', 'instructor', 'student')),
   phone text,
+  avatar_hue int not null default 12,
   created_at timestamptz not null default now()
 );
 
@@ -48,6 +50,7 @@ create table if not exists public.students (
   status text not null default 'active',
   monthly_fee numeric not null default 0,
   notes text,
+  avatar_hue int not null default 40,
   created_at timestamptz not null default now()
 );
 
@@ -133,6 +136,8 @@ create table if not exists public.posts (
   id uuid primary key default gen_random_uuid(),
   academy_id uuid not null references public.academies(id) on delete cascade,
   author_id uuid references public.profiles(id) on delete set null,
+  author_name text,
+  author_role text,
   content text not null,
   pinned boolean not null default false,
   created_at timestamptz not null default now()
@@ -158,54 +163,85 @@ alter table public.posts enable row level security;
 alter table public.post_likes enable row level security;
 
 create or replace function public.current_academy_id()
-returns uuid language sql stable as $$
+returns uuid
+language sql
+stable
+security definer
+set search_path = public
+as $$
   select academy_id from public.profiles where id = auth.uid()
 $$;
 
+revoke all on function public.current_academy_id() from public;
+grant execute on function public.current_academy_id() to authenticated, anon;
+
+drop policy if exists "profiles self" on public.profiles;
 create policy "profiles self" on public.profiles
   for select using (id = auth.uid() or academy_id = public.current_academy_id());
 
+drop policy if exists "profiles update self" on public.profiles;
+create policy "profiles update self" on public.profiles
+  for update using (id = auth.uid())
+  with check (id = auth.uid());
+
+drop policy if exists "academy members" on public.academies;
 create policy "academy members" on public.academies
   for select using (id = public.current_academy_id());
 
+drop policy if exists "students by academy" on public.students;
 create policy "students by academy" on public.students
   for all using (academy_id = public.current_academy_id())
   with check (academy_id = public.current_academy_id());
 
+drop policy if exists "classes by academy" on public.classes;
 create policy "classes by academy" on public.classes
   for all using (academy_id = public.current_academy_id())
   with check (academy_id = public.current_academy_id());
 
+drop policy if exists "attendance by academy" on public.attendance;
 create policy "attendance by academy" on public.attendance
   for all using (academy_id = public.current_academy_id())
   with check (academy_id = public.current_academy_id());
 
+drop policy if exists "payments by academy" on public.payments;
 create policy "payments by academy" on public.payments
   for all using (academy_id = public.current_academy_id())
   with check (academy_id = public.current_academy_id());
 
+drop policy if exists "expenses by academy" on public.expenses;
 create policy "expenses by academy" on public.expenses
   for all using (academy_id = public.current_academy_id())
   with check (academy_id = public.current_academy_id());
 
+drop policy if exists "inventory by academy" on public.inventory;
 create policy "inventory by academy" on public.inventory
   for all using (academy_id = public.current_academy_id())
   with check (academy_id = public.current_academy_id());
 
+drop policy if exists "graduations by academy" on public.graduations;
 create policy "graduations by academy" on public.graduations
   for all using (academy_id = public.current_academy_id())
   with check (academy_id = public.current_academy_id());
 
+drop policy if exists "evaluations by academy" on public.evaluations;
 create policy "evaluations by academy" on public.evaluations
   for all using (academy_id = public.current_academy_id())
   with check (academy_id = public.current_academy_id());
 
+drop policy if exists "posts by academy" on public.posts;
 create policy "posts by academy" on public.posts
   for all using (academy_id = public.current_academy_id())
   with check (academy_id = public.current_academy_id());
 
+drop policy if exists "likes by academy" on public.post_likes;
 create policy "likes by academy" on public.post_likes
   for all using (
+    exists (
+      select 1 from public.posts p
+      where p.id = post_id and p.academy_id = public.current_academy_id()
+    )
+  )
+  with check (
     exists (
       select 1 from public.posts p
       where p.id = post_id and p.academy_id = public.current_academy_id()
@@ -246,18 +282,27 @@ alter table public.events enable row level security;
 alter table public.event_rsvps enable row level security;
 alter table public.sales enable row level security;
 
+drop policy if exists "events by academy" on public.events;
 create policy "events by academy" on public.events
   for all using (academy_id = public.current_academy_id())
   with check (academy_id = public.current_academy_id());
 
+drop policy if exists "event rsvps by academy" on public.event_rsvps;
 create policy "event rsvps by academy" on public.event_rsvps
   for all using (
     exists (
       select 1 from public.events e
       where e.id = event_id and e.academy_id = public.current_academy_id()
     )
+  )
+  with check (
+    exists (
+      select 1 from public.events e
+      where e.id = event_id and e.academy_id = public.current_academy_id()
+    )
   );
 
+drop policy if exists "sales by academy" on public.sales;
 create policy "sales by academy" on public.sales
   for all using (academy_id = public.current_academy_id())
   with check (academy_id = public.current_academy_id());
@@ -275,6 +320,7 @@ create table if not exists public.drop_ins (
 
 alter table public.drop_ins enable row level security;
 
+drop policy if exists "drop ins by academy" on public.drop_ins;
 create policy "drop ins by academy" on public.drop_ins
   for all using (academy_id = public.current_academy_id())
   with check (academy_id = public.current_academy_id());
@@ -315,11 +361,24 @@ begin
   insert into public.academies (name, slug, city, state, plan, pix_name)
   values (p_name, v_slug, p_city, p_state, coalesce(p_plan, 'essencial'), p_name)
   returning id into v_id;
-  insert into public.profiles (id, academy_id, name, role)
-  values (auth.uid(), v_id, p_owner_name, 'owner');
+  insert into public.profiles (id, academy_id, name, role, email)
+  values (
+    auth.uid(),
+    v_id,
+    p_owner_name,
+    'owner',
+    coalesce(auth.jwt()->>'email', '')
+  );
   return v_id;
 end;
 $$;
 
 revoke all on function public.register_academy(text, text, text, text, text, text) from public;
 grant execute on function public.register_academy(text, text, text, text, text, text) to authenticated;
+
+-- Idempotente para quem já rodou uma versão anterior do schema
+alter table public.profiles add column if not exists email text;
+alter table public.profiles add column if not exists avatar_hue int not null default 12;
+alter table public.students add column if not exists avatar_hue int not null default 40;
+alter table public.posts add column if not exists author_name text;
+alter table public.posts add column if not exists author_role text;

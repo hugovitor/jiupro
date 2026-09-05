@@ -19,11 +19,13 @@ Feito para o dono que treina de manhã e administra de noite: mensalidades em at
 - **Loja** — venda no nome do aluno, baixa o estoque, entra no financeiro
 - **PWA do aluno** — check-in do dia, agenda, mural, evolução, Pix e perfil (instalável no celular)
 - **Planos mensais** — Essencial, Academia e Equipe, com checkout Stripe quando as chaves existem
-- **Cadastro real** — abre a sua academia, vazia, isolada da Equipe Origem. Sem Supabase fica neste navegador; com as chaves, Auth + `register_academy` grava na nuvem
+- **Cadastro real** — abre a sua academia, vazia, isolada da Equipe Origem. Sem Supabase fica neste navegador; com o projeto ligado, Auth + tabelas gravam na nuvem
 - **Demo completa** — Equipe Origem (Campinas) nos atalhos de Entrar ou em `/demo`
-- **Supabase** — schema multi-tenant com RLS e snapshot `app_state` em `supabase/schema.sql`
+- **Supabase** — schema multi-tenant com RLS. Cada entidade (aluno, turma, pagamento, mural…) é uma tabela, não um JSON único
 
-A demo da Equipe Origem continua no navegador. **Cadastro** cria outra academia (não entra como Carla). Sem chaves de Supabase, a casa nova fica no `localStorage` deste browser. Com `NEXT_PUBLIC_SUPABASE_URL` e a anon key, o cadastro também cria usuário no Auth e uma linha em `academies`.
+A demo da Equipe Origem continua no navegador. **Cadastro** cria outra academia (não entra como Carla). Sem chaves de Supabase, a casa nova fica no `localStorage` deste browser. Com Project URL + anon key (em Configurações ou `.env.local`), o cadastro cria usuário no Auth, a academia em `academies` e o painel nas tabelas.
+
+## Como rodar
 
 ## Como rodar
 
@@ -45,16 +47,22 @@ Abre em [http://localhost:43123](http://localhost:43123).
 
 ## Supabase
 
-1. Crie um projeto
-2. Rode `supabase/schema.sql` no SQL Editor
-3. Preencha no `.env.local`:
+1. Crie um projeto no [Supabase](https://supabase.com)
+2. Dashboard → Project Settings → API: copie a **Project URL** e a **anon public** key (nunca a service role)
+3. Cole as duas em **Configurações** no painel, ou no `.env.local`:
 
 ```
 NEXT_PUBLIC_SUPABASE_URL=
 NEXT_PUBLIC_SUPABASE_ANON_KEY=
 ```
 
-O schema isola dados por `academy_id` (RLS). O cadastro chama `register_academy` (função security definer) e grava o painel em `academies.app_state`. Auth usa `auth.users` + `profiles`. No painel do Auth, desative “Confirm email” se quiser entrar na hora.
+4. SQL Editor: cole `supabase/schema.sql` (o botão “Copiar schema.sql” nas Configurações copia o arquivo). Pode rodar de novo.
+5. Auth → Providers → Email: desligue “Confirm email” se quiser entrar na hora
+6. Na sua academia (não na demo), use **Enviar esta academia** para subir o que já está neste navegador
+
+O schema isola dados por `academy_id` (RLS). O cadastro chama `register_academy` e o painel grava em tabelas (`students`, `classes`, `payments`, `posts`, …). Login com o mesmo e-mail baixa o estado da nuvem. A Equipe Origem não sincroniza.
+
+`SUPABASE_SERVICE_ROLE_KEY` no `.env.example` é só para scripts no servidor no futuro. O app no browser usa só a anon key.
 
 ## Stripe
 

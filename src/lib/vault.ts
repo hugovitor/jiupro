@@ -135,8 +135,11 @@ export function switchAcademy(academyId: string, session: Session) {
   return activeState();
 }
 
-export function putAcademy(state: AppState, password?: string) {
+export function putAcademy(state: AppState, password?: string, previousId?: string) {
   const v = getVault();
+  if (previousId && previousId !== state.academy.id) {
+    delete v.academies[previousId];
+  }
   v.academies[state.academy.id] = stripSession(state);
   v.activeId = state.academy.id;
   v.session = state.session;
@@ -147,6 +150,10 @@ export function putAcademy(state: AppState, password?: string) {
     if (email) v.credentials[email] = password;
   }
   saveVault();
+}
+
+export function passwordFor(email: string) {
+  return getVault().credentials[email.trim().toLowerCase()];
 }
 
 export function findUserAcrossAcademies(email: string) {

@@ -1,24 +1,229 @@
+import type { SupabaseClient } from "@supabase/supabase-js";
 import { createSupabaseBrowserClient } from "./client";
+import { ensureUuidState, rehomeAcademy, stateToTables, tablesToState } from "./mapper";
 import { DEMO_ACADEMY_ID } from "../seed";
-import { stripSession } from "../vault";
-import type { AppState } from "../types";
+import type { AppState, Role, Session } from "../types";
 
-type AcademyRow = {
-  id: string;
-  name: string;
-  slug: string;
-  city: string | null;
-  state: string | null;
-  address: string | null;
-  phone: string | null;
-  instagram: string | null;
-  pix_key: string | null;
-  pix_name: string | null;
-  plan: string;
-  monthly_goal: number | null;
-  drop_in_fee: number | null;
-  app_state: AppState | null;
-};
+async function replaceRows(
+  client: SupabaseClient,
+  table: string,
+  academyId: string,
+  rows: Record<string, unknown>[],
+  academyColumn = "academy_id",
+) {
+  const { data: existing, error: readError } = await client
+    .from(table)
+    .select("id")
+    .eq(academyColumn, academyId);
+  if (readError) throw readError;
+  const keep = new Set(rows.map((r) => String(r.id)));
+  const extra = (existing ?? [])
+    .map((r: { id: string }) => String(r.id))
+    .filter((id: string) => !keep.has(id));
+  if (extra.length) {
+    const { error } = await client.from(table).delete().in("id", extra);
+    if (error) throw error;
+  }
+  if (rows.length) {
+    const { error } = await client.from(table).upsert(rows);
+    if (error) throw error;
+  }
+}
+
+async function replaceJoin(
+  client: SupabaseClient,
+  table: string,
+  filterColumn: string,
+  parentIds: string[],
+  rows: Record<string, unknown>[],
+) {
+  if (parentIds.length) {
+    const { error } = await client.from(table).delete().in(filterColumn, parentIds);
+    if (error) throw error;
+  }
+  if (rows.length) {
+    const { error } = await client.from(table).upsert(rows);
+    if (error) throw error;
+  }
+}
+
+export async function pushAcademyState(state: AppState) {
+  const client = createSupabaseBrowserClient();
+  if (!client) return { error: "Sem projeto Supabase." };
+  if (state.academy.id === DEMO_ACADEMY_ID) {
+    return { error: "A Equipe Origem é só demo local." };
+  }
+  const ready = ensureUuidState(state);
+
+  const { data: existing, error: lookupError } = await client
+    .from("academies")
+    .select("id")
+    .eq("id", ready.academy.id)
+    .maybeSingle();
+  if (lookupError) return { error: lookupError.message, state: ready };
+  if (!existing) {
+    return {
+      error: "Esta academia ainda não existe no Supabase. Use Enviar esta academia.",
+      missingAcademy: true as const,
+      state: ready,
+    };
+  }
+
+  const { data: profileRows, error: profileError } = await client
+    .from("profiles")
+    .select("id")
+    .eq("academy_id", ready.academy.id);
+  if (profileError) return { error: profileError.message, state: ready };
+  const profileIds = new Set(
+    (profileRows ?? []).map((p: { id: string }) => String(p.id)),
+  );
+  const tables = stateToTables(ready, profileIds);
+
+  const { error: academyError } = await client
+    .from("academies")
+    .update(tables.academy)
+    .eq("id", ready.academy.id);
+  if (academyError) return { error: academyError.message, state: ready };
+
+  try {
+    await replaceRows(client, "students", ready.academy.id, tables.students);
+    await replaceRows(client, "classes", ready.academy.id, tables.classes);
+    await replaceRows(client, "attendance", ready.academy.id, tables.attendance);
+    await replaceRows(client, "payments", ready.academy.id, tables.payments);
+    await replaceRows(client, "expenses", ready.academy.id, tables.expenses);
+    await replaceRows(client, "inventory", ready.academy.id, tables.inventory);
+    await replaceRows(client, "graduations", ready.academy.id, tables.graduations);
+    await replaceRows(client, "evaluations", ready.academy.id, tables.evaluations);
+    await replaceRows(client, "posts", ready.academy.id, tables.posts);
+    await replaceJoin(
+      client,
+      "post_likes",
+      "post_id",
+      tables.posts.map((p) => String(p.id)),
+      tables.postLikes,
+    );
+    await replaceRows(client, "events", ready.academy.id, tables.events);
+    await replaceJoin(
+      client,
+      "event_rsvps",
+      "event_id",
+      tables.events.map((e) => String(e.id)),
+      tables.eventRsvps,
+    );
+    await replaceRows(client, "sales", ready.academy.id, tables.sales);
+    await replaceRows(client, "drop_ins", ready.academy.id, tables.dropIns);
+  } catch (err) {
+    const message = err instanceof Error ? err.message : "Falha ao gravar no Supabase.";
+    return { error: message, state: ready };
+  }
+  return { state: ready };
+}
+
+export function scheduleRemotePush(state: AppState) {
+  if (typeof window === "undefined") return;
+  if (state.academy.id === DEMO_ACADEMY_ID) return;
+  if (!createSupabaseBrowserClient()) return;
+  const handle = window.setTimeout(() => {
+    void pushAcademyState(state).then((result) => {
+      if (result.error && !("missingAcademy" in result && result.missingAcademy)) {
+        console.warn("JiuPro: sync Supabase —", result.error);
+      }
+    });
+  }, 800);
+  return () => window.clearTimeout(handle);
+}
+
+export async function pullAcademyState(session: Session): Promise<AppState | { error: string }> {
+  const client = createSupabaseBrowserClient();
+  if (!client) return { error: "Sem projeto Supabase." };
+
+  const academyId = session.academyId;
+  const [
+    academy,
+    profiles,
+    students,
+    classes,
+    attendance,
+    payments,
+    expenses,
+    inventory,
+    graduations,
+    evaluations,
+    posts,
+    events,
+    sales,
+    dropIns,
+  ] = await Promise.all([
+    client.from("academies").select("*").eq("id", academyId).maybeSingle(),
+    client.from("profiles").select("*").eq("academy_id", academyId),
+    client.from("students").select("*").eq("academy_id", academyId),
+    client.from("classes").select("*").eq("academy_id", academyId),
+    client.from("attendance").select("*").eq("academy_id", academyId),
+    client.from("payments").select("*").eq("academy_id", academyId),
+    client.from("expenses").select("*").eq("academy_id", academyId),
+    client.from("inventory").select("*").eq("academy_id", academyId),
+    client.from("graduations").select("*").eq("academy_id", academyId),
+    client.from("evaluations").select("*").eq("academy_id", academyId),
+    client.from("posts").select("*").eq("academy_id", academyId),
+    client.from("events").select("*").eq("academy_id", academyId),
+    client.from("sales").select("*").eq("academy_id", academyId),
+    client.from("drop_ins").select("*").eq("academy_id", academyId),
+  ]);
+
+  if (academy.error) return { error: academy.error.message };
+  if (!academy.data) return { error: "Academia não encontrada no Supabase." };
+
+  const postIds = (posts.data ?? []).map((p: { id: string }) => String(p.id));
+  const eventIds = (events.data ?? []).map((e: { id: string }) => String(e.id));
+  const postLikes = postIds.length
+    ? await client.from("post_likes").select("*").in("post_id", postIds)
+    : { data: [], error: null };
+  const eventRsvps = eventIds.length
+    ? await client.from("event_rsvps").select("*").in("event_id", eventIds)
+    : { data: [], error: null };
+
+  if (postLikes.error) return { error: postLikes.error.message };
+  if (eventRsvps.error) return { error: eventRsvps.error.message };
+
+  return tablesToState({
+    academy: academy.data,
+    profiles: profiles.data ?? [],
+    students: students.data ?? [],
+    classes: classes.data ?? [],
+    attendance: attendance.data ?? [],
+    payments: payments.data ?? [],
+    expenses: expenses.data ?? [],
+    inventory: inventory.data ?? [],
+    graduations: graduations.data ?? [],
+    evaluations: evaluations.data ?? [],
+    posts: posts.data ?? [],
+    postLikes: postLikes.data ?? [],
+    events: events.data ?? [],
+    eventRsvps: eventRsvps.data ?? [],
+    sales: sales.data ?? [],
+    dropIns: dropIns.data ?? [],
+    session,
+  });
+}
+
+export async function testSupabaseConnection() {
+  const client = createSupabaseBrowserClient();
+  if (!client) return { ok: false as const, error: "Cole a URL e a anon key." };
+  const { error } = await client.from("academies").select("id").limit(1);
+  if (!error) return { ok: true as const };
+  const msg = error.message || "";
+  if (/does not exist|schema cache|42P01/i.test(msg) || error.code === "PGRST205") {
+    return {
+      ok: false as const,
+      error: "Projeto alcançado, mas o schema JiuPro ainda não foi aplicado. Cole supabase/schema.sql no SQL Editor.",
+      needsSchema: true as const,
+    };
+  }
+  if (/jwt|invalid api key|apikey/i.test(msg)) {
+    return { ok: false as const, error: "Chave anônima inválida." };
+  }
+  return { ok: false as const, error: msg };
+}
 
 export async function registerRemoteAcademy(input: {
   email: string;
@@ -71,91 +276,62 @@ export async function signInRemote(email: string, password: string) {
 
   if (!profile) return { userId: data.user.id, missingProfile: true as const };
 
-  const { data: row } = await client
-    .from("academies")
-    .select(
-      "id, name, slug, city, state, address, phone, instagram, pix_key, pix_name, plan, monthly_goal, drop_in_fee, app_state",
-    )
-    .eq("id", profile.academy_id)
-    .maybeSingle();
-
   return {
     userId: data.user.id,
     profile,
-    academy: row as AcademyRow | null,
+    session: {
+      userId: data.user.id,
+      academyId: profile.academy_id as string,
+      role: profile.role as Role,
+    } satisfies Session,
   };
 }
 
-export async function finishRemoteRegister(input: {
-  name: string;
-  slug: string;
-  city: string;
-  state: string;
-  plan: string;
-  ownerName: string;
+export async function attachLocalAcademy(input: {
+  email: string;
+  password: string;
+  state: AppState;
 }) {
   const client = createSupabaseBrowserClient();
-  if (!client) return { error: "offline" };
-  const { data: academyId, error } = await client.rpc("register_academy", {
-    p_name: input.name,
-    p_slug: input.slug,
-    p_city: input.city,
-    p_state: input.state,
-    p_plan: input.plan,
-    p_owner_name: input.ownerName,
+  if (!client) return { error: "Cole a URL e a anon key do projeto." };
+
+  let ownerId: string | undefined;
+  const signedIn = await client.auth.signInWithPassword({
+    email: input.email,
+    password: input.password,
   });
-  if (error) return { error: error.message };
-  return { academyId: academyId as string };
-}
-
-export function scheduleRemotePush(state: AppState) {
-  if (typeof window === "undefined") return;
-  if (state.academy.id === DEMO_ACADEMY_ID) return;
-  const client = createSupabaseBrowserClient();
-  if (!client) return;
-  const handle = window.setTimeout(() => {
-    void client
-      .from("academies")
-      .update({
-        name: state.academy.name,
-        slug: state.academy.slug,
-        city: state.academy.city,
-        state: state.academy.state,
-        address: state.academy.address,
-        phone: state.academy.phone,
-        instagram: state.academy.instagram,
-        pix_key: state.academy.pixKey,
-        pix_name: state.academy.pixName,
-        plan: state.academy.plan,
-        monthly_goal: state.academy.monthlyGoal,
-        drop_in_fee: state.academy.dropInFee,
-        app_state: stripSession(state),
-      })
-      .eq("id", state.academy.id)
-      .then(({ error }) => {
-        if (error) console.warn("JiuPro: falha ao gravar academia no Supabase.", error.message);
-      });
-  }, 700);
-  return () => window.clearTimeout(handle);
-}
-
-export function applyRemoteAcademy(row: AcademyRow, session: AppState["session"]): AppState | null {
-  if (row.app_state?.academy) {
-    return {
-      ...row.app_state,
-      academy: {
-        ...row.app_state.academy,
-        id: row.id,
-        name: row.name,
-        slug: row.slug,
-        city: row.city ?? row.app_state.academy.city,
-        state: row.state ?? row.app_state.academy.state,
-        pixKey: row.pix_key ?? row.app_state.academy.pixKey,
-        pixName: row.pix_name ?? row.app_state.academy.pixName,
-        plan: (row.plan as AppState["academy"]["plan"]) ?? row.app_state.academy.plan,
-      },
-      session,
-    };
+  if (signedIn.data.session?.user) {
+    ownerId = signedIn.data.user.id;
+  } else {
+    const created = await client.auth.signUp({
+      email: input.email,
+      password: input.password,
+    });
+    if (created.error) return { error: created.error.message };
+    if (!created.data.session) {
+      return { error: "Confirme o e-mail no Supabase (Auth → confirmação) e tente de novo." };
+    }
+    ownerId = created.data.user?.id;
   }
-  return null;
+  if (!ownerId) return { error: "Não foi possível autenticar." };
+
+  const { data: academyId, error: rpcError } = await client.rpc("register_academy", {
+    p_name: input.state.academy.name,
+    p_slug: input.state.academy.slug,
+    p_city: input.state.academy.city,
+    p_state: input.state.academy.state,
+    p_plan: input.state.academy.plan,
+    p_owner_name:
+      input.state.users.find((u) => u.role === "owner")?.name ?? input.state.academy.name,
+  });
+  if (rpcError) return { error: rpcError.message };
+  if (!academyId) return { error: "Falha ao criar a academia no Supabase." };
+
+  const next = rehomeAcademy(input.state, academyId as string, {
+    id: ownerId,
+    email: input.email,
+  });
+  const pushed = await pushAcademyState(next);
+  if (pushed.error) return { error: pushed.error, state: pushed.state ?? next };
+  return { state: pushed.state ?? next };
 }

@@ -14,17 +14,22 @@ import { createEmptyAcademy, uniqueSlug } from "./empty-academy";
 import { currentMonth, isoDate, uid, weekdayToday } from "./format";
 import { createSeed, DEMO_ACADEMY_ID, DEMO_ACCOUNTS } from "./seed";
 import {
-  applyRemoteAcademy,
+  attachLocalAcademy,
+  pullAcademyState,
+  pushAcademyState,
   registerRemoteAcademy,
   scheduleRemotePush,
   signInRemote,
 } from "./supabase/sync";
+import { ensureUuidState, rehomeAcademy } from "./supabase/mapper";
+import { isSupabaseConfigured } from "./supabase/config";
 import {
   activeState,
   checkPassword,
   emailTaken,
   findUserAcrossAcademies,
   hasLocalPassword,
+  passwordFor,
   putAcademy,
   rememberPassword,
   resetDemoAcademy,
@@ -55,6 +60,10 @@ export type LoginResult =
   | { ok: true; role: Role }
   | { ok: false; error: string };
 
+export type SyncResult =
+  | { ok: true }
+  | { ok: false; error: string };
+
 export type RegisterInput = {
   ownerName: string;
   academyName: string;
@@ -74,6 +83,8 @@ type Store = AppState & {
   logout: () => void;
   resetDemo: () => void;
   registerAcademy: (input: RegisterInput) => Promise<LoginResult>;
+  syncNow: () => Promise<SyncResult>;
+  pullNow: () => Promise<SyncResult>;
   addStudent: (input: Omit<Student, "id" | "academyId" | "userId" | "avatarHue">) => void;
   updateStudent: (id: string, patch: Partial<Student>) => void;
   recordPayment: (studentId: string, month: string, method: Payment["method"]) => void;
@@ -125,10 +136,13 @@ let cached: AppState | null = null;
 let clientReady = false;
 let pushCancel: (() => void) | undefined;
 
-function persist(state: AppState) {
-  writeActive(state);
+function persist(state: AppState): AppState {
+  const next =
+    state.academy.id === DEMO_ACADEMY_ID ? state : ensureUuidState(state);
+  writeActive(next);
   pushCancel?.();
-  pushCancel = scheduleRemotePush(state);
+  pushCancel = scheduleRemotePush(next);
+  return next;
 }
 
 function load(): AppState {
@@ -159,8 +173,8 @@ function getServerSnapshot(): AppState {
 }
 
 function write(next: AppState) {
-  cached = next;
-  if (clientReady) persist(next);
+  const out = clientReady ? persist(next) : next;
+  cached = out;
   emit();
 }
 
@@ -206,6 +220,31 @@ export function StoreProvider({ children }: { children: ReactNode }) {
     }
 
     const local = findUserAcrossAcademies(needle);
+
+    if (password && isSupabaseConfigured()) {
+      const remote = await signInRemote(needle, password);
+      if (!("error" in remote && remote.error === "offline")) {
+        if ("missingProfile" in remote && remote.missingProfile) {
+          return {
+            ok: false,
+            error: "Conta confirmada, mas a academia ainda não foi criada. Cadastre de novo.",
+          };
+        }
+        if ("session" in remote && remote.session) {
+          const pulled = await pullAcademyState(remote.session);
+          if (!("error" in pulled)) {
+            rememberPassword(needle, password);
+            putAcademy(pulled, password);
+            write(pulled);
+            return { ok: true, role: remote.session.role };
+          }
+          if (!local) {
+            return { ok: false, error: pulled.error };
+          }
+        }
+      }
+    }
+
     if (local) {
       if (!password || !checkPassword(needle, password)) {
         return { ok: false, error: "E-mail ou senha incorretos." };
@@ -220,38 +259,6 @@ export function StoreProvider({ children }: { children: ReactNode }) {
       return { ok: true, role: local.user.role };
     }
 
-    if (!password) {
-      return { ok: false, error: "Conta não encontrada." };
-    }
-
-    const remote = await signInRemote(needle, password);
-    if ("error" in remote && remote.error === "offline") {
-      return { ok: false, error: "Conta não encontrada." };
-    }
-    if ("error" in remote && remote.error) {
-      return { ok: false, error: "E-mail ou senha incorretos." };
-    }
-    if ("missingProfile" in remote && remote.missingProfile) {
-      return {
-        ok: false,
-        error: "Conta confirmada, mas a academia ainda não foi criada. Cadastre de novo.",
-      };
-    }
-    if ("academy" in remote && remote.academy && remote.profile) {
-      const role = remote.profile.role as Role;
-      const session = {
-        userId: remote.userId,
-        academyId: remote.academy.id,
-        role,
-      };
-      const pulled = applyRemoteAcademy(remote.academy, session);
-      if (pulled) {
-        rememberPassword(needle, password);
-        putAcademy(pulled, password);
-        write(pulled);
-        return { ok: true, role };
-      }
-    }
     return { ok: false, error: "Conta não encontrada." };
   }, []);
 
@@ -294,6 +301,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
       academy: { ...academy.academy, slug },
     };
 
+    const originalId = academy.academy.id;
     const remote = await registerRemoteAcademy({
       email,
       password: input.password,
@@ -306,58 +314,86 @@ export function StoreProvider({ children }: { children: ReactNode }) {
     });
 
     if (remote.error && remote.error !== "offline") {
-      /* Local still works; keep going unless it's a duplicate email from Auth. */
       if (/already|registered|exists/i.test(remote.error)) {
         return { ok: false, error: "Este e-mail já está cadastrado." };
       }
     }
 
     if (remote.academyId) {
-      const remoteId = remote.academyId;
-      const ownerId = remote.ownerId ?? academy.session!.userId;
-      academy = {
-        ...academy,
-        academy: { ...academy.academy, id: remoteId },
-        users: academy.users.map((u) =>
-          u.role === "owner"
-            ? { ...u, id: ownerId, academyId: remoteId }
-            : { ...u, academyId: remoteId },
-        ),
-        classes: academy.classes.map((c) => ({
-          ...c,
-          academyId: remoteId,
-          instructorId: c.instructorId === academy.session?.userId ? ownerId : c.instructorId,
-        })),
-        session: {
-          userId: ownerId,
-          academyId: remoteId,
-          role: "owner",
-        },
-      };
+      academy = rehomeAcademy(academy, remote.academyId, {
+        id: remote.ownerId ?? academy.session!.userId,
+        email,
+      });
     } else if (remote.pendingEmail && remote.ownerId) {
-      academy = {
-        ...academy,
-        users: academy.users.map((u) =>
-          u.role === "owner" ? { ...u, id: remote.ownerId! } : u,
-        ),
-        classes: academy.classes.map((c) => ({
-          ...c,
-          instructorId:
-            c.instructorId === academy.session?.userId
-              ? remote.ownerId!
-              : c.instructorId,
-        })),
-        session: {
-          ...academy.session!,
-          userId: remote.ownerId,
-        },
-      };
+      academy = rehomeAcademy(academy, academy.academy.id, {
+        id: remote.ownerId,
+        email,
+      });
     }
 
-    putAcademy(academy, input.password);
+    putAcademy(academy, input.password, originalId);
     write(academy);
-    if (remote.academyId) scheduleRemotePush(academy);
+    if (remote.academyId) {
+      const pushed = await pushAcademyState(academy);
+      if (pushed.state) write(pushed.state);
+    }
     return { ok: true, role: "owner" };
+  }, []);
+
+  const syncNow = useCallback(async (): Promise<SyncResult> => {
+    const current = getSnapshot();
+    if (current.academy.id === DEMO_ACADEMY_ID) {
+      return {
+        ok: false,
+        error: "A Equipe Origem é só demonstração e não vai para o Supabase.",
+      };
+    }
+    if (!isSupabaseConfigured()) {
+      return { ok: false, error: "Cole a URL e a chave anon do projeto." };
+    }
+    const ready = ensureUuidState(current);
+    write(ready);
+    const owner = ready.users.find((u) => u.role === "owner");
+    const password = owner ? passwordFor(owner.email) : undefined;
+    const pushed = await pushAcademyState(ready);
+    if ("missingAcademy" in pushed && pushed.missingAcademy) {
+      if (!owner?.email || !password) {
+        return {
+          ok: false,
+          error:
+            "Não achei a senha do dono neste navegador. Entre de novo e tente enviar.",
+        };
+      }
+      const attached = await attachLocalAcademy({
+        email: owner.email,
+        password,
+        state: ready,
+      });
+      if (attached.error) return { ok: false, error: attached.error };
+      if (attached.state) {
+        putAcademy(attached.state, password, ready.academy.id);
+        write(attached.state);
+      }
+      return { ok: true };
+    }
+    if (pushed.error) return { ok: false, error: pushed.error };
+    if (pushed.state) write(pushed.state);
+    return { ok: true };
+  }, []);
+
+  const pullNow = useCallback(async (): Promise<SyncResult> => {
+    const current = getSnapshot();
+    if (current.academy.id === DEMO_ACADEMY_ID) {
+      return { ok: false, error: "A demo não baixa do Supabase." };
+    }
+    if (!current.session) {
+      return { ok: false, error: "Entre na academia para baixar." };
+    }
+    const pulled = await pullAcademyState(current.session);
+    if ("error" in pulled) return { ok: false, error: pulled.error };
+    putAcademy(pulled);
+    write(pulled);
+    return { ok: true };
   }, []);
 
   const addStudent: Store["addStudent"] = useCallback((input) => {
@@ -367,7 +403,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
         ...input,
         id,
         academyId: prev.academy.id,
-        userId: uid("u"),
+        userId: "",
         avatarHue: Math.floor(Math.random() * 360),
       };
       const payment: Payment = {
@@ -814,6 +850,8 @@ export function StoreProvider({ children }: { children: ReactNode }) {
       logout,
       resetDemo,
       registerAcademy,
+      syncNow,
+      pullNow,
       addStudent,
       updateStudent,
       recordPayment,
@@ -850,6 +888,8 @@ export function StoreProvider({ children }: { children: ReactNode }) {
       logout,
       resetDemo,
       registerAcademy,
+      syncNow,
+      pullNow,
       addStudent,
       updateStudent,
       recordPayment,

@@ -117,8 +117,11 @@ export function initials(name: string) {
     .toUpperCase();
 }
 
-export function uid(prefix = "id") {
-  return `${prefix}_${Math.random().toString(36).slice(2, 10)}`;
+export function uid(_prefix = "id") {
+  if (typeof crypto !== "undefined" && "randomUUID" in crypto) {
+    return crypto.randomUUID();
+  }
+  return `${_prefix}_${Math.random().toString(36).slice(2, 10)}`;
 }
 
 export function shiftMonth(month: string, delta: number) {
