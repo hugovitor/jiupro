@@ -1,5 +1,5 @@
 export const POOLER_URI_HINT =
-  "Em Database → Connect, escolha Session pooler (host …pooler.supabase.com, porta 5432). Não use Direct (db.…supabase.co): esse host é só IPv6 e falha com ENETUNREACH. Se a porta 5432 estiver bloqueada, cole o SQL no SQL Editor.";
+  "Se a porta 5432 estiver bloqueada, cole o SQL no SQL Editor do Supabase e clique Run.";
 
 export function postgresHostname(raw: string): string | null {
   try {
@@ -23,10 +23,6 @@ export function isSupabaseDatabaseUrl(raw: string) {
 export function isDirectSupabaseDbHost(raw: string) {
   const host = postgresHostname(raw);
   return Boolean(host && host.startsWith("db.") && host.endsWith(".supabase.co"));
-}
-
-export function directDbHostError() {
-  return `Essa URI é Direct (IPv6). ${POOLER_URI_HINT}`;
 }
 
 function errorCode(err: unknown) {
