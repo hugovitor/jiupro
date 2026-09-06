@@ -3,6 +3,7 @@
 import { useState } from "react";
 import Link from "next/link";
 import { toast } from "sonner";
+import { AsaasChargeButton } from "@/components/asaas-pix-dialog";
 import { PersonAvatar } from "@/components/belt-badge";
 import { FormDialog } from "@/components/form-dialog";
 import { Button } from "@/components/ui/button";
@@ -92,6 +93,7 @@ export default function FinanceiroPage() {
                   </p>
                 </div>
                 <span className="text-sm">{brl(p.amount)}</span>
+                <AsaasChargeButton payment={p} student={s} />
                 <Button
                   size="sm"
                   variant="outline"

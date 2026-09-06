@@ -90,6 +90,8 @@ export type Student = {
   monthlyFee: number;
   notes: string;
   avatarHue: number;
+  cpf?: string;
+  asaasCustomerId?: string;
 };
 
 export type ClassSession = {
@@ -134,6 +136,10 @@ export type Payment = {
   status: PaymentStatus;
   paidAt?: string;
   method?: "pix" | "card" | "cash" | "transfer";
+  asaasPaymentId?: string;
+  asaasInvoiceUrl?: string;
+  asaasPixCopy?: string;
+  asaasStatus?: string;
 };
 
 export type Expense = {

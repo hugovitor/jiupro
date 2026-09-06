@@ -24,7 +24,11 @@ export function overdueMessage(
     ? firstName(student.guardianName)
     : firstName(student.name);
   const kid = student.guardianName ? ` do(a) ${firstName(student.name)}` : "";
-  return `Oi ${who}, aqui é a ${academy.name}. A mensalidade${kid} de ${monthLabel(payment.month)} (${brl(payment.amount)}) está em aberto. Pix: ${academy.pixKey} (${academy.pixName}). Qualquer dúvida, estamos no tatame. Oss.`;
+  return `Oi ${who}, aqui é a ${academy.name}. A mensalidade${kid} de ${monthLabel(payment.month)} (${brl(payment.amount)}) está em aberto.${
+    payment.asaasInvoiceUrl
+      ? ` Pague no Pix da fatura: ${payment.asaasInvoiceUrl}`
+      : ` Pix: ${academy.pixKey} (${academy.pixName}).`
+  } Qualquer dúvida, estamos no tatame. Oss.`;
 }
 
 export function comebackMessage(academy: Academy, student: Student) {

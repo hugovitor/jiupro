@@ -382,6 +382,12 @@ alter table public.profiles add column if not exists avatar_hue int not null def
 alter table public.students add column if not exists avatar_hue int not null default 40;
 alter table public.posts add column if not exists author_name text;
 alter table public.posts add column if not exists author_role text;
+alter table public.students add column if not exists cpf text;
+alter table public.students add column if not exists asaas_customer_id text;
+alter table public.payments add column if not exists asaas_payment_id text;
+alter table public.payments add column if not exists asaas_invoice_url text;
+alter table public.payments add column if not exists asaas_pix_copy text;
+alter table public.payments add column if not exists asaas_status text;
 
 -- Faz o PostgREST (API) enxergar as tabelas novas neste projeto vazio.
 notify pgrst, 'reload schema';

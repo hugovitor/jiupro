@@ -113,6 +113,18 @@ type Store = AppState & {
     date: string;
   }) => void;
   waivePayment: (id: string) => void;
+  attachAsaasCharge: (
+    paymentId: string,
+    data: {
+      studentId: string;
+      asaasPaymentId: string;
+      asaasInvoiceUrl?: string;
+      asaasPixCopy?: string;
+      asaasStatus?: string;
+      asaasCustomerId?: string;
+    },
+  ) => void;
+  applyAsaasPaid: (asaasPaymentId: string) => void;
   addEvent: (
     input: Omit<AcademyEvent, "id" | "academyId" | "goingIds"> & {
       goingIds?: string[];
@@ -742,6 +754,45 @@ export function StoreProvider({ children }: { children: ReactNode }) {
     }));
   }, []);
 
+  const attachAsaasCharge: Store["attachAsaasCharge"] = useCallback((paymentId, data) => {
+    commit((prev) => ({
+      ...prev,
+      students: data.asaasCustomerId
+        ? prev.students.map((s) =>
+            s.id === data.studentId ? { ...s, asaasCustomerId: data.asaasCustomerId } : s,
+          )
+        : prev.students,
+      payments: prev.payments.map((p) =>
+        p.id === paymentId
+          ? {
+              ...p,
+              asaasPaymentId: data.asaasPaymentId,
+              asaasInvoiceUrl: data.asaasInvoiceUrl,
+              asaasPixCopy: data.asaasPixCopy,
+              asaasStatus: data.asaasStatus,
+            }
+          : p,
+      ),
+    }));
+  }, []);
+
+  const applyAsaasPaid: Store["applyAsaasPaid"] = useCallback((asaasPaymentId) => {
+    commit((prev) => ({
+      ...prev,
+      payments: prev.payments.map((p) =>
+        p.asaasPaymentId === asaasPaymentId && p.status !== "paid" && p.status !== "waived"
+          ? {
+              ...p,
+              status: "paid" as const,
+              paidAt: new Date().toISOString(),
+              method: "pix" as const,
+              asaasStatus: "RECEIVED",
+            }
+          : p,
+      ),
+    }));
+  }, []);
+
   const addEvent: Store["addEvent"] = useCallback((input) => {
     commit((prev) => ({
       ...prev,
@@ -858,6 +909,8 @@ export function StoreProvider({ children }: { children: ReactNode }) {
       generateMonthCharges,
       addExpense,
       waivePayment,
+      attachAsaasCharge,
+      applyAsaasPaid,
       addEvent,
       toggleRsvp,
       removeEvent,
@@ -896,6 +949,8 @@ export function StoreProvider({ children }: { children: ReactNode }) {
       generateMonthCharges,
       addExpense,
       waivePayment,
+      attachAsaasCharge,
+      applyAsaasPaid,
       addEvent,
       toggleRsvp,
       removeEvent,

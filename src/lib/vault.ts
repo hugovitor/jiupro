@@ -33,6 +33,17 @@ function migrateState(state: AppState): AppState {
     events: state.events ?? [],
     sales: state.sales ?? [],
     dropIns: state.dropIns ?? [],
+    students: (state.students ?? []).map((s) => ({
+      ...s,
+      cpf: s.cpf ?? "",
+    })),
+    payments: (state.payments ?? []).map((p) => ({
+      ...p,
+      asaasPaymentId: p.asaasPaymentId,
+      asaasInvoiceUrl: p.asaasInvoiceUrl,
+      asaasPixCopy: p.asaasPixCopy,
+      asaasStatus: p.asaasStatus,
+    })),
   };
 }
 

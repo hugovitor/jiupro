@@ -7,7 +7,7 @@ Feito para o dono que treina de manhã e administra de noite: mensalidades em at
 ## O que já funciona nesta fatia
 
 - **Painel da academia** — alunos, faixas/graus, turmas, chamada, financeiro, estoque, mural e plano
-- **Cobranças** — mensagem pronta no WhatsApp + chave Pix + baixa ou isenção
+- **Cobranças** — Pix Asaas sandbox (QR + fatura + webhook) ou WhatsApp + chave Pix + baixa manual
 - **Fechamento do mês** — recebido × despesa, gerar mensalidades do próximo mês, CSV
 - **Experimentais** — captar aula experimental e converter em mensalista
 - **Código do dia** — recepção mostra, aluno confirma no PWA
@@ -18,14 +18,12 @@ Feito para o dono que treina de manhã e administra de noite: mensalidades em at
 - **Agenda** — seminário, campeonato, open mat; confirmação no PWA e Zap para quem falta
 - **Loja** — venda no nome do aluno, baixa o estoque, entra no financeiro
 - **PWA do aluno** — check-in do dia, agenda, mural, evolução, Pix e perfil (instalável no celular)
-- **Planos mensais** — Essencial, Academia e Equipe, com checkout Stripe quando as chaves existem
+- **Planos mensais** — Essencial, Academia e Equipe. Stripe cobra o plano do JiuPro; Asaas cobra a mensalidade do aluno
 - **Cadastro real** — abre a sua academia, vazia, isolada da Equipe Origem. Sem Supabase fica neste navegador; com o projeto ligado, Auth + tabelas gravam na nuvem
 - **Demo completa** — Equipe Origem (Campinas) nos atalhos de Entrar ou em `/demo`
 - **Supabase** — schema multi-tenant com RLS. Cada entidade (aluno, turma, pagamento, mural…) é uma tabela, não um JSON único
 
 A demo da Equipe Origem continua no navegador. **Cadastro** cria outra academia (não entra como Carla). Sem chaves de Supabase, a casa nova fica no `localStorage` deste browser. Com Project URL + anon key (em Configurações ou `.env.local`), o cadastro cria usuário no Auth, a academia em `academies` e o painel nas tabelas.
-
-## Como rodar
 
 ## Como rodar
 
@@ -67,6 +65,28 @@ NEXT_PUBLIC_SUPABASE_ANON_KEY=
 
 O schema isola dados por `academy_id` (RLS). O cadastro chama `register_academy` e o painel grava em tabelas. A Equipe Origem não sincroniza. A URI do banco não fica salva no navegador.
 
+## Asaas (mensalidades)
+
+Sandbox primeiro. Stripe cobra o **plano do JiuPro**; o Asaas cobra a **mensalidade do aluno**.
+
+1. Crie uma conta em [sandbox.asaas.com](https://sandbox.asaas.com)
+2. Integrações → API Key (começa com `$aact_hmlg_`)
+3. No JiuPro: **Configurações** → colar a chave → Testar sandbox
+4. Em **Cobranças**, **Gerar Pix Asaas** (CPF do aluno é obrigatório)
+5. Pague a fatura no próprio sandbox. **Conferir** consulta o status. Com URL pública, o webhook `POST /api/asaas/webhook` baixa sozinho
+
+No `.env.local`:
+
+```
+ASAAS_API_KEY=$aact_hmlg_…
+ASAAS_ENV=sandbox
+ASAAS_WEBHOOK_TOKEN=
+```
+
+Produção: chave `$aact_prod_` e `ASAAS_ENV=production`. Sem chave, o WhatsApp + Pix da casa continuam.
+
+Webhook no painel Asaas: URL `https://seu-dominio/api/asaas/webhook`, header `asaas-access-token`, eventos `PAYMENT_RECEIVED` e `PAYMENT_CONFIRMED`. Se o Supabase tiver `SUPABASE_SERVICE_ROLE_KEY`, o webhook grava `payments` direto.
+
 ## Stripe
 
 Crie três Prices recorrentes (mensal) e coloque os IDs:
@@ -87,4 +107,4 @@ No celular, abra `/aluno` e adicione à tela inicial. O service worker em `publi
 
 ## Stack
 
-Next.js (App Router) · TypeScript · Tailwind · shadcn/ui · Supabase · Stripe
+Next.js (App Router) · TypeScript · Tailwind · shadcn/ui · Supabase · Asaas · Stripe

@@ -1,4 +1,5 @@
 import { currentMonth, isoDate, shiftMonth, weekdayToday } from "./format";
+import { sandboxCpf } from "./cpf";
 import type {
   Academy,
   AcademyEvent,
@@ -841,7 +842,7 @@ export function createSeed(): AppState {
     version: 6,
     academy,
     users,
-    students,
+    students: students.map((s, i) => ({ ...s, cpf: sandboxCpf(i + 1) })),
     classes,
     attendance,
     payments,

@@ -228,6 +228,8 @@ export function stateToTables(state: AppState, allowedProfiles?: Set<string>) {
       monthly_fee: s.monthlyFee,
       notes: s.notes || null,
       avatar_hue: s.avatarHue,
+      cpf: s.cpf || null,
+      asaas_customer_id: s.asaasCustomerId || null,
     })),
     classes: state.classes.filter((c) => isUuid(c.id)).map((c) => ({
       id: c.id,
@@ -261,6 +263,10 @@ export function stateToTables(state: AppState, allowedProfiles?: Set<string>) {
       status: p.status,
       paid_at: p.paidAt ?? null,
       method: p.method ?? null,
+      asaas_payment_id: p.asaasPaymentId ?? null,
+      asaas_invoice_url: p.asaasInvoiceUrl ?? null,
+      asaas_pix_copy: p.asaasPixCopy ?? null,
+      asaas_status: p.asaasStatus ?? null,
     })),
     expenses: state.expenses.filter((e) => isUuid(e.id)).map((e) => ({
       id: e.id,
@@ -448,6 +454,8 @@ export function tablesToState(input: {
     monthlyFee: num(s.monthly_fee),
     notes: str(s.notes),
     avatarHue: num(s.avatar_hue, 40),
+    cpf: str(s.cpf) || undefined,
+    asaasCustomerId: str(s.asaas_customer_id) || undefined,
   }));
 
   return {
@@ -485,6 +493,10 @@ export function tablesToState(input: {
       status: (str(p.status, "pending") as Payment["status"]) || "pending",
       paidAt: str(p.paid_at) || undefined,
       method: (p.method ? str(p.method) : undefined) as Payment["method"],
+      asaasPaymentId: str(p.asaas_payment_id) || undefined,
+      asaasInvoiceUrl: str(p.asaas_invoice_url) || undefined,
+      asaasPixCopy: str(p.asaas_pix_copy) || undefined,
+      asaasStatus: str(p.asaas_status) || undefined,
     })),
     expenses: input.expenses.map((e) => ({
       id: str(e.id),

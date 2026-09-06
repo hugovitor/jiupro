@@ -10,6 +10,7 @@ import { brl } from "@/lib/format";
 import { PLANS, planById } from "@/lib/plans";
 import { useStore } from "@/lib/store";
 import type { PlanId } from "@/lib/types";
+import { AsaasConnect } from "@/components/asaas-connect";
 import { SupabaseConnect } from "@/components/supabase-connect";
 
 function ConfigInner() {
@@ -46,7 +47,7 @@ function ConfigInner() {
       <div>
         <h1 className="font-display text-3xl">Configurações</h1>
         <p className="mt-1 text-sm text-muted-foreground">
-          Projeto Supabase vazio, plano e ligações com Stripe.
+          Projeto Supabase, Pix Asaas (sandbox) e plano Stripe.
         </p>
       </div>
 
@@ -75,6 +76,8 @@ function ConfigInner() {
       </section>
 
       <SupabaseConnect />
+
+      <AsaasConnect />
 
       <section className="border border-border bg-card p-5">
         <h2 className="font-medium">Plano atual · {plan.name}</h2>
@@ -142,9 +145,10 @@ function PixForm() {
 
   return (
     <section className="border border-border bg-card p-5">
-      <h2 className="font-medium">Pix para mensalidade</h2>
+      <h2 className="font-medium">Pix avulso (fallback)</h2>
       <p className="mt-1 text-sm text-muted-foreground">
-        Entra na mensagem de cobrança do WhatsApp.
+        Entra no WhatsApp se o Asaas não estiver ligado. Com Asaas, a cobrança
+        usa QR dinâmico por mensalidade.
       </p>
       <form
         className="mt-4 grid gap-3"

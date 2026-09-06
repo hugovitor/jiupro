@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { useParams } from "next/navigation";
 import { toast } from "sonner";
+import { AsaasChargeButton } from "@/components/asaas-pix-dialog";
 import { BeltBadge, PersonAvatar } from "@/components/belt-badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -16,6 +17,7 @@ import {
   isoDate,
   monthsBetween,
 } from "@/lib/format";
+import { formatCpf } from "@/lib/cpf";
 import { attendanceInDays } from "@/lib/insights";
 import { useStore } from "@/lib/store";
 import { overdueMessage, waHref } from "@/lib/whatsapp";
@@ -86,6 +88,12 @@ export default function AlunoDetalhePage() {
           >
             Baixar mensalidade
           </Button>
+          {pays.find((p) => p.status === "overdue" || p.status === "pending") && (
+            <AsaasChargeButton
+              payment={pays.find((p) => p.status === "overdue" || p.status === "pending")!}
+              student={student}
+            />
+          )}
           <Button
             onClick={() => {
               store.promote(student.id, "Promoção pela ficha do aluno.");
@@ -114,6 +122,7 @@ export default function AlunoDetalhePage() {
           <CardContent className="space-y-2 text-sm">
             <Row k="WhatsApp" v={student.phone} />
             <Row k="E-mail" v={student.email} />
+            <Row k="CPF" v={student.cpf ? formatCpf(student.cpf) : "—"} />
             {student.guardianName && <Row k="Responsável" v={student.guardianName} />}
             <Row k="Mensalidade" v={student.monthlyFee ? brl(student.monthlyFee) : "Isento"} />
             <Row k="Último treino" v={last ? formatDay(last.date) : "—"} />

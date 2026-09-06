@@ -48,26 +48,56 @@ export default function PerfilAluno() {
                 : "em aberto"}
         </p>
         {pay?.status !== "paid" && pay?.status !== "waived" && (
-          <p className="mt-2 text-xs text-destructive">
-            Pague no Pix abaixo e avise a secretaria.
-          </p>
+          <div className="mt-4 space-y-3 bg-background p-3">
+            {pay?.asaasPixCopy ? (
+              <>
+                <p className="text-xs text-muted-foreground">Pix Asaas desta mensalidade</p>
+                {pay.asaasInvoiceUrl && (
+                  <Button
+                    size="sm"
+                    render={<a href={pay.asaasInvoiceUrl} target="_blank" rel="noreferrer" />}
+                  >
+                    Abrir fatura
+                  </Button>
+                )}
+                <p className="break-all font-mono text-[10px] leading-relaxed text-muted-foreground">
+                  {pay.asaasPixCopy}
+                </p>
+                <Button
+                  className="mt-1"
+                  size="sm"
+                  variant="outline"
+                  onClick={async () => {
+                    await navigator.clipboard.writeText(pay.asaasPixCopy ?? "");
+                    toast.success("Pix copiado.");
+                  }}
+                >
+                  Copiar Pix
+                </Button>
+              </>
+            ) : (
+              <>
+                <p className="text-xs text-destructive">
+                  Pague no Pix abaixo e avise a secretaria, ou peça o QR Asaas na recepção.
+                </p>
+                <p className="text-xs text-muted-foreground">Pix da academia</p>
+                <p className="mt-1 font-mono text-sm">{store.academy.pixKey}</p>
+                <p className="text-xs text-muted-foreground">{store.academy.pixName}</p>
+                <Button
+                  className="mt-2"
+                  size="sm"
+                  variant="outline"
+                  onClick={async () => {
+                    await navigator.clipboard.writeText(store.academy.pixKey);
+                    toast.success("Chave Pix copiada.");
+                  }}
+                >
+                  Copiar Pix
+                </Button>
+              </>
+            )}
+          </div>
         )}
-        <div className="mt-4 bg-background p-3">
-          <p className="text-xs text-muted-foreground">Pix da academia</p>
-          <p className="mt-1 font-mono text-sm">{store.academy.pixKey}</p>
-          <p className="text-xs text-muted-foreground">{store.academy.pixName}</p>
-          <Button
-            className="mt-2"
-            size="sm"
-            variant="outline"
-            onClick={async () => {
-              await navigator.clipboard.writeText(store.academy.pixKey);
-              toast.success("Chave Pix copiada.");
-            }}
-          >
-            Copiar Pix
-          </Button>
-        </div>
       </div>
 
       <div className="border border-border bg-card p-4 text-sm">

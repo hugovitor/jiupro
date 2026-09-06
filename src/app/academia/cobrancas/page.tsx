@@ -1,5 +1,6 @@
 "use client";
 
+import { AsaasChargeButton } from "@/components/asaas-pix-dialog";
 import { toast } from "sonner";
 import { PersonAvatar } from "@/components/belt-badge";
 import { Button } from "@/components/ui/button";
@@ -20,7 +21,8 @@ export default function CobrancasPage() {
       <div>
         <h1 className="font-display text-3xl">Cobranças</h1>
         <p className="mt-1 text-sm text-muted-foreground">
-          Mensagem pronta no WhatsApp, Pix da casa, baixa na hora que cair.
+          Pix Asaas por aluno quando a sandbox está ligada. WhatsApp e baixa
+          manual continuam.
         </p>
       </div>
 
@@ -67,6 +69,7 @@ export default function CobrancasPage() {
                 </p>
               </div>
               <div className="flex flex-wrap gap-2">
+                <AsaasChargeButton payment={p} student={s} />
                 <Button size="sm" render={<a href={waHref(s.phone, text)} target="_blank" rel="noreferrer" />}>
                   WhatsApp
                 </Button>

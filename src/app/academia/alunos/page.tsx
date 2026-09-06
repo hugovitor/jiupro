@@ -17,6 +17,7 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { beltsForDivision } from "@/lib/belts";
+import { formatCpf } from "@/lib/cpf";
 import { brl, currentMonth, isoDate } from "@/lib/format";
 import { useStore } from "@/lib/store";
 import type { Student, StudentStatus } from "@/lib/types";
@@ -167,6 +168,7 @@ function NovoAluno() {
     division: "adult" as Student["division"],
     belt: "white",
     monthlyFee: "180",
+    cpf: "",
   });
 
   const belts = beltsForDivision(form.division);
@@ -202,6 +204,7 @@ function NovoAluno() {
               status: "active",
               monthlyFee: Number(form.monthlyFee) || 0,
               notes: "",
+              cpf: form.cpf.replace(/\D/g, ""),
             });
             toast.success(`${form.name} entrou na academia.`);
             setOpen(false);
@@ -212,6 +215,7 @@ function NovoAluno() {
               division: "adult",
               belt: "white",
               monthlyFee: "180",
+              cpf: "",
             });
           }}
         >
@@ -270,6 +274,14 @@ function NovoAluno() {
                 ))}
               </select>
             </div>
+          </div>
+          <div className="space-y-1.5">
+            <Label>CPF (Pix Asaas)</Label>
+            <Input
+              value={formatCpf(form.cpf)}
+              onChange={(e) => setForm({ ...form, cpf: e.target.value })}
+              placeholder="000.000.000-00"
+            />
           </div>
           <div className="space-y-1.5">
             <Label>Mensalidade (R$)</Label>
