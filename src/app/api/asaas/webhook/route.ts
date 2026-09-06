@@ -23,6 +23,14 @@ function supabaseAdmin() {
   return createClient(url, key, { auth: { persistSession: false } });
 }
 
+export async function GET() {
+  return Response.json({
+    ok: true,
+    service: "jiupro-asaas-webhook",
+    hint: "O Asaas deve enviar POST neste endereço.",
+  });
+}
+
 export async function POST(req: Request) {
   const expected = asaasWebhookToken();
   const sent = req.headers.get("asaas-access-token") ?? "";

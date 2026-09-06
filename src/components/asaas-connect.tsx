@@ -17,6 +17,7 @@ export function AsaasConnect() {
   const [status, setStatus] = useState<string | null>(null);
   const [envConfigured, setEnvConfigured] = useState(false);
   const [environment, setEnvironment] = useState("sandbox");
+  const [webhookUrl, setWebhookUrl] = useState("");
 
   useEffect(() => {
     const saved = getAsaasBrowserConfig();
@@ -25,6 +26,7 @@ export function AsaasConnect() {
         setApiKey(saved.apiKey);
         setWebhookToken(saved.webhookToken ?? "");
       }
+      setWebhookUrl(`${window.location.origin}/api/asaas/webhook`);
     }, 0);
     void fetch("/api/asaas/account")
       .then((r) => r.json())
@@ -123,18 +125,60 @@ export function AsaasConnect() {
           />
         </div>
         <div className="space-y-1.5">
-          <Label htmlFor="asaas-wh">Token do webhook (opcional)</Label>
+          <Label htmlFor="asaas-wh">Token de autenticação</Label>
           <Input
             id="asaas-wh"
             type="password"
             value={webhookToken}
             onChange={(e) => setWebhookToken(e.target.value)}
-            placeholder="mesmo authToken do painel Asaas"
+            placeholder="o mesmo do painel Asaas"
             autoComplete="off"
           />
+          <Button
+            type="button"
+            variant="outline"
+            size="sm"
+            onClick={() => {
+              const bytes = new Uint8Array(24);
+              crypto.getRandomValues(bytes);
+              const token = `jiupro_${Array.from(bytes, (b) => b.toString(16).padStart(2, "0")).join("")}`;
+              setWebhookToken(token);
+              toast.message("Cole este token também no Asaas.");
+            }}
+          >
+            Gerar token
+          </Button>
         </div>
+        {webhookUrl && (
+          <div className="space-y-1.5">
+            <Label htmlFor="asaas-url">URL do Webhook</Label>
+            <Input id="asaas-url" readOnly value={webhookUrl} />
+            <p className="text-xs text-muted-foreground">
+              Cole no painel Asaas. Tem de ser HTTPS público —{" "}
+              <code>127.0.0.1</code> e Preview local o Asaas não alcança.
+              Sem domínio ainda, use <strong className="font-medium text-foreground">Conferir</strong>{" "}
+              na cobrança.
+            </p>
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              onClick={async () => {
+                await navigator.clipboard.writeText(webhookUrl);
+                toast.success("URL copiada.");
+              }}
+            >
+              Copiar URL
+            </Button>
+          </div>
+        )}
         <p className="text-xs text-muted-foreground">
-          Integrações → API Key em{" "}
+          No formulário Asaas: nome <strong className="font-medium text-foreground">JiuProWebhooks</strong>
+          , versão <strong className="font-medium text-foreground">v3</strong>, envio{" "}
+          <strong className="font-medium text-foreground">Sequencial</strong>. Eventos:{" "}
+          PAYMENT_RECEIVED e PAYMENT_CONFIRMED. O header que o Asaas manda é{" "}
+          <code>asaas-access-token</code> (é o token acima). Integrações → API
+          Key em{" "}
           <a
             className="underline"
             href="https://sandbox.asaas.com"
@@ -143,9 +187,7 @@ export function AsaasConnect() {
           >
             sandbox.asaas.com
           </a>
-          . Webhook: <code>POST /api/asaas/webhook</code> com eventos
-          PAYMENT_RECEIVED e PAYMENT_CONFIRMED. Header{" "}
-          <code>asaas-access-token</code>.
+          .
         </p>
         <div className="flex flex-wrap gap-2">
           <Button type="submit" disabled={busy !== null}>
