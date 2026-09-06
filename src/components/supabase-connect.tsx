@@ -7,6 +7,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { configSource, saveSupabasePublicConfig } from "@/lib/supabase/config";
+import { directDbHostError, isDirectSupabaseDbHost } from "@/lib/supabase/database-url";
 import { testSupabaseConnection } from "@/lib/supabase/sync";
 import { useStore } from "@/lib/store";
 
@@ -105,6 +106,13 @@ export function SupabaseConnect() {
   async function applySchema() {
     setBusy("apply");
     try {
+      if (isDirectSupabaseDbHost(dbUrl.trim())) {
+        const error = directDbHostError();
+        setStatus(error);
+        toast.error(error);
+        await loadSql();
+        return;
+      }
       const res = await fetch("/api/supabase/bootstrap", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -238,8 +246,11 @@ export function SupabaseConnect() {
           <p className="text-sm font-medium">2. Criar as tabelas</p>
           <p className="text-sm text-muted-foreground">
             Duas opções: colar o SQL no Editor (mais simples) ou aplicar daqui
-            com a URI do Postgres. A URI fica em Database → Connect → URI
-            (session pooler). Não fica salva neste navegador.
+            com a URI do <strong className="font-medium text-foreground">Session pooler</strong>.
+            Em Database → Connect, escolha Session pooler
+            (host <span className="font-mono text-xs">…pooler.supabase.com</span>,
+            porta 5432). Direct (<span className="font-mono text-xs">db.…supabase.co</span>)
+            é só IPv6 e falha com ENETUNREACH. A URI não fica salva neste navegador.
           </p>
           <form
             className="grid gap-3"

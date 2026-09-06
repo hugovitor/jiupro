@@ -54,7 +54,7 @@ Projeto **novo e vazio** é o esperado. O Dashboard não cria as tabelas do JiuP
 3. No JiuPro: **Configurações** → colar as duas → Salvar → Testar conexão
 4. Criar tabelas, uma destas:
    - **Mostrar SQL** / **Copiar SQL** e Run no SQL Editor, ou
-   - Database → Connect → URI (session pooler) em **Aplicar schema agora**
+   - Database → Connect → **Session pooler** (host `…pooler.supabase.com`, porta 5432) em **Aplicar schema agora**. Não use Direct (`db.…supabase.co`): é IPv6-only e falha com `ENETUNREACH` nesta rede.
 5. Authentication → Providers → Email: desligue **Confirm email** para entrar na hora
 6. Na sua academia (não na demo): **Enviar esta academia**
 
