@@ -101,6 +101,35 @@ STRIPE_PRICE_EQUIPE=
 
 Webhook: `POST /api/stripe/webhook`. Sem chaves, o checkout só troca o plano na demo.
 
+## Produção no Vercel
+
+O app é Next.js e sobe direto. Região sugerida: `gru1` (São Paulo), em `vercel.json`.
+
+```bash
+npx vercel login
+npx vercel --prod
+```
+
+No dashboard da Vercel, Project → Settings → Environment Variables (Production):
+
+```
+NEXT_PUBLIC_APP_URL=https://SEU-PROJETO.vercel.app
+ASAAS_ENV=sandbox
+ASAAS_API_KEY=
+ASAAS_WEBHOOK_TOKEN=
+NEXT_PUBLIC_SUPABASE_URL=
+NEXT_PUBLIC_SUPABASE_ANON_KEY=
+SUPABASE_SERVICE_ROLE_KEY=
+```
+
+Stripe só se for cobrar o plano do JiuPro. Asaas pode continuar em sandbox até a conta real.
+
+Depois do primeiro deploy, a URL do webhook Asaas é:
+
+`https://SEU-PROJETO.vercel.app/api/asaas/webhook`
+
+Cole isso no painel sandbox (v3, sequencial, PAYMENT_RECEIVED + PAYMENT_CONFIRMED). Sem GitHub, o `vercel --prod` publica a pasta; com repositório ligado, cada push em `main` gera produção.
+
 ## PWA do aluno
 
 No celular, abra `/aluno` e adicione à tela inicial. O service worker em `public/sw.js` guarda o check-in para rede instável.
