@@ -9,7 +9,6 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import {
   attendanceStatus,
-  classCode,
   classHeadcount,
   classPhase,
   habitualStudentIds,
@@ -50,7 +49,6 @@ export default function PresencaPage() {
     "";
   const cls = store.classes.find((c) => c.id === classId);
   const phase = cls ? classPhase(cls, now) : "closed";
-  const code = cls ? classCode(today, store.academy.slug, cls.id) : "----";
 
   const roster = useMemo(() => {
     return store.students.filter((s) => {
@@ -137,8 +135,8 @@ export default function PresencaPage() {
           </p>
           <h1 className="mt-1 text-[22px] font-medium">Presença</h1>
           <p className="mt-1 max-w-xl text-sm text-muted-foreground">
-            Aula certa, código da turma. O aluno confirma no PWA; a recepção
-            aceita quem treinou e marca quem confirmou e não veio.
+            O aluno confirma no celular. Você aceita quem treinou e marca quem
+            confirmou e não veio — sem código no quadro.
           </p>
         </div>
         <Visitante classId={classId} disabled={!classId} />
@@ -192,14 +190,20 @@ export default function PresencaPage() {
           <div className="grid gap-4 lg:grid-cols-[minmax(0,1.15fr)_minmax(0,0.85fr)]">
             <div className="surface p-5">
               <p className="text-[11px] tracking-[0.16em] text-muted-foreground uppercase">
-                Código desta aula
+                Confirmados no app
               </p>
-              <p className="mt-3 font-mono text-[52px] leading-none tracking-[0.22em]">
-                {code}
+              <p className="mt-3 text-[52px] leading-none font-medium tabular-nums">
+                {waiting.length + validated.length}
               </p>
               <p className="mt-3 text-sm text-muted-foreground">
-                Anote no quadro. Vale só para {cls.name} hoje — outra turma tem
-                outro número.
+                {waiting.length === 0
+                  ? "Ninguém aguardando aceite."
+                  : waiting.length === 1
+                    ? "1 aluno esperando você no tatame."
+                    : `${waiting.length} alunos esperando aceite.`}
+                {validated.length
+                  ? ` ${validated.length} já validado${validated.length === 1 ? "" : "s"}.`
+                  : ""}
               </p>
             </div>
             <div className="surface flex flex-col justify-between p-5">
@@ -217,7 +221,7 @@ export default function PresencaPage() {
               </div>
               {phase === "closed" ? (
                 <p className="mt-4 text-[12px] text-muted-foreground">
-                  O PWA já recusa check-in. Aqui você ainda desfaz e inclui.
+                  O app já recusa confirmação. Aqui você ainda aceita, recusa e inclui.
                 </p>
               ) : recommended?.id === cls.id ? (
                 <p className="mt-4 text-[12px] text-muted-foreground">

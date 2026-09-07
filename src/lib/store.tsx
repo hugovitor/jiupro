@@ -37,7 +37,7 @@ import {
   takenSlugs,
   writeActive,
 } from "./vault";
-import { classCode, attendanceStatus, classHeadcount, isOnRoster, isValidated, studentCanSelfCheckIn } from "./attendance";
+import { attendanceStatus, classHeadcount, isOnRoster, isValidated, studentCanSelfCheckIn } from "./attendance";
 import type {
   AcademyEvent,
   AppState,
@@ -114,7 +114,7 @@ type Store = AppState & {
   addClass: (input: Omit<ClassSession, "id" | "academyId">) => void;
   removeClass: (id: string) => void;
   addEvaluation: (input: Omit<Evaluation, "id" | "academyId">) => void;
-  checkInWithCode: (studentId: string, classId: string, code: string) => boolean;
+  confirmClass: (studentId: string, classId: string) => boolean;
   generateMonthCharges: (month: string) => number;
   addExpense: (input: {
     description: string;
@@ -832,14 +832,12 @@ export function StoreProvider({ children }: { children: ReactNode }) {
     }));
   }, []);
 
-  const checkInWithCode: Store["checkInWithCode"] = useCallback(
-    (studentId, classId, code) => {
+  const confirmClass: Store["confirmClass"] = useCallback(
+    (studentId, classId) => {
       const current = getSnapshot();
       const session = current.classes.find((c) => c.id === classId);
       if (!session) return false;
       if (!studentCanSelfCheckIn(session)) return false;
-      const expected = classCode(isoDate(0), current.academy.slug, classId);
-      if (code.replace(/\s/g, "") !== expected) return false;
       const today = isoDate(0);
       const mine = current.attendance.find(
         (a) =>
@@ -853,7 +851,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
         today,
       );
       if (session.capacity > 0 && heads >= session.capacity) return false;
-      return checkIn(studentId, classId, "code");
+      return checkIn(studentId, classId, "app");
     },
     [checkIn],
   );
@@ -1073,7 +1071,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
       addClass,
       removeClass,
       addEvaluation,
-      checkInWithCode,
+      confirmClass,
       generateMonthCharges,
       addExpense,
       waivePayment,
@@ -1119,7 +1117,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
       addClass,
       removeClass,
       addEvaluation,
-      checkInWithCode,
+      confirmClass,
       generateMonthCharges,
       addExpense,
       waivePayment,

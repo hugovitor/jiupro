@@ -1,11 +1,5 @@
 import type { Attendance, AttendanceStatus, ClassSession, Student } from "@/lib/types";
 import { isoDate, minutes } from "@/lib/format";
-import { dayCode } from "@/lib/whatsapp";
-
-/** Código de 4 dígitos desta aula neste dia — não vale para outra turma. */
-export function classCode(date: string, academySlug: string, classId: string) {
-  return dayCode(date, `${academySlug}|${classId}`);
-}
 
 export type ClassPhase = "upcoming" | "open" | "live" | "grace" | "closed";
 
@@ -76,7 +70,7 @@ export function selfCheckInHint(session: ClassSession, now = new Date()) {
   if (phase === "closed") {
     return "A chamada desta aula já fechou. Peça ao professor na recepção.";
   }
-  return "Confirme com o código desta turma. Os colegas veem sua confirmação; o professor valida quem treinou.";
+  return "Um toque confirma. Os colegas veem na lista; o professor valida quem treinou.";
 }
 
 /** Aula ao vivo → janela aberta → próxima hoje → última de hoje. */

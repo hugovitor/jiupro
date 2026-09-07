@@ -516,7 +516,7 @@ export function createSeed(): AppState {
         classId: todayAdult.id,
         date: todayIso,
         checkedInAt: now,
-        method: "code",
+        method: "app",
         status: "pending",
       },
       {
@@ -526,7 +526,7 @@ export function createSeed(): AppState {
         classId: todayAdult.id,
         date: todayIso,
         checkedInAt: now,
-        method: "code",
+        method: "app",
         status: "pending",
       },
       {
@@ -551,7 +551,7 @@ export function createSeed(): AppState {
       classId: todayKids.id,
       date: todayIso,
       checkedInAt: new Date().toISOString(),
-      method: "code",
+      method: "app",
       status: "pending",
     });
   }

@@ -4,7 +4,6 @@ import Link from "next/link";
 import { toast } from "sonner";
 import { BeltBadge, PersonAvatar } from "@/components/belt-badge";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
 import {
   attendanceStatus,
   classHeadcount,
@@ -25,7 +24,6 @@ import type { Attendance, ClassSession, Student } from "@/lib/types";
 import { useNow } from "@/lib/use-now";
 import { cn } from "@/lib/utils";
 import { firstName } from "@/lib/whatsapp";
-import { useState } from "react";
 
 export default function AlunoHome() {
   const store = useStore();
@@ -42,7 +40,6 @@ export default function AlunoHome() {
     .sort((a, b) => minutes(a.startTime) - minutes(b.startTime));
   const featured = recommendClass(classes, now);
   const att = student ? attendanceInDays(store, student.id, 30) : 0;
-  const [code, setCode] = useState("");
 
   const mineRow = (classId: string) =>
     store.attendance.find(
@@ -100,8 +97,6 @@ export default function AlunoHome() {
               ) >= featured.capacity &&
               !onList(featured.id)
             }
-            code={code}
-            onCode={setCode}
             classmates={rosterFor(store.students, store.attendance, featured.id, today)}
             onConfirm={() => {
               if (!student) return;
@@ -110,18 +105,13 @@ export default function AlunoHome() {
                 toast.error(selfCheckInHint(featured, now));
                 return;
               }
-              if (code.length !== 4) {
-                toast.error("Digite o código de 4 dígitos no quadro.");
-                return;
-              }
-              const ok = store.checkInWithCode(student.id, featured.id, code);
+              const ok = store.confirmClass(student.id, featured.id);
               if (ok) {
                 toast.success(
                   "Confirmado. A turma já te vê na lista. O professor valida no tatame.",
                 );
-                setCode("");
               } else {
-                toast.error("Código desta aula não confere, ou a turma lotou.");
+                toast.error("Não deu para confirmar. A turma pode ter lotado.");
               }
             }}
             onCancel={() => {
@@ -160,21 +150,20 @@ export default function AlunoHome() {
                       <Button
                         size="sm"
                         variant="outline"
-                        disabled={!student || !open || code.length !== 4}
+                        disabled={!student || !open}
                         onClick={() => {
                           if (!student) return;
-                          const ok = store.checkInWithCode(student.id, c.id, code);
+                          const ok = store.confirmClass(student.id, c.id);
                           if (ok) {
                             toast.success("Confirmado. A turma já te vê.");
-                            setCode("");
                           } else if (!open) {
                             toast.error(selfCheckInHint(c, now));
                           } else {
-                            toast.error("Código desta aula não confere.");
+                            toast.error("Não deu para confirmar.");
                           }
                         }}
                       >
-                        {open ? "Usar código" : "Fora da janela"}
+                        {open ? "Confirmar" : "Encerrada"}
                       </Button>
                     )}
                   </div>
@@ -229,8 +218,6 @@ function FeaturedClass({
   canCheck,
   lockHint,
   full,
-  code,
-  onCode,
   onConfirm,
   onCancel,
   classmates,
@@ -242,8 +229,6 @@ function FeaturedClass({
   canCheck: boolean;
   lockHint: string;
   full: boolean;
-  code: string;
-  onCode: (v: string) => void;
   onConfirm: () => void;
   onCancel: () => void;
   classmates: { student: Student; row: Attendance }[];
@@ -277,15 +262,7 @@ function FeaturedClass({
         </p>
       ) : canCheck ? (
         <>
-          <Input
-            className="mt-4 text-center font-mono tracking-[0.4em]"
-            inputMode="numeric"
-            maxLength={4}
-            placeholder="0000"
-            value={code}
-            onChange={(e) => onCode(e.target.value.replace(/\D/g, "").slice(0, 4))}
-          />
-          <Button className="mt-3 w-full" size="lg" onClick={onConfirm}>
+          <Button className="mt-4 w-full" size="lg" onClick={onConfirm}>
             Confirmar que vou
           </Button>
           <p className="mt-2 text-center text-xs text-muted-foreground">{lockHint}</p>

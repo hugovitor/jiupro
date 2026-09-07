@@ -56,14 +56,3 @@ export function eventInviteMessage(
     : "";
   return `Oi ${who}, a ${academy.name} confirma: ${event.title} em ${formatDay(event.date)} às ${event.time} (${event.place}).${fee} Confirma se vem? Oss.`;
 }
-
-/** Hash estável de 4 dígitos. Presença usa classCode(aula), não o slug sozinho. */
-export function dayCode(date: string, salt: string) {
-  let h = 2166136261;
-  const src = `${date}|${salt}`;
-  for (let i = 0; i < src.length; i++) {
-    h ^= src.charCodeAt(i);
-    h = Math.imul(h, 16777619);
-  }
-  return String(1000 + (h >>> 0) % 9000);
-}

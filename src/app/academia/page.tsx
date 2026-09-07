@@ -5,7 +5,6 @@ import { useSyncExternalStore } from "react";
 import { BeltBadge, PersonAvatar } from "@/components/belt-badge";
 import { Button } from "@/components/ui/button";
 import {
-  classCode,
   classPhase,
   isOnRoster,
   isValidated,
@@ -66,7 +65,12 @@ export default function AcademiaDashboard() {
     (a, b) => minutes(a.startTime) - minutes(b.startTime),
   );
   const live = recommendClass(classes, now);
-  const code = live ? classCode(today, store.academy.slug, live.id) : null;
+  const waitingNow = live
+    ? store.attendance.filter(
+        (a) =>
+          a.classId === live.id && a.date === today && isOnRoster(a) && !isValidated(a),
+      ).length
+    : 0;
   const upcoming = [...(store.events ?? [])]
     .filter((e) => e.date >= today)
     .sort((a, b) => a.date.localeCompare(b.date))
@@ -170,13 +174,19 @@ export default function AcademiaDashboard() {
               })}
             </ul>
           )}
-          {code && live ? (
+          {live ? (
             <div className="mt-6 flex items-center justify-between border border-border px-4 py-4">
               <div>
                 <p className="text-[11px] tracking-[0.16em] text-muted-foreground uppercase">
-                  Código · {live.name}
+                  Aceite · {live.name}
                 </p>
-                <p className="mt-1 font-mono text-3xl tracking-[0.2em]">{code}</p>
+                <p className="mt-1 text-[18px] font-medium">
+                  {waitingNow === 0
+                    ? "Ninguém aguardando"
+                    : waitingNow === 1
+                      ? "1 confirmação para aceitar"
+                      : `${waitingNow} confirmações para aceitar`}
+                </p>
                 <p className="mt-1 text-[11px] text-muted-foreground">
                   {clockLabel(now)} · {phaseHint(live, now)}
                 </p>
@@ -187,7 +197,7 @@ export default function AcademiaDashboard() {
             </div>
           ) : (
             <div className="mt-6 flex items-center justify-between border border-border px-4 py-4">
-              <p className="text-sm text-muted-foreground">Sem código — não há turma hoje.</p>
+              <p className="text-sm text-muted-foreground">Sem turma hoje.</p>
               <Button size="sm" variant="outline" render={<Link href="/academia/presenca" />}>
                 Chamada
               </Button>

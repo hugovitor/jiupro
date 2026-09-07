@@ -98,7 +98,7 @@ export default function HomePage() {
               Presença confirmada. Faixa visível.
             </h2>
             <ul className="mt-6 space-y-2 text-[14px] text-muted-foreground">
-              <li>Confirma a aula com o código da turma. Os colegas veem quem vai.</li>
+              <li>Um toque confirma a aula. Os colegas veem quem vai.</li>
               <li>Grade da semana e mural da casa.</li>
               <li>Histórico de faixa, graus e treinos.</li>
               <li>Pix da academia na mensalidade.</li>
@@ -110,11 +110,8 @@ export default function HomePage() {
           <div className="border border-border bg-white p-6">
             <p className="text-[12px] text-muted-foreground">Confirmou · Adultos Gi</p>
             <p className="mt-4 font-mono text-[32px] tracking-tight">19:30</p>
-            <p className="mt-1 text-[13px] text-muted-foreground">Gi · 75 min · código da turma</p>
-            <div className="mt-5 border border-border py-3 text-center font-mono text-[18px] tracking-[0.35em]">
-              4821
-            </div>
-            <div className="mt-3 bg-[#111] px-4 py-3 text-center text-[13px] font-medium text-white">
+            <p className="mt-1 text-[13px] text-muted-foreground">Gi · 75 min</p>
+            <div className="mt-5 bg-[#111] px-4 py-3 text-center text-[13px] font-medium text-white">
               Confirmar que vou
             </div>
             <p className="mt-4 text-[12px] text-muted-foreground">Na lista · Ana, Marina, Thiago</p>
@@ -229,9 +226,9 @@ function ProductPreview() {
           <div className="mt-4 flex items-end justify-between border border-border px-3 py-3">
             <div>
               <p className="text-[11px] tracking-[0.16em] text-muted-foreground uppercase">
-                Código desta aula
+                Confirmados no app
               </p>
-              <p className="mt-1 font-mono text-[28px] tracking-[0.22em]">4821</p>
+              <p className="mt-1 text-[28px] font-medium tabular-nums">3</p>
             </div>
             <p className="text-[12px] text-muted-foreground">Aceite do professor</p>
           </div>
