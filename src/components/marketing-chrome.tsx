@@ -16,7 +16,7 @@ export function MarketingChrome({
       <header className="sticky top-0 z-30 px-3 pt-3 sm:px-4">
         <div className="mx-auto flex h-14 max-w-6xl items-center justify-between gap-3 rounded-full border border-white/10 bg-[#09090b]/80 px-3 pl-4 shadow-[0_8px_40px_rgb(0_0_0_/_0.45)] backdrop-blur-md">
           <Link href="/" aria-label="JiuPro">
-            <Logo />
+            <Logo className="[&>span:last-child]:max-sm:hidden" />
           </Link>
           {nav}
           {action ?? (
