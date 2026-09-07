@@ -51,34 +51,37 @@ export default function HomePage() {
   return (
     <MarketingChrome
       nav={
-        <nav className="hidden items-center gap-6 text-sm text-neutral-400 md:flex">
+        <nav className="hidden items-center gap-7 text-sm text-zinc-400 md:flex">
           <a href="#dores" className="hover:text-white">
             Dores
           </a>
           <a href="#produto" className="hover:text-white">
-            O sistema
+            Sistema
+          </a>
+          <a href="#alunos" className="hover:text-white">
+            App
           </a>
           <a href="#planos" className="hover:text-white">
             Planos
           </a>
-          <a href="#alunos" className="hover:text-white">
-            App do aluno
-          </a>
         </nav>
       }
     >
-      <section className="relative overflow-hidden">
-        <div className="mx-auto grid min-h-[calc(100vh-4rem)] max-w-6xl items-end gap-10 px-4 py-12 lg:grid-cols-[minmax(0,1fr)_16rem] lg:items-center lg:py-0">
-          <div className="max-w-2xl pb-4 lg:py-20">
-            <p className="text-sm text-primary">Sistema para academia de Jiu-Jitsu</p>
-            <h1 className="font-display mt-4 text-[3.25rem] leading-[0.88] font-semibold uppercase sm:text-7xl lg:text-8xl">
-              Quadro
+      <section className="relative">
+        <div className="mx-auto grid max-w-6xl items-center gap-12 px-4 py-16 lg:grid-cols-[1.05fr_0.95fr] lg:py-24">
+          <div>
+            <p className="inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/5 px-3 py-1 text-xs text-zinc-300">
+              <span className="size-1.5 rounded-full bg-primary" />
+              Sistema para academia de Jiu-Jitsu
+            </p>
+            <h1 className="font-display mt-6 text-[4.2rem] leading-[0.86] sm:text-8xl lg:text-[7.5rem]">
+              A casa
               <br />
-              da casa.
+              no controle.
               <br />
-              <span className="text-primary">Não planilha.</span>
+              <span className="text-primary">Não a planilha.</span>
             </h1>
-            <p className="mt-6 max-w-lg text-base leading-relaxed text-neutral-400 sm:text-lg">
+            <p className="mt-6 max-w-lg text-base leading-relaxed text-zinc-400 sm:text-lg">
               Mensalidade, faixa, presença, estoque e mural. Cada academia tem a
               sua conta. O aluno marca presença no celular e vê a própria faixa
               caminhar.
@@ -91,119 +94,124 @@ export default function HomePage() {
                 Ver a demo
               </Button>
             </div>
-            <p className="mt-4 text-xs text-neutral-500">
+            <p className="mt-4 text-xs text-zinc-500">
               Sem cartão agora. Cadastro abre a sua casa. Mensalidade do aluno
-              pelo Pix da academia; Asaas e Stripe entram depois.
+              pelo Pix da academia.
             </p>
           </div>
 
-          <aside className="hidden h-full flex-col justify-center gap-5 border-l border-white/10 py-16 pl-8 lg:flex">
-            <p className="font-display text-xs tracking-[0.2em] text-neutral-500 uppercase">
+          <div className="surface relative overflow-hidden p-6 sm:p-8">
+            <p className="font-display text-sm tracking-[0.22em] text-zinc-500">
               Origem · Campinas
             </p>
-            {ranks.map((r) => (
-              <div key={r.belt}>
-                <p className="mb-1.5 text-[11px] text-neutral-500">{r.name}</p>
-                <BeltStrip belt={r.belt} stripes={r.stripes} className="h-3.5 w-full" />
-              </div>
-            ))}
-            <p className="text-[11px] leading-relaxed text-neutral-600">
+            <p className="mt-2 text-sm text-zinc-400">Quadro de faixas da casa</p>
+            <div className="mt-8 space-y-5">
+              {ranks.map((r) => (
+                <div key={r.belt}>
+                  <div className="mb-2 flex items-center justify-between text-xs text-zinc-500">
+                    <span>{r.name}</span>
+                    <span>{r.stripes} graus</span>
+                  </div>
+                  <BeltStrip belt={r.belt} stripes={r.stripes} className="h-4 w-full rounded-sm" />
+                </div>
+              ))}
+            </div>
+            <p className="mt-8 text-xs leading-relaxed text-zinc-600">
               Preta: ponteira vermelha. Demais: ponteira preta. Graus brancos —
               como no kimono.
             </p>
-          </aside>
+          </div>
         </div>
       </section>
 
-      <section className="lg:hidden border-t border-white/10 px-4 py-8">
-        <p className="font-display text-xs tracking-[0.2em] text-neutral-500 uppercase">
-          Quadro de faixas
-        </p>
-        <ul className="mt-4 space-y-3">
-          {ranks.map((r) => (
-            <li key={r.belt} className="flex items-center justify-between gap-3">
-              <span className="text-sm">{r.name}</span>
-              <BeltStrip belt={r.belt} stripes={r.stripes} className="h-4 w-36" />
-            </li>
-          ))}
-        </ul>
-      </section>
-
-      <section id="dores" className="border-t border-white/10">
-        <div className="mx-auto max-w-6xl px-4 py-16 lg:grid lg:grid-cols-[18rem_minmax(0,1fr)] lg:gap-16">
-          <div className="lg:sticky lg:top-24 lg:self-start">
-            <h2 className="font-display text-3xl font-semibold uppercase sm:text-4xl">
+      <section id="dores" className="border-t border-white/8">
+        <div className="mx-auto max-w-6xl px-4 py-20">
+          <div className="max-w-2xl">
+            <p className="text-sm text-primary">O segundo turno</p>
+            <h2 className="font-display mt-2 text-5xl leading-none sm:text-6xl">
               O dono treina de manhã e administra de noite.
             </h2>
-            <p className="mt-3 text-neutral-400">
-              O sistema precisa resolver o segundo turno — não virar mais uma
-              planilha.
+            <p className="mt-4 text-zinc-400">
+              O sistema precisa resolver o que sobra depois do treino — não virar
+              mais uma aba.
             </p>
           </div>
-          <ol className="mt-10 divide-y divide-white/10 lg:mt-0">
+          <div className="mt-12 grid gap-4 sm:grid-cols-2">
             {pains.map((p) => (
-              <li key={p.title} className="grid grid-cols-[3rem_minmax(0,1fr)] gap-4 py-6">
-                <p className="font-display text-primary">{p.n}</p>
-                <div>
-                  <h3 className="font-display text-xl uppercase">{p.title}</h3>
-                  <p className="mt-2 text-sm leading-relaxed text-neutral-400">{p.body}</p>
-                </div>
-              </li>
-            ))}
-          </ol>
-        </div>
-      </section>
-
-      <section id="produto" className="border-t border-white/10 bg-[#0c0c0c]">
-        <div className="mx-auto max-w-6xl px-4 py-16">
-          <h2 className="font-display text-3xl font-semibold uppercase sm:text-4xl">
-            Do caixa à faixa preta.
-          </h2>
-          <div className="mt-10 columns-1 sm:columns-2 gap-x-16">
-            {coverage.map(([title, body]) => (
-              <div key={title} className="mb-8 break-inside-avoid border-t border-white/10 pt-4">
-                <h3 className="font-display text-lg uppercase">{title}</h3>
-                <p className="mt-1 text-sm leading-relaxed text-neutral-400">{body}</p>
-              </div>
+              <article key={p.title} className="surface p-6">
+                <p className="font-display text-3xl text-primary">{p.n}</p>
+                <h3 className="font-display mt-3 text-2xl">{p.title}</h3>
+                <p className="mt-2 text-sm leading-relaxed text-zinc-400">{p.body}</p>
+              </article>
             ))}
           </div>
         </div>
       </section>
 
-      <section id="alunos" className="border-t border-white/10">
-        <div className="mx-auto grid max-w-6xl lg:grid-cols-[1fr_22rem]">
-          <div className="px-4 py-16 lg:pr-12">
+      <section id="produto" className="border-t border-white/8">
+        <div className="mx-auto max-w-6xl px-4 py-20">
+          <h2 className="font-display text-5xl leading-none sm:text-6xl">
+            Do caixa à faixa preta.
+          </h2>
+          <div className="mt-12 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+            {coverage.map(([title, body]) => (
+              <article key={title} className="surface p-5">
+                <h3 className="font-display text-xl">{title}</h3>
+                <p className="mt-2 text-sm leading-relaxed text-zinc-400">{body}</p>
+              </article>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      <section id="alunos" className="border-t border-white/8">
+        <div className="mx-auto grid max-w-6xl items-center gap-10 px-4 py-20 lg:grid-cols-2">
+          <div>
             <p className="text-sm text-primary">PWA do aluno</p>
-            <h2 className="font-display mt-2 text-3xl font-semibold uppercase sm:text-4xl">
+            <h2 className="font-display mt-2 text-5xl leading-none sm:text-6xl">
               Abre o celular, marca presença, vê a faixa.
             </h2>
-            <ul className="mt-6 space-y-3 text-sm text-neutral-400">
-              <li>Check-in com o código do dia, mesmo offline.</li>
-              <li>Mural da academia: seminário, carona, horário.</li>
-              <li>Evolução: tempo de faixa, presenças, histórico de graus.</li>
-              <li>Pix da casa na mensalidade, sem perguntar no Zap.</li>
+            <ul className="mt-8 space-y-3 text-sm text-zinc-400">
+              <li className="flex gap-3">
+                <span className="mt-1.5 size-1.5 shrink-0 rounded-full bg-primary" />
+                Check-in com o código do dia, mesmo offline.
+              </li>
+              <li className="flex gap-3">
+                <span className="mt-1.5 size-1.5 shrink-0 rounded-full bg-primary" />
+                Mural da academia: seminário, carona, horário.
+              </li>
+              <li className="flex gap-3">
+                <span className="mt-1.5 size-1.5 shrink-0 rounded-full bg-primary" />
+                Evolução: tempo de faixa, presenças, histórico de graus.
+              </li>
+              <li className="flex gap-3">
+                <span className="mt-1.5 size-1.5 shrink-0 rounded-full bg-primary" />
+                Pix da casa na mensalidade, sem perguntar no Zap.
+              </li>
             </ul>
-            <Button className="mt-6" render={<Link href="/demo?as=aluno" />}>
+            <Button className="mt-8" size="lg" render={<Link href="/demo?as=aluno" />}>
               Entrar como aluno
             </Button>
           </div>
-          <div className="flex items-end justify-center bg-[#111] px-6 py-10 lg:py-16">
-            <div className="w-full max-w-[17rem] bg-[#0a0a0a] p-5 ring-1 ring-white/12">
+          <div className="flex justify-center">
+            <div className="w-full max-w-[20rem] rounded-[2rem] border border-white/12 bg-[#0c0c0e] p-5 shadow-[0_30px_80px_rgb(196_30_58_/_0.12)]">
               <div className="flex items-center justify-between">
-                <p className="text-[11px] text-neutral-500">Hoje · Adultos Gi</p>
-                <span className="text-[11px] tracking-wide text-neutral-600">JIUPRO</span>
+                <p className="text-[11px] text-zinc-500">Hoje · Adultos Gi</p>
+                <span className="font-display text-sm tracking-widest text-zinc-600">
+                  JIUPRO
+                </span>
               </div>
-              <p className="mt-6 font-display text-5xl leading-none">19:30</p>
-              <div className="mt-5 bg-primary px-4 py-3 text-center text-sm font-medium text-white">
+              <p className="font-display mt-8 text-6xl leading-none">19:30</p>
+              <div className="mt-6 rounded-xl bg-primary px-4 py-3.5 text-center text-sm font-medium text-white">
                 Estou no tatame
               </div>
-              <div className="mt-5 space-y-3 text-sm">
+              <div className="mt-6 space-y-4 text-sm">
                 <div className="flex items-center justify-between">
-                  <span className="text-neutral-500">Faixa</span>
+                  <span className="text-zinc-500">Faixa</span>
                   <BeltStrip belt="blue" stripes={2} />
                 </div>
                 <div className="flex justify-between">
-                  <span className="text-neutral-500">Este mês</span>
+                  <span className="text-zinc-500">Este mês</span>
                   <span>11 treinos</span>
                 </div>
               </div>
@@ -212,41 +220,39 @@ export default function HomePage() {
         </div>
       </section>
 
-      <section id="planos" className="border-t border-white/10 bg-[#0c0c0c]">
-        <div className="mx-auto max-w-6xl px-4 py-16">
-          <h2 className="font-display text-3xl font-semibold uppercase">
+      <section id="planos" className="border-t border-white/8">
+        <div className="mx-auto max-w-6xl px-4 py-20">
+          <h2 className="font-display text-5xl leading-none sm:text-6xl">
             Cabe no caixa da academia.
           </h2>
-          <p className="mt-2 max-w-xl text-sm text-neutral-400">
-            Escolhe o plano e abre a academia. A cobrança do JiuPro (Stripe)
-            entra depois — a casa já funciona sem cartão.
+          <p className="mt-4 max-w-xl text-zinc-400">
+            Escolhe o plano e abre a casa. A cobrança do JiuPro entra depois —
+            a academia já funciona sem cartão.
           </p>
-          <div className="mt-10 grid gap-px bg-white/10 lg:grid-cols-3">
+          <div className="mt-12 grid gap-4 lg:grid-cols-3">
             {PLANS.map((plan) => (
               <article
                 key={plan.id}
-                className={`flex flex-col bg-background p-6 ${
-                  plan.popular ? "ring-1 ring-inset ring-primary" : ""
+                className={`surface flex flex-col p-6 ${
+                  plan.popular ? "ring-1 ring-primary" : ""
                 }`}
               >
                 {plan.popular && (
                   <p className="mb-2 text-xs font-medium text-primary">Mais escolhido</p>
                 )}
-                <h3 className="font-display text-2xl uppercase">{plan.name}</h3>
-                <p className="mt-1 text-sm text-neutral-400">{plan.blurb}</p>
-                <p className="mt-4 font-display text-3xl">
+                <h3 className="font-display text-3xl">{plan.name}</h3>
+                <p className="mt-1 text-sm text-zinc-400">{plan.blurb}</p>
+                <p className="font-display mt-5 text-4xl">
                   {brl(plan.price)}
-                  <span className="text-sm font-sans font-normal text-neutral-500">
-                    /mês
-                  </span>
+                  <span className="font-sans text-sm font-normal text-zinc-500">/mês</span>
                 </p>
-                <ul className="mt-4 flex-1 space-y-2 text-sm text-neutral-400">
+                <ul className="mt-5 flex-1 space-y-2 text-sm text-zinc-400">
                   {plan.features.map((f) => (
-                    <li key={f}>{f}</li>
+                    <li key={f}>— {f}</li>
                   ))}
                 </ul>
                 <Button
-                  className="mt-6 w-full"
+                  className="mt-8 w-full"
                   variant={plan.popular ? "default" : "outline"}
                   render={<Link href={`/cadastro?plano=${plan.id}`} />}
                 >
@@ -258,15 +264,15 @@ export default function HomePage() {
         </div>
       </section>
 
-      <section className="border-t border-white/10">
-        <div className="mx-auto flex max-w-6xl flex-col gap-6 px-4 py-16 sm:flex-row sm:items-end sm:justify-between">
+      <section className="border-t border-white/8">
+        <div className="mx-auto flex max-w-6xl flex-col gap-6 px-4 py-20 sm:flex-row sm:items-end sm:justify-between">
           <div>
-            <h2 className="font-display text-3xl font-semibold uppercase sm:text-4xl">
+            <h2 className="font-display text-5xl leading-none sm:text-6xl">
               Levo o JiuPro aberto
               <br />
               na sua academia.
             </h2>
-            <p className="mt-3 max-w-md text-neutral-400">
+            <p className="mt-4 max-w-md text-zinc-400">
               O dono vê o quadro. O aluno vê o PWA. Sem enrolação de plataforma.
             </p>
           </div>
@@ -276,7 +282,7 @@ export default function HomePage() {
         </div>
       </section>
 
-      <footer className="border-t border-white/10 py-8 text-center text-xs text-neutral-500">
+      <footer className="border-t border-white/8 py-10 text-center text-xs text-zinc-500">
         JiuPro · gestão para academias de Jiu-Jitsu · cada academia, uma conta
       </footer>
     </MarketingChrome>

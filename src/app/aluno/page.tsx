@@ -24,17 +24,19 @@ export default function AlunoHome() {
 
   return (
     <div className="space-y-6">
-        <div className="flex items-center justify-between border-b border-border pb-4">
+        <div className="flex items-center justify-between pb-1">
           <div>
-            <p className="text-sm text-muted-foreground">{store.academy.name}</p>
-            <h1 className="font-display text-3xl uppercase">
+            <p className="text-sm text-muted-foreground">
+              {weekdayFull(weekdayToday())}
+            </p>
+            <h1 className="font-display text-4xl leading-none">
               {student?.name.split(" ")[0] ?? "aluno"}
             </h1>
           </div>
           {student && <BeltBadge belt={student.belt} stripes={student.stripes} />}
         </div>
 
-      <section className="border border-border bg-card p-4">
+      <section className="surface p-4">
         <p className="text-xs text-muted-foreground">Hoje no tatame</p>
         {classes.length === 0 && (
           <p className="mt-2 text-sm text-muted-foreground">
@@ -50,7 +52,7 @@ export default function AlunoHome() {
                 a.date === isoDate(0),
             );
             return (
-              <div key={c.id} className="bg-background p-4">
+              <div key={c.id} className="rounded-xl bg-background/80 p-4 ring-1 ring-white/6">
                 <p className="font-display text-2xl">{c.startTime}</p>
                 <p className="text-sm text-muted-foreground">
                   {c.name} · {c.durationMin} min · {c.gi ? "Gi" : "No-Gi"}
@@ -98,11 +100,11 @@ export default function AlunoHome() {
       </section>
 
       <div className="grid grid-cols-2 gap-3">
-        <div className="border border-border bg-card p-4">
+        <div className="surface p-4">
           <p className="text-xs text-muted-foreground">Treinos no mês</p>
           <p className="font-display text-3xl">{att}</p>
         </div>
-        <div className="border border-border bg-card p-4">
+        <div className="surface p-4">
           <p className="text-xs text-muted-foreground">Plano da casa</p>
           <p className="font-display text-xl capitalize">{store.academy.plan}</p>
         </div>
@@ -129,7 +131,7 @@ function GradeSemana() {
   const today = weekdayToday();
 
   return (
-    <section className="border border-border bg-card p-4">
+    <section className="surface p-4">
       <p className="text-xs text-muted-foreground">Sua grade</p>
       <div className="mt-3 space-y-2">
         {week.map((c) => (
@@ -162,7 +164,7 @@ function ProximoEvento() {
   return (
     <Link
       href="/aluno/agenda"
-      className="block border border-border bg-card p-4"
+      className="surface block p-4"
     >
       <p className="text-xs text-muted-foreground">Próximo da casa</p>
       <p className="mt-1 font-medium">{next.title}</p>

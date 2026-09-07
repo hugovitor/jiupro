@@ -42,18 +42,18 @@ export default function PlanosPage() {
   return (
     <MarketingChrome>
       <main className="mx-auto w-full max-w-6xl px-4 py-12">
-        <h1 className="font-display text-4xl uppercase">Planos mensais</h1>
+        <h1 className="font-display text-5xl leading-none">Planos mensais</h1>
         <p className="mt-2 max-w-xl text-muted-foreground">
           Uma assinatura por academia. Alunos não pagam o JiuPro — pagam a
           mensalidade para você, pelo Pix da casa. Stripe do JiuPro entra
           depois: escolha o plano agora e abra a academia.
         </p>
-          <div className="mt-10 grid gap-px bg-white/10 lg:grid-cols-3">
+          <div className="mt-12 grid gap-4 lg:grid-cols-3">
             {PLANS.map((plan) => (
               <article
                 key={plan.id}
-                className={`flex flex-col bg-background p-6 ${
-                  plan.popular ? "ring-1 ring-inset ring-primary" : ""
+                className={`surface flex flex-col p-6 ${
+                  plan.popular ? "ring-1 ring-primary" : ""
                 }`}
               >
               <h2 className="font-display text-2xl">{plan.name}</h2>

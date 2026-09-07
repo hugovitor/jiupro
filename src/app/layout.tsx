@@ -1,21 +1,21 @@
 import type { Metadata, Viewport } from "next";
-import { Geist_Mono, Oswald, Source_Sans_3 } from "next/font/google";
+import { Bebas_Neue, Geist_Mono, Outfit } from "next/font/google";
 import { Toaster } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { Providers } from "@/components/providers";
 import { metadataBaseUrl } from "@/lib/app-url";
 import "./globals.css";
 
-const sourceSans = Source_Sans_3({
+const outfit = Outfit({
   variable: "--font-body",
   subsets: ["latin"],
   weight: ["400", "500", "600", "700"],
 });
 
-const oswald = Oswald({
-  variable: "--font-oswald",
+const bebas = Bebas_Neue({
+  variable: "--font-bebas",
   subsets: ["latin"],
-  weight: ["400", "500", "600", "700"],
+  weight: "400",
 });
 
 const geistMono = Geist_Mono({
@@ -48,7 +48,7 @@ export const metadata: Metadata = {
 };
 
 export const viewport: Viewport = {
-  themeColor: "#0a0a0a",
+  themeColor: "#09090b",
   width: "device-width",
   initialScale: 1,
   maximumScale: 1,
@@ -59,7 +59,7 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
   return (
     <html
       lang="pt-BR"
-      className={`dark ${sourceSans.variable} ${oswald.variable} ${geistMono.variable} h-full antialiased`}
+      className={`dark tatame ${outfit.variable} ${bebas.variable} ${geistMono.variable} h-full antialiased`}
     >
       <body className="min-h-full flex flex-col bg-background text-foreground">
         <Providers>

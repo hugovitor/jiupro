@@ -11,20 +11,20 @@ export function Logo({
     <span className={cn("inline-flex items-center gap-2.5", className)}>
       <span
         className={cn(
-          "relative h-5 w-9 overflow-hidden ring-1 ring-white/15",
+          "relative size-9 overflow-hidden rounded-full ring-1 ring-white/20",
           markClassName,
         )}
         aria-hidden
       >
-        <span className="absolute inset-y-0 left-0 w-[62%] bg-neutral-950" />
-        <span className="absolute inset-y-0 right-0 w-[38%] bg-primary" />
-        <span className="absolute inset-y-[3px] right-[3px] flex gap-[2px]">
-          <span className="h-full w-[2px] bg-white" />
-          <span className="h-full w-[2px] bg-white" />
-          <span className="h-full w-[2px] bg-white" />
+        <span className="absolute inset-0 bg-[#111113]" />
+        <span className="absolute inset-y-0 right-0 w-[34%] bg-primary" />
+        <span className="absolute inset-y-[7px] right-[5px] flex gap-[2px]">
+          <span className="h-full w-[2px] rounded-full bg-white" />
+          <span className="h-full w-[2px] rounded-full bg-white" />
+          <span className="h-full w-[2px] rounded-full bg-white" />
         </span>
       </span>
-      <span className="font-display text-[1.35rem] font-semibold leading-none">
+      <span className="font-display text-[1.7rem] leading-none">
         JIU<span className="text-primary">PRO</span>
       </span>
     </span>

@@ -61,7 +61,7 @@ export default function AcademiaDashboard() {
           <p className="text-xs tracking-[0.18em] text-muted-foreground uppercase">
             {weekdayFull(weekdayToday())} · {monthLabel(month)}
           </p>
-          <h1 className="font-display mt-1 text-4xl uppercase leading-none">Quadro do dia</h1>
+          <h1 className="font-display mt-1 text-5xl leading-none">Quadro do dia</h1>
           {store.isDemo ? (
             <p className="mt-2 text-sm text-muted-foreground">
               Equipe Origem (demonstração).{" "}
@@ -80,7 +80,7 @@ export default function AcademiaDashboard() {
             </p>
           )}
         </div>
-        <div className="flex items-center gap-6">
+        <div className="flex items-center gap-3">
           <Stat k="No tatame" v={String(todayCount)} />
           <Stat k="Ativos" v={String(active.length)} hint={`${trials.length} experimental`} />
           <Stat k="Atraso" v={brl(overdue)} warn={overdue > 0} />
@@ -88,7 +88,7 @@ export default function AcademiaDashboard() {
       </div>
 
       {!store.isDemo && !cloudReady && (
-        <div className="mt-6 border border-border bg-card p-4 text-sm">
+        <div className="mt-6 surface p-4 text-sm">
           <p className="font-medium">Projeto Supabase ainda vazio</p>
           <p className="mt-1 text-muted-foreground">
             Não tem tabela no Dashboard — o JiuPro cria. Cole a URL e a anon key
@@ -100,10 +100,10 @@ export default function AcademiaDashboard() {
         </div>
       )}
 
-      <div className="mt-8 grid gap-10 lg:grid-cols-[minmax(0,1.1fr)_minmax(0,0.9fr)]">
-        <section>
+      <div className="mt-8 grid gap-4 lg:grid-cols-[minmax(0,1.1fr)_minmax(0,0.9fr)]">
+        <section className="surface p-5">
           <div className="flex items-end justify-between gap-4">
-            <h2 className="font-display text-xl uppercase">Hoje no tatame</h2>
+            <h2 className="font-display text-2xl">Hoje no tatame</h2>
             <Link href="/academia/presenca" className="text-xs text-primary hover:underline">
               Fazer chamada
             </Link>
@@ -132,7 +132,7 @@ export default function AcademiaDashboard() {
               })}
             </ul>
           )}
-          <div className="mt-6 flex items-center justify-between border border-border bg-card px-4 py-3">
+          <div className="mt-6 flex items-center justify-between surface px-4 py-4">
             <div>
               <p className="text-[11px] tracking-wide text-muted-foreground uppercase">
                 Código da recepção
@@ -144,21 +144,21 @@ export default function AcademiaDashboard() {
             </Button>
           </div>
           <div className="mt-4 grid grid-cols-2 gap-2 text-sm sm:grid-cols-3">
-            <Link className="border border-border px-3 py-2 hover:bg-muted/40" href="/academia/cobrancas">
+            <Link className="surface px-3 py-3 text-sm hover:bg-white/5" href="/academia/cobrancas">
               Cobrar no Zap
             </Link>
-            <Link className="border border-border px-3 py-2 hover:bg-muted/40" href="/academia/experimentais">
+            <Link className="surface px-3 py-3 text-sm hover:bg-white/5" href="/academia/experimentais">
               Experimentais
             </Link>
-            <Link className="border border-border px-3 py-2 hover:bg-muted/40" href="/academia/fechamento">
+            <Link className="surface px-3 py-3 text-sm hover:bg-white/5" href="/academia/fechamento">
               Fechamento
             </Link>
           </div>
         </section>
 
-        <section>
+        <section className="surface p-5">
           <div className="flex items-end justify-between gap-4">
-            <h2 className="font-display text-xl uppercase">Pararam de aparecer</h2>
+            <h2 className="font-display text-2xl">Pararam de aparecer</h2>
             <p className="text-xs text-muted-foreground">
               {brl(revenue)} no mês · despesas {brl(expenses)}
             </p>
@@ -208,7 +208,7 @@ export default function AcademiaDashboard() {
         </section>
       </div>
 
-      <div className="mt-12 grid gap-10 border-t border-border pt-8 lg:grid-cols-3">
+      <div className="mt-8 grid gap-4 lg:grid-cols-3">
         <BoardCol
           title="Prontos para graduação"
           href="/academia/graduacoes"
@@ -307,7 +307,7 @@ function Stat({
   warn?: boolean;
 }) {
   return (
-    <div className="text-right">
+    <div className="surface min-w-[5.5rem] px-3 py-2.5 text-right">
       <p className="text-[11px] tracking-wide text-muted-foreground uppercase">{k}</p>
       <p className={`font-display text-2xl leading-none ${warn ? "text-destructive" : ""}`}>
         {v}
@@ -327,9 +327,9 @@ function BoardCol({
   children: React.ReactNode;
 }) {
   return (
-    <section>
+    <section className="surface p-5">
       <div className="flex items-end justify-between">
-        <h2 className="font-display text-xl uppercase">{title}</h2>
+        <h2 className="font-display text-2xl">{title}</h2>
         <Link href={href} className="text-xs text-muted-foreground hover:text-foreground">
           Ver
         </Link>
