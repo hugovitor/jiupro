@@ -57,7 +57,7 @@ export function eventInviteMessage(
   return `Oi ${who}, a ${academy.name} confirma: ${event.title} em ${formatDay(event.date)} às ${event.time} (${event.place}).${fee} Confirma se vem? Oss.`;
 }
 
-/** Código de 4 dígitos estável no dia — o mesmo na recepção e no PWA. */
+/** Hash estável de 4 dígitos. Presença usa classCode(aula), não o slug sozinho. */
 export function dayCode(date: string, salt: string) {
   let h = 2166136261;
   const src = `${date}|${salt}`;

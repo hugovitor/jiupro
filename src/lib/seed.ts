@@ -442,7 +442,7 @@ export function createSeed(): AppState {
   for (const weeksAgo of [0, 1, 2, 3, 4, 5, 6]) {
     for (const weekday of [1, 3, 5]) {
       const date = dateOnWeekday(weekday, weeksAgo);
-      if (date > isoDate(0)) continue;
+      if (date >= isoDate(0)) continue;
       for (const sid of adultIds) {
         if (sid === "s_larissa" && weeksAgo > 1) continue;
         if (sid === "s_ana" && weeksAgo === 2 && weekday === 5) continue;
@@ -459,7 +459,7 @@ export function createSeed(): AppState {
     }
     for (const weekday of [2, 4]) {
       const date = dateOnWeekday(weekday, weeksAgo);
-      if (date > isoDate(0)) continue;
+      if (date >= isoDate(0)) continue;
       for (const sid of kidsIds) {
         attendance.push({
           id: seedId("at"),

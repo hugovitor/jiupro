@@ -5,11 +5,20 @@ import { useSyncExternalStore } from "react";
 import { BeltBadge, PersonAvatar } from "@/components/belt-badge";
 import { Button } from "@/components/ui/button";
 import {
+  classCode,
+  classPhase,
+  phaseHint,
+  phaseLabel,
+  recommendClass,
+} from "@/lib/attendance";
+import {
   brl,
+  clockLabel,
   currentMonth,
   daysSince,
   formatDay,
   isoDate,
+  minutes,
   monthLabel,
   weekdayFull,
   weekdayToday,
@@ -26,10 +35,12 @@ import {
 } from "@/lib/insights";
 import { isSupabaseConfigured, subscribeSupabaseConfig } from "@/lib/supabase/config";
 import { useStore } from "@/lib/store";
-import { birthdayMessage, comebackMessage, dayCode, waHref } from "@/lib/whatsapp";
+import { useNow } from "@/lib/use-now";
+import { birthdayMessage, comebackMessage, waHref } from "@/lib/whatsapp";
 
 export default function AcademiaDashboard() {
   const store = useStore();
+  const now = useNow();
   const cloudReady = useSyncExternalStore(
     subscribeSupabaseConfig,
     isSupabaseConfigured,
@@ -47,8 +58,11 @@ export default function AcademiaDashboard() {
   const risk = store.students.filter((s) => isAtRisk(store, s));
   const lowStock = store.inventory.filter((i) => i.quantity <= i.minQuantity);
   const birthdays = birthdaysSoon(store.students);
-  const code = dayCode(today, store.academy.slug);
-  const classes = store.todayClasses();
+  const classes = [...store.todayClasses()].sort(
+    (a, b) => minutes(a.startTime) - minutes(b.startTime),
+  );
+  const live = recommendClass(classes, now);
+  const code = live ? classCode(today, store.academy.slug, live.id) : null;
   const upcoming = [...(store.events ?? [])]
     .filter((e) => e.date >= today)
     .sort((a, b) => a.date.localeCompare(b.date))
@@ -116,15 +130,23 @@ export default function AcademiaDashboard() {
                 const count = store.attendance.filter(
                   (a) => a.classId === c.id && a.date === today,
                 ).length;
+                const phase = classPhase(c, now);
+                const suggested = live?.id === c.id;
                 return (
                   <li key={c.id} className="flex items-baseline justify-between gap-3 py-3">
                     <div>
-                      <p className="font-display text-3xl leading-none">{c.startTime}</p>
+                      <p className="font-mono text-3xl leading-none tracking-tight">
+                        {c.startTime}
+                      </p>
                       <p className="mt-1 text-sm text-muted-foreground">
                         {c.name} · {c.gi ? "Gi" : "No-Gi"} · {c.durationMin} min
+                        {suggested ? " · agora" : ""}
+                      </p>
+                      <p className="mt-0.5 text-[11px] text-muted-foreground">
+                        {phaseLabel(phase)} · {phaseHint(c, now)}
                       </p>
                     </div>
-                    <p className="text-sm">
+                    <p className="text-sm tabular-nums">
                       {count}/{c.capacity}
                     </p>
                   </li>
@@ -132,17 +154,29 @@ export default function AcademiaDashboard() {
               })}
             </ul>
           )}
-          <div className="mt-6 flex items-center justify-between surface px-4 py-4">
-            <div>
-              <p className="text-[11px] tracking-wide text-muted-foreground uppercase">
-                Código da recepção
-              </p>
-              <p className="font-display text-3xl tracking-[0.2em]">{code}</p>
+          {code && live ? (
+            <div className="mt-6 flex items-center justify-between border border-border px-4 py-4">
+              <div>
+                <p className="text-[11px] tracking-[0.16em] text-muted-foreground uppercase">
+                  Código · {live.name}
+                </p>
+                <p className="mt-1 font-mono text-3xl tracking-[0.2em]">{code}</p>
+                <p className="mt-1 text-[11px] text-muted-foreground">
+                  {clockLabel(now)} · {phaseHint(live, now)}
+                </p>
+              </div>
+              <Button size="sm" variant="outline" render={<Link href="/academia/presenca" />}>
+                Chamada
+              </Button>
             </div>
-            <Button size="sm" variant="outline" render={<Link href="/academia/presenca" />}>
-              Chamada
-            </Button>
-          </div>
+          ) : (
+            <div className="mt-6 flex items-center justify-between border border-border px-4 py-4">
+              <p className="text-sm text-muted-foreground">Sem código — não há turma hoje.</p>
+              <Button size="sm" variant="outline" render={<Link href="/academia/presenca" />}>
+                Chamada
+              </Button>
+            </div>
+          )}
           <div className="mt-4 grid grid-cols-2 gap-2 text-sm sm:grid-cols-3">
             <Link className="surface px-3 py-3 text-sm hover:bg-muted" href="/academia/cobrancas">
               Cobrar no Zap

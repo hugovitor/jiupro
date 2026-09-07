@@ -1,6 +1,6 @@
 # JiuPro
 
-Sistema de gestão para academias de Jiu-Jitsu. Preto, vermelho e branco — a paleta da faixa preta. Cada academia tem a sua conta. Os alunos usam um PWA para marcar presença, acompanhar a faixa e falar no mural da casa.
+Sistema de gestão para academias de Jiu-Jitsu. Visual Tesla no site, Microsoft 365 no painel. Cada academia tem a sua conta. Os alunos usam um PWA para marcar presença (com o código da aula), acompanhar a faixa e falar no mural da casa.
 
 Feito para o dono que treina de manhã e administra de noite: mensalidades em atraso, aluno que some, graduação com critério (tempo + presença) e estoque de kimono.
 
@@ -10,7 +10,8 @@ Feito para o dono que treina de manhã e administra de noite: mensalidades em at
 - **Cobranças agora** — WhatsApp + chave Pix da casa + baixa manual (Asaas entra depois)
 - **Fechamento do mês** — recebido × despesa, gerar mensalidades do próximo mês, CSV
 - **Experimentais** — captar aula experimental e converter em mensalista
-- **Código do dia** — recepção mostra, aluno confirma no PWA
+- **Código da aula** — cada turma tem o seu número de 4 dígitos; o aluno confirma no PWA só na janela da aula (20 min antes até 15 min depois)
+- **Chamada inteligente** — sugere a aula ao vivo, separa habituais ausentes e deixa desfazer na recepção
 - **Visitante / aula avulsa** — quem aparece na porta entra na chamada e no caixa
 - **Grade da semana** — o aluno vê os horários da divisão no PWA
 - **Avaliação no tatame** — nota do professor na ficha, com indicação de graduação

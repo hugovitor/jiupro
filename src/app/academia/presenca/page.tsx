@@ -7,165 +7,427 @@ import { PersonAvatar } from "@/components/belt-badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { brl, currentMonth, isoDate } from "@/lib/format";
+import {
+  classCode,
+  classPhase,
+  habitualStudentIds,
+  isLateCheckIn,
+  isOverdue,
+  methodLabel,
+  phaseHint,
+  phaseLabel,
+  recommendClass,
+  sortByName,
+} from "@/lib/attendance";
+import { brl, clockLabel, currentMonth, formatTime, isoDate, minutes } from "@/lib/format";
 import { useStore } from "@/lib/store";
-import { dayCode } from "@/lib/whatsapp";
+import type { Attendance, ClassSession, Student } from "@/lib/types";
+import { useNow } from "@/lib/use-now";
+import { cn } from "@/lib/utils";
 
 export default function PresencaPage() {
   const store = useStore();
+  const now = useNow();
   const today = isoDate(0);
-  const classes = store.todayClasses();
-  const [classId, setClassId] = useState(classes[0]?.id ?? store.classes[0]?.id);
+  const todayList = useMemo(() => {
+    const list = store.todayClasses();
+    return [...list].sort((a, b) => minutes(a.startTime) - minutes(b.startTime));
+  }, [store]);
+  const recommended = recommendClass(todayList, now);
+  const [pinnedId, setPinnedId] = useState<string | null>(null);
   const [q, setQ] = useState("");
 
+  const classId =
+    pinnedId ??
+    recommended?.id ??
+    todayList[0]?.id ??
+    store.classes[0]?.id ??
+    "";
   const cls = store.classes.find((c) => c.id === classId);
-  const students = useMemo(() => {
-    const needle = q.trim().toLowerCase();
+  const phase = cls ? classPhase(cls, now) : "closed";
+  const code = cls ? classCode(today, store.academy.slug, cls.id) : "----";
+
+  const roster = useMemo(() => {
     return store.students.filter((s) => {
       if (s.status === "inactive") return false;
       if (cls?.division === "kids" && s.division !== "kids") return false;
       if (cls?.division === "adult" && s.division !== "adult") return false;
-      if (
-        needle &&
-        !s.name.toLowerCase().includes(needle) &&
-        !s.phone.includes(q.trim())
-      ) {
-        return false;
-      }
       return true;
     });
-  }, [store.students, cls, q]);
+  }, [store.students, cls]);
 
-  const presentIds = new Set(
-    store.attendance
-      .filter((a) => a.classId === classId && a.date === today)
-      .map((a) => a.studentId),
+  const presentRows = store.attendance.filter(
+    (a) => a.classId === classId && a.date === today,
   );
+  const presentByStudent = new Map(presentRows.map((a) => [a.studentId, a]));
+  const habitual = habitualStudentIds(classId, store.attendance);
   const visitors = (store.dropIns ?? []).filter(
     (d) => d.classId === classId && d.date === today,
   );
-  const heads = presentIds.size + visitors.length;
+
+  const needle = q.trim().toLowerCase();
+  function matches(s: Student) {
+    if (!needle) return true;
+    return (
+      s.name.toLowerCase().includes(needle) || s.phone.includes(q.trim())
+    );
+  }
+
+  const present = roster
+    .filter((s) => presentByStudent.has(s.id) && matches(s))
+    .sort(sortByName);
+  const habitualMissing = roster
+    .filter((s) => habitual.has(s.id) && !presentByStudent.has(s.id) && matches(s))
+    .sort(sortByName);
+  const others = roster
+    .filter((s) => !habitual.has(s.id) && !presentByStudent.has(s.id) && matches(s))
+    .sort(sortByName);
+
+  const heads = presentRows.length + visitors.length;
   const cap = cls?.capacity ?? 0;
   const full = cap > 0 && heads >= cap;
+  const open = Math.max(0, cap - heads);
+  const tabs = todayList.length ? todayList : store.classes;
 
   return (
-    <div className="mx-auto max-w-3xl space-y-6">
-      <div className="flex items-end justify-between gap-3">
+    <div className="mx-auto max-w-5xl space-y-6">
+      <div className="flex flex-col gap-3 border-b border-border pb-5 sm:flex-row sm:items-end sm:justify-between">
         <div>
-          <h1 className="font-display text-3xl">Presença</h1>
-          <p className="mt-1 text-sm text-muted-foreground">
-            Chamada de hoje. Visitante paga aula avulsa na porta.
+          <p className="text-[12px] text-muted-foreground">
+            {clockLabel(now)} · São Paulo
+          </p>
+          <h1 className="mt-1 text-[22px] font-medium">Presença</h1>
+          <p className="mt-1 max-w-xl text-sm text-muted-foreground">
+            A aula certa, o código desta turma, quem costuma vir. Recepção
+            marca na hora; o aluno confirma no PWA só na janela da aula.
           </p>
         </div>
-        <Visitante classId={classId} />
+        <Visitante classId={classId} disabled={!classId} />
       </div>
 
-      <div className="border border-primary/50 bg-card p-5 text-center">
-        <p className="text-xs text-muted-foreground">Código do dia</p>
-        <p className="mt-1 font-display text-5xl tracking-[0.2em] text-primary">
-          {dayCode(today, store.academy.slug)}
-        </p>
-        <p className="mt-2 text-xs text-muted-foreground">
-          Anote no quadro. O aluno confirma no PWA com este número.
-        </p>
-      </div>
-
-      {classes.length === 0 ? (
-        <p className="border border-border bg-card p-4 text-sm text-muted-foreground">
-          Não há turma na grade para hoje. Você ainda pode lançar em qualquer
-          horário da semana.
-        </p>
-      ) : (
-        <p className="text-sm text-primary">
-          {classes.length} turma(s) hoje na grade.
-        </p>
-      )}
-
-      <div className="flex flex-wrap gap-2">
-        {(classes.length ? classes : store.classes).map((c) => (
-          <Button
-            key={c.id}
-            size="sm"
-            variant={classId === c.id ? "default" : "outline"}
-            onClick={() => setClassId(c.id)}
-          >
-            {c.name} {c.startTime}
-          </Button>
-        ))}
-      </div>
-
-      <div className="flex flex-wrap items-center justify-between gap-3">
-        <p className={`text-sm ${full ? "text-destructive" : "text-muted-foreground"}`}>
-          {heads} no tatame
-          {cap ? ` · vaga ${Math.max(0, cap - heads)} de ${cap}` : ""}
-          {full ? " · lotou" : ""}
-        </p>
-        <Input
-          className="sm:max-w-xs"
-          placeholder="Buscar na chamada"
-          value={q}
-          onChange={(e) => setQ(e.target.value)}
-        />
-      </div>
-
-      {visitors.length > 0 && (
-        <section className="space-y-2">
-          <h2 className="text-sm font-medium">Visitantes</h2>
-          {visitors.map((v) => (
-            <div
-              key={v.id}
-              className="flex items-center justify-between border border-primary/40 bg-card p-3 text-sm"
-            >
-              <span>
-                {v.name}
-                <span className="ml-2 text-xs text-muted-foreground">
-                  aula avulsa · {brl(v.amount)}
-                </span>
-              </span>
-              <span className="text-xs text-muted-foreground">Presente</span>
-            </div>
-          ))}
-        </section>
-      )}
-
-      <div className="space-y-2">
-        {students.map((s) => {
-          const here = presentIds.has(s.id);
+      <div className="flex gap-1 overflow-x-auto border-b border-border">
+        {tabs.map((c) => {
+          const selected = c.id === classId;
+          const live = classPhase(c, now);
+          const n = store.attendance.filter(
+            (a) => a.classId === c.id && a.date === today,
+          ).length;
           return (
-            <div
-              key={s.id}
-              className="flex items-center gap-3 border border-border bg-card p-3"
+            <button
+              key={c.id}
+              type="button"
+              onClick={() => setPinnedId(c.id)}
+              className={cn(
+                "flex shrink-0 items-center gap-2 border-b-2 px-3 py-2.5 text-left text-[13px]",
+                selected
+                  ? "border-foreground font-medium"
+                  : "border-transparent text-muted-foreground hover:text-foreground",
+              )}
             >
-              <PersonAvatar name={s.name} hue={s.avatarHue} size="sm" />
-              <div className="min-w-0 flex-1">
-                <p className="truncate text-sm font-medium">{s.name}</p>
-                <p className="text-xs text-muted-foreground">{s.phone}</p>
-              </div>
-              <Button
-                size="sm"
-                variant={here ? "secondary" : "default"}
-                onClick={() => {
-                  if (here) {
-                    toast.message("Já está na lista de hoje.");
-                    return;
-                  }
-                  store.checkIn(s.id, classId, "manual");
-                  toast.success(`${s.name} presente.`);
-                }}
-              >
-                {here ? "Presente" : "Marcar"}
-              </Button>
-            </div>
+              {live === "live" ? (
+                <span className="size-1.5 bg-primary" aria-hidden />
+              ) : null}
+              <span className="font-mono tabular-nums">{c.startTime}</span>
+              <span>{c.name}</span>
+              <span className="text-[11px] text-muted-foreground">{n}</span>
+            </button>
           );
         })}
       </div>
+
+      {!cls ? (
+        <p className="surface p-4 text-sm text-muted-foreground">
+          Cadastre uma turma para abrir a chamada.
+        </p>
+      ) : (
+        <>
+          <div className="grid gap-4 lg:grid-cols-[minmax(0,1.15fr)_minmax(0,0.85fr)]">
+            <div className="surface p-5">
+              <p className="text-[11px] tracking-[0.16em] text-muted-foreground uppercase">
+                Código desta aula
+              </p>
+              <p className="mt-3 font-mono text-[52px] leading-none tracking-[0.22em]">
+                {code}
+              </p>
+              <p className="mt-3 text-sm text-muted-foreground">
+                Anote no quadro. Vale só para {cls.name} hoje — outra turma tem
+                outro número.
+              </p>
+            </div>
+            <div className="surface flex flex-col justify-between p-5">
+              <div>
+                <p className="text-[11px] tracking-[0.16em] text-muted-foreground uppercase">
+                  {phaseLabel(phase)}
+                </p>
+                <p className="mt-2 text-[18px] font-medium">
+                  {cls.startTime} · {cls.name}
+                </p>
+                <p className="mt-1 text-sm text-muted-foreground">
+                  {cls.gi ? "Gi" : "No-Gi"} · {cls.durationMin} min ·{" "}
+                  {phaseHint(cls, now)}
+                </p>
+              </div>
+              {phase === "closed" ? (
+                <p className="mt-4 text-[12px] text-muted-foreground">
+                  O PWA já recusa check-in. Aqui você ainda desfaz e inclui.
+                </p>
+              ) : recommended?.id === cls.id ? (
+                <p className="mt-4 text-[12px] text-muted-foreground">
+                  Turma sugerida agora para esta casa.
+                </p>
+              ) : (
+                <p className="mt-4 text-[12px] text-muted-foreground">
+                  Você escolheu esta turma. A sugerida agora é{" "}
+                  {recommended?.name ?? "—"}.
+                </p>
+              )}
+            </div>
+          </div>
+
+          <div className="grid grid-cols-3 border border-border bg-white">
+            <Kpi k="Presentes" v={String(heads)} hint={full ? "Lotou" : undefined} warn={full} />
+            <Kpi
+              k="Vagas"
+              v={cap ? String(open) : "—"}
+              hint={cap ? `de ${cap}` : "sem limite"}
+            />
+            <Kpi
+              k="Habituais fora"
+              v={String(habitualMissing.length)}
+              hint="≥3 aulas nesta turma"
+            />
+          </div>
+
+          <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+            <Input
+              className="sm:max-w-xs"
+              placeholder="Buscar na chamada"
+              value={q}
+              onChange={(e) => setQ(e.target.value)}
+            />
+            {habitualMissing.length > 0 && !needle ? (
+              <Button
+                type="button"
+                onClick={() => {
+                  const n = store.checkInMany(
+                    habitualMissing.map((s) => s.id),
+                    classId,
+                    "manual",
+                  );
+                  toast.success(
+                    n === 1
+                      ? "1 habitual confirmado."
+                      : `${n} habituais confirmados.`,
+                  );
+                }}
+              >
+                Confirmar habituais ({habitualMissing.length})
+              </Button>
+            ) : null}
+          </div>
+
+          {visitors.length > 0 && (
+            <section className="space-y-2">
+              <h2 className="text-[13px] font-medium">Visitantes</h2>
+              {visitors.map((v) => (
+                <div
+                  key={v.id}
+                  className="flex items-center justify-between border border-border bg-white px-3 py-3 text-sm"
+                >
+                  <span>
+                    {v.name}
+                    <span className="ml-2 text-xs text-muted-foreground">
+                      aula avulsa · {brl(v.amount)}
+                    </span>
+                  </span>
+                  <span className="text-xs text-muted-foreground">Presente</span>
+                </div>
+              ))}
+            </section>
+          )}
+
+          <Group title="Presentes" count={present.length} empty="Ninguém nesta aula ainda.">
+            {present.map((s) => {
+              const row = presentByStudent.get(s.id)!;
+              return (
+                <RosterRow
+                  key={s.id}
+                  student={s}
+                  attendance={row}
+                  session={cls}
+                  overdue={store.overdueFor(s.id).length > 0}
+                  missing={isOverdue(s, store.attendance)}
+                  action={
+                    <Button
+                      size="sm"
+                      variant="ghost"
+                      onClick={() => {
+                        store.checkOut(s.id, classId);
+                        toast.message(`${s.name} removido da lista.`);
+                      }}
+                    >
+                      Desfazer
+                    </Button>
+                  }
+                />
+              );
+            })}
+          </Group>
+
+          <Group
+            title="Habituais ausentes"
+            count={habitualMissing.length}
+            empty="Os que costumam vir nesta turma já estão na lista — ou ninguém tem histórico suficiente."
+          >
+            {habitualMissing.map((s) => (
+              <RosterRow
+                key={s.id}
+                student={s}
+                overdue={store.overdueFor(s.id).length > 0}
+                missing={isOverdue(s, store.attendance)}
+                action={
+                  <Button
+                    size="sm"
+                    disabled={full}
+                    onClick={() => {
+                      store.checkIn(s.id, classId, "manual");
+                      toast.success(`${s.name} presente.`);
+                    }}
+                  >
+                    Marcar
+                  </Button>
+                }
+              />
+            ))}
+          </Group>
+
+          <Group title="Demais da divisão" count={others.length}>
+            {others.map((s) => (
+              <RosterRow
+                key={s.id}
+                student={s}
+                overdue={store.overdueFor(s.id).length > 0}
+                missing={isOverdue(s, store.attendance)}
+                action={
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    disabled={full}
+                    onClick={() => {
+                      store.checkIn(s.id, classId, "manual");
+                      toast.success(`${s.name} presente.`);
+                    }}
+                  >
+                    Marcar
+                  </Button>
+                }
+              />
+            ))}
+          </Group>
+        </>
+      )}
 
       <FrequenciaMes />
     </div>
   );
 }
 
-function Visitante({ classId }: { classId: string }) {
+function Kpi({
+  k,
+  v,
+  hint,
+  warn,
+}: {
+  k: string;
+  v: string;
+  hint?: string;
+  warn?: boolean;
+}) {
+  return (
+    <div className="border-l border-border px-4 py-3 first:border-l-0">
+      <p className="text-[11px] text-muted-foreground">{k}</p>
+      <p className={`mt-1 text-[20px] font-medium tabular-nums ${warn ? "text-destructive" : ""}`}>
+        {v}
+      </p>
+      {hint ? <p className="mt-0.5 text-[11px] text-muted-foreground">{hint}</p> : null}
+    </div>
+  );
+}
+
+function Group({
+  title,
+  count,
+  empty,
+  children,
+}: {
+  title: string;
+  count: number;
+  empty?: string;
+  children: React.ReactNode;
+}) {
+  return (
+    <section className="space-y-2">
+      <div className="flex items-baseline justify-between">
+        <h2 className="text-[13px] font-medium">{title}</h2>
+        <span className="text-[12px] text-muted-foreground tabular-nums">{count}</span>
+      </div>
+      {count === 0 ? (
+        empty ? (
+          <p className="border border-dashed border-border bg-white px-3 py-4 text-sm text-muted-foreground">
+            {empty}
+          </p>
+        ) : null
+      ) : (
+        <div className="divide-y divide-border border border-border bg-white">{children}</div>
+      )}
+    </section>
+  );
+}
+
+function RosterRow({
+  student,
+  attendance,
+  session,
+  overdue,
+  missing,
+  action,
+}: {
+  student: Student;
+  attendance?: Attendance;
+  session?: ClassSession;
+  overdue: boolean;
+  missing: boolean;
+  action: React.ReactNode;
+}) {
+  const late =
+    attendance && session ? isLateCheckIn(session, attendance.checkedInAt) : false;
+  return (
+    <div className="flex items-center gap-3 px-3 py-2.5">
+      <PersonAvatar name={student.name} hue={student.avatarHue} size="sm" />
+      <div className="min-w-0 flex-1">
+        <p className="truncate text-sm font-medium">{student.name}</p>
+        <p className="flex flex-wrap gap-x-2 text-[11px] text-muted-foreground">
+          {attendance ? (
+            <>
+              <span>
+                {formatTime(attendance.checkedInAt)} · {methodLabel(attendance.method)}
+              </span>
+              {late ? <span className="text-destructive">Atrasado</span> : null}
+            </>
+          ) : (
+            <span>{student.phone}</span>
+          )}
+          {student.status === "trial" ? <span>Experimental</span> : null}
+          {overdue ? <span className="text-destructive">Mensalidade</span> : null}
+          {missing && !attendance ? <span>Sumiu</span> : null}
+        </p>
+      </div>
+      {action}
+    </div>
+  );
+}
+
+function Visitante({ classId, disabled }: { classId: string; disabled?: boolean }) {
   const store = useStore();
   const [open, setOpen] = useState(false);
   const [name, setName] = useState("");
@@ -174,7 +436,7 @@ function Visitante({ classId }: { classId: string }) {
 
   return (
     <>
-      <Button type="button" onClick={() => setOpen(true)}>
+      <Button type="button" variant="outline" disabled={disabled} onClick={() => setOpen(true)}>
         Visitante
       </Button>
       <FormDialog open={open} onClose={() => setOpen(false)} title="Aula avulsa">
@@ -182,7 +444,7 @@ function Visitante({ classId }: { classId: string }) {
           className="grid gap-3"
           onSubmit={(e) => {
             e.preventDefault();
-            if (!name.trim()) return;
+            if (!name.trim() || !classId) return;
             store.addDropIn({
               name: name.trim(),
               phone,
@@ -222,22 +484,25 @@ function FrequenciaMes() {
     .filter((s) => s.status !== "inactive")
     .map((s) => ({
       s,
-      n: store.attendance.filter((a) => a.studentId === s.id && a.date.startsWith(month))
-        .length,
+      n: store.attendance.filter(
+        (a) => a.studentId === s.id && a.date.startsWith(month),
+      ).length,
     }))
     .sort((a, b) => b.n - a.n);
 
   return (
-    <section className="space-y-2">
-      <h2 className="font-display text-xl">Frequência do mês</h2>
-      {rows.map(({ s, n }) => (
-        <div key={s.id} className="flex items-center justify-between text-sm">
-          <span>{s.name}</span>
-          <span className={n === 0 ? "text-destructive" : "text-muted-foreground"}>
-            {n} treino{n === 1 ? "" : "s"}
-          </span>
-        </div>
-      ))}
+    <section className="surface p-5">
+      <h2 className="text-[14px] font-medium">Frequência do mês</h2>
+      <div className="mt-3 divide-y divide-border">
+        {rows.map(({ s, n }) => (
+          <div key={s.id} className="flex items-center justify-between py-2 text-sm">
+            <span>{s.name}</span>
+            <span className={n === 0 ? "text-destructive" : "text-muted-foreground"}>
+              {n} treino{n === 1 ? "" : "s"}
+            </span>
+          </div>
+        ))}
+      </div>
     </section>
   );
 }

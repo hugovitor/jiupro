@@ -37,7 +37,7 @@ import {
   takenSlugs,
   writeActive,
 } from "./vault";
-import { dayCode } from "./whatsapp";
+import { classCode, studentCanSelfCheckIn } from "./attendance";
 import type {
   AcademyEvent,
   AppState,
@@ -89,6 +89,12 @@ type Store = AppState & {
   updateStudent: (id: string, patch: Partial<Student>) => void;
   recordPayment: (studentId: string, month: string, method: Payment["method"]) => void;
   checkIn: (studentId: string, classId: string, method?: Attendance["method"]) => boolean;
+  checkInMany: (
+    studentIds: string[],
+    classId: string,
+    method?: Attendance["method"],
+  ) => number;
+  checkOut: (studentId: string, classId: string) => void;
   promote: (studentId: string, notes: string) => void;
   addStripe: (studentId: string) => void;
   adjustStock: (id: string, delta: number) => void;
@@ -510,6 +516,50 @@ export function StoreProvider({ children }: { children: ReactNode }) {
     return true;
   }, []);
 
+  const checkInMany: Store["checkInMany"] = useCallback(
+    (studentIds, classId, method = "manual") => {
+      const today = isoDate(0);
+      let added = 0;
+      commit((prev) => {
+        const seen = new Set(
+          prev.attendance
+            .filter((a) => a.classId === classId && a.date === today)
+            .map((a) => a.studentId),
+        );
+        const fresh: Attendance[] = [];
+        for (const studentId of studentIds) {
+          if (seen.has(studentId)) continue;
+          seen.add(studentId);
+          fresh.push({
+            id: uid("at"),
+            academyId: prev.academy.id,
+            studentId,
+            classId,
+            date: today,
+            checkedInAt: new Date().toISOString(),
+            method,
+          });
+        }
+        added = fresh.length;
+        if (fresh.length === 0) return prev;
+        return { ...prev, attendance: [...fresh, ...prev.attendance] };
+      });
+      return added;
+    },
+    [],
+  );
+
+  const checkOut: Store["checkOut"] = useCallback((studentId, classId) => {
+    const today = isoDate(0);
+    commit((prev) => ({
+      ...prev,
+      attendance: prev.attendance.filter(
+        (a) =>
+          !(a.studentId === studentId && a.classId === classId && a.date === today),
+      ),
+    }));
+  }, []);
+
   const promote: Store["promote"] = useCallback((studentId, notes) => {
     commit((prev) => {
       const student = prev.students.find((s) => s.id === studentId);
@@ -689,7 +739,10 @@ export function StoreProvider({ children }: { children: ReactNode }) {
   const checkInWithCode: Store["checkInWithCode"] = useCallback(
     (studentId, classId, code) => {
       const current = getSnapshot();
-      const expected = dayCode(isoDate(0), current.academy.slug);
+      const session = current.classes.find((c) => c.id === classId);
+      if (!session) return false;
+      if (!studentCanSelfCheckIn(session)) return false;
+      const expected = classCode(isoDate(0), current.academy.slug, classId);
       if (code.replace(/\s/g, "") !== expected) return false;
       return checkIn(studentId, classId, "code");
     },
@@ -890,6 +943,8 @@ export function StoreProvider({ children }: { children: ReactNode }) {
       updateStudent,
       recordPayment,
       checkIn,
+      checkInMany,
+      checkOut,
       promote,
       addStripe,
       adjustStock,
@@ -930,6 +985,8 @@ export function StoreProvider({ children }: { children: ReactNode }) {
       updateStudent,
       recordPayment,
       checkIn,
+      checkInMany,
+      checkOut,
       promote,
       addStripe,
       adjustStock,

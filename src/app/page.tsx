@@ -7,7 +7,7 @@ import { brl } from "@/lib/format";
 const modules = [
   ["Cadastro", "Alunos, responsáveis, turmas e status."],
   ["Financeiro", "Mensalidade, atraso, isenção e fechamento."],
-  ["Presença", "Chamada, código do dia e visitante na porta."],
+  ["Presença", "Chamada da aula ao vivo, código da turma e habituais."],
   ["Graduação", "Tempo de faixa, graus e quem está pronto."],
   ["Estoque", "Kimono e faixa no nome do aluno."],
   ["Aplicativo", "O aluno marca presença e vê a própria faixa."],
@@ -41,7 +41,8 @@ export default function HomePage() {
           </h1>
           <p className="mt-5 max-w-md text-[16px] leading-relaxed text-white/60">
             Alunos, mensalidades, presença, faixas e estoque. Uma conta por
-            casa. Controle no painel, check-in no celular.
+            casa. A chamada escolhe a aula certa; o aluno confirma com o código
+            da turma.
           </p>
           <div className="mt-10 flex w-full max-w-sm flex-col gap-3 sm:flex-row sm:justify-center">
             <Button
@@ -97,7 +98,7 @@ export default function HomePage() {
               Presença confirmada. Faixa visível.
             </h2>
             <ul className="mt-6 space-y-2 text-[14px] text-muted-foreground">
-              <li>Check-in com o código do dia.</li>
+              <li>Check-in com o código desta aula, só na janela do treino.</li>
               <li>Grade da semana e mural da casa.</li>
               <li>Histórico de faixa, graus e treinos.</li>
               <li>Pix da academia na mensalidade.</li>
@@ -107,15 +108,14 @@ export default function HomePage() {
             </Button>
           </div>
           <div className="border border-border bg-white p-6">
-            <p className="text-[12px] text-muted-foreground">Hoje · Adultos Gi</p>
+            <p className="text-[12px] text-muted-foreground">Chamada aberta · Adultos Gi</p>
             <p className="mt-4 font-mono text-[32px] tracking-tight">19:30</p>
-            <p className="mt-1 text-[13px] text-muted-foreground">Gi · 60 min</p>
-            <div className="mt-6 bg-[#111] px-4 py-3 text-center text-[13px] font-medium text-white">
-              Estou no tatame
+            <p className="mt-1 text-[13px] text-muted-foreground">Gi · 75 min · código da turma</p>
+            <div className="mt-5 border border-border py-3 text-center font-mono text-[18px] tracking-[0.35em]">
+              4821
             </div>
-            <div className="mt-5 flex justify-between text-[13px]">
-              <span className="text-muted-foreground">Este mês</span>
-              <span>11 treinos</span>
+            <div className="mt-3 bg-[#111] px-4 py-3 text-center text-[13px] font-medium text-white">
+              Confirmar presença
             </div>
           </div>
         </div>
@@ -197,7 +197,7 @@ function ProductPreview() {
               <div
                 key={item}
                 className={`border-l-2 px-4 py-2 text-[13px] ${
-                  i === 0
+                  i === 2
                     ? "border-foreground bg-[#f3f2f1] font-medium"
                     : "border-transparent text-muted-foreground"
                 }`}
@@ -208,13 +208,13 @@ function ProductPreview() {
           )}
         </div>
         <div className="p-5">
-          <p className="text-[12px] text-muted-foreground">Início / Visão do dia</p>
-          <p className="mt-1 text-[16px] font-medium">Segunda-feira</p>
+          <p className="text-[12px] text-muted-foreground">Operação / Presença</p>
+          <p className="mt-1 text-[16px] font-medium">Adultos Gi · 19:30</p>
           <div className="mt-4 grid grid-cols-3 border border-border">
             {[
-              ["Presentes", "18"],
-              ["Ativos", "86"],
-              ["Em atraso", "R$ 1.240"],
+              ["Presentes", "0"],
+              ["Habituais fora", "7"],
+              ["Vagas", "28"],
             ].map(([k, v], i) => (
               <div
                 key={k}
@@ -225,24 +225,14 @@ function ProductPreview() {
               </div>
             ))}
           </div>
-          <div className="mt-4 border border-border">
-            {[
-              ["19:30", "Adultos Gi", "12 / 20"],
-              ["20:30", "No-Gi avançado", "9 / 16"],
-            ].map(([t, n, c], i) => (
-              <div
-                key={t}
-                className={`flex items-center justify-between px-3 py-2.5 text-[13px] ${
-                  i ? "border-t border-border" : ""
-                }`}
-              >
-                <span>
-                  <span className="font-mono tabular-nums">{t}</span>
-                  <span className="text-muted-foreground"> · {n}</span>
-                </span>
-                <span className="text-muted-foreground">{c}</span>
-              </div>
-            ))}
+          <div className="mt-4 flex items-end justify-between border border-border px-3 py-3">
+            <div>
+              <p className="text-[11px] tracking-[0.16em] text-muted-foreground uppercase">
+                Código desta aula
+              </p>
+              <p className="mt-1 font-mono text-[28px] tracking-[0.22em]">4821</p>
+            </div>
+            <p className="text-[12px] text-muted-foreground">Chamada abre em 18 min</p>
           </div>
         </div>
       </div>

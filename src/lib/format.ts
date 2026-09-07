@@ -107,6 +107,31 @@ export function isoDate(offsetDays = 0) {
     .slice(0, 10);
 }
 
+/** Minutos desde meia-noite em America/Sao_Paulo, ou a partir de "HH:MM". */
+export function minutes(input: Date | string) {
+  if (typeof input === "string" && /^\d{1,2}:\d{2}$/.test(input.trim())) {
+    const [h, m] = input.trim().split(":").map(Number);
+    return (h ?? 0) * 60 + (m ?? 0);
+  }
+  const d = typeof input === "string" ? new Date(input) : input;
+  const parts = new Intl.DateTimeFormat("en-US", {
+    timeZone: TZ,
+    hour: "numeric",
+    minute: "numeric",
+    hourCycle: "h23",
+  }).formatToParts(d);
+  const n = (type: Intl.DateTimeFormatPartTypes) =>
+    Number(parts.find((p) => p.type === type)?.value);
+  return n("hour") * 60 + n("minute");
+}
+
+export function clockLabel(date = new Date()) {
+  const t = minutes(date);
+  const h = Math.floor(t / 60);
+  const m = t % 60;
+  return `${String(h).padStart(2, "0")}:${String(m).padStart(2, "0")}`;
+}
+
 export function initials(name: string) {
   return name
     .split(" ")
