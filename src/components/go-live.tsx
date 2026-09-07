@@ -26,8 +26,8 @@ export function GoLiveCard() {
   const ready = cloud || envCloud;
 
   return (
-    <section className="border border-primary/40 bg-primary/5 p-5">
-      <p className="text-xs font-medium tracking-wide text-primary uppercase">
+    <section className="surface p-5">
+      <p className="text-xs font-medium tracking-wide text-muted-foreground uppercase">
         Produção
       </p>
       <h2 className="mt-1 text-lg font-semibold tracking-tight">A academia já opera</h2>
@@ -37,7 +37,7 @@ export function GoLiveCard() {
       </p>
       <ol className="mt-4 space-y-2 text-sm">
         <li>
-          <span className={ready ? "text-foreground" : "text-primary"}>
+          <span className={ready ? "text-foreground" : "text-muted-foreground"}>
             {ready ? "1. Nuvem ligada." : "1. Ligue o Supabase abaixo — sem isso os dados ficam só neste navegador."}
           </span>
         </li>

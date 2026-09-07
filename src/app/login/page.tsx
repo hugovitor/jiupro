@@ -69,7 +69,7 @@ export default function LoginPage() {
             autoComplete="current-password"
           />
         </div>
-        <Button type="submit" className="w-full uppercase tracking-wide" size="lg" disabled={busy}>
+        <Button type="submit" className="w-full" size="lg" disabled={busy}>
           {busy ? "Entrando…" : "Entrar"}
         </Button>
       </form>
@@ -84,13 +84,13 @@ export default function LoginPage() {
               setPassword(a.password);
               void enter(a.email, a.password);
             }}
-            className="flex w-full items-center justify-between rounded-lg border border-border bg-muted/40 px-4 py-3 text-left hover:bg-muted"
+            className="flex w-full items-center justify-between border border-border bg-muted/40 px-4 py-3 text-left hover:bg-muted"
           >
             <span>
               <span className="block text-sm font-medium">{a.label}</span>
               <span className="text-xs text-muted-foreground">{a.hint}</span>
             </span>
-            <span className="text-xs text-primary">Abrir</span>
+            <span className="text-xs text-muted-foreground">Abrir</span>
           </button>
         ))}
       </div>

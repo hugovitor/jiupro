@@ -9,7 +9,7 @@ import { cn } from "@/lib/utils";
 
 const NAV = [
   { href: "/aluno", label: "Hoje", icon: Home },
-  { href: "/aluno/agenda", label: "Aulas", icon: CalendarDays },
+  { href: "/aluno/agenda", label: "Agenda", icon: CalendarDays },
   { href: "/aluno/mural", label: "Mural", icon: MessageSquare },
   { href: "/aluno/evolucao", label: "Faixa", icon: LineChart },
   { href: "/aluno/perfil", label: "Perfil", icon: User },
@@ -22,9 +22,9 @@ export function AlunoShell({ children }: { children: React.ReactNode }) {
   const student = currentStudent(store);
 
   return (
-    <div className="flex min-h-screen justify-center bg-background">
-      <div className="flex min-h-screen w-full max-w-md flex-col border-x border-border bg-card">
-        <header className="sticky top-0 z-30 flex h-14 items-center gap-3 border-b border-border bg-card/95 px-4 backdrop-blur">
+    <div className="flex min-h-screen justify-center bg-[#f3f2f1]">
+      <div className="flex min-h-screen w-full max-w-md flex-col border-x border-border bg-white">
+        <header className="sticky top-0 z-30 flex h-12 items-center gap-3 border-b border-border bg-white px-4">
           <Logo />
           <div className="min-w-0 flex-1 text-right">
             <p className="truncate text-[11px] text-muted-foreground">{store.academy.name}</p>
@@ -45,7 +45,7 @@ export function AlunoShell({ children }: { children: React.ReactNode }) {
           </button>
         </header>
         <main className="flex-1 p-4 pb-20">{children}</main>
-        <nav className="fixed bottom-0 left-1/2 z-20 w-full max-w-md -translate-x-1/2 border-t border-border bg-card pb-[max(0.25rem,env(safe-area-inset-bottom))]">
+        <nav className="fixed bottom-0 left-1/2 z-20 w-full max-w-md -translate-x-1/2 border-t border-border bg-white pb-[max(0.25rem,env(safe-area-inset-bottom))]">
           <div className="flex">
             {NAV.map((item) => {
               const active =
@@ -58,7 +58,7 @@ export function AlunoShell({ children }: { children: React.ReactNode }) {
                   href={item.href}
                   className={cn(
                     "flex flex-1 flex-col items-center gap-1 py-2 text-[10px]",
-                    active ? "font-medium text-primary" : "text-muted-foreground",
+                    active ? "font-medium text-foreground" : "text-muted-foreground",
                   )}
                 >
                   <item.icon className="size-4" />

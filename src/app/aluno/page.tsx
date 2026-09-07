@@ -66,8 +66,8 @@ export default function AlunoHome() {
       </div>
 
       <section className="surface p-4">
-        <p className="text-[11px] tracking-[0.16em] text-primary uppercase">
-          Minhas próximas aulas
+        <p className="text-[11px] tracking-[0.16em] text-muted-foreground uppercase">
+          Próxima aula
         </p>
         {classes.length === 0 && (
           <p className="mt-2 text-sm text-muted-foreground">
@@ -239,29 +239,29 @@ function FeaturedClass({
         {phaseLabel(phase)} · {hint}
       </p>
       {validated ? (
-        <div className="mt-4 rounded-xl border border-border bg-muted px-3 py-3 text-sm">
+        <div className="mt-4 border border-border bg-muted px-3 py-3 text-sm">
           Presença validada pelo professor.
         </div>
       ) : pending ? (
-        <div className="mt-4 space-y-2 rounded-xl border border-border bg-muted px-3 py-3">
+        <div className="mt-4 space-y-2 border border-border bg-muted px-3 py-3">
           <p className="text-sm">Você confirmou. Esperando o aceite no tatame.</p>
           <Button size="sm" variant="ghost" onClick={onCancel}>
             Desistir desta aula
           </Button>
         </div>
       ) : full ? (
-        <p className="mt-4 rounded-xl border border-border bg-muted px-3 py-3 text-sm text-muted-foreground">
+        <p className="mt-4 border border-border bg-muted px-3 py-3 text-sm text-muted-foreground">
           Turma lotada. Fale com o professor na recepção.
         </p>
       ) : canCheck ? (
         <>
           <Button className="mt-4 h-12 w-full text-base" size="lg" onClick={onConfirm}>
-            Check-in
+            Confirmar que vou
           </Button>
           <p className="mt-2 text-center text-xs text-muted-foreground">{lockHint}</p>
         </>
       ) : (
-        <p className="mt-4 rounded-xl border border-border bg-muted px-3 py-3 text-sm text-muted-foreground">
+        <p className="mt-4 border border-border bg-muted px-3 py-3 text-sm text-muted-foreground">
           {lockHint}
         </p>
       )}
@@ -293,7 +293,7 @@ function Classmates({
           Seja o primeiro. Os colegas vão ver o seu nome aqui.
         </p>
       ) : (
-        <ul className="mt-3 divide-y divide-border overflow-hidden rounded-xl border border-border">
+        <ul className="mt-3 divide-y divide-border overflow-hidden border border-border">
           {people.map(({ student, row }) => (
             <li key={student.id} className="flex items-center gap-3 px-3 py-2">
               <PersonAvatar name={student.name} hue={student.avatarHue} size="sm" />
@@ -337,7 +337,7 @@ function FrequencyMonth({ studentId, count }: { studentId?: string; count: numbe
     <section className="surface p-4">
       <div className="flex items-baseline justify-between">
         <p className="text-xs text-muted-foreground">Frequência mensal</p>
-        <p className="text-xs text-primary tabular-nums">{count} treinos</p>
+        <p className="text-xs tabular-nums text-muted-foreground">{count} treinos</p>
       </div>
       <div className="mt-3 grid grid-cols-7 gap-1 text-center text-[10px] text-muted-foreground">
         {["D", "S", "T", "Q", "Q", "S", "S"].map((d, i) => (

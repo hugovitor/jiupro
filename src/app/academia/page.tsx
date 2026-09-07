@@ -86,11 +86,11 @@ export default function AcademiaDashboard() {
           <p className="text-[12px] text-muted-foreground">
             {weekdayFull(weekdayToday())} · {monthLabel(month)}
           </p>
-          <h1 className="mt-1 text-[22px] font-medium">Dashboard</h1>
+          <h1 className="mt-1 text-[22px] font-medium">Início</h1>
           {store.isDemo ? (
             <p className="mt-2 text-sm text-muted-foreground">
               Equipe Origem (demonstração).{" "}
-              <Link href="/cadastro" className="text-primary underline">
+              <Link href="/cadastro" className="text-foreground underline underline-offset-4">
                 Abra a sua academia
               </Link>
               .
@@ -131,7 +131,7 @@ export default function AcademiaDashboard() {
         <section className="surface p-5">
           <div className="flex items-end justify-between gap-4">
             <h2 className="text-[14px] font-medium">Próximas aulas</h2>
-            <Link href="/academia/presenca" className="text-xs text-primary hover:underline">
+            <Link href="/academia/presenca" className="text-xs text-muted-foreground hover:text-foreground">
               Fazer chamada
             </Link>
           </div>
@@ -172,18 +172,18 @@ export default function AcademiaDashboard() {
                           {instructor} · {phaseLabel(phase)} · {phaseHint(c, now)}
                         </p>
                       </div>
-                      <p className="text-right text-[12px] text-primary">
+                      <p className="text-right text-[12px] text-muted-foreground">
                         {confirmed} confirmados
                         {waiting ? (
-                          <span className="block text-[11px] text-muted-foreground">
+                          <span className="block text-[11px]">
                             {waiting} aguardando aceite
                           </span>
                         ) : null}
                       </p>
                     </div>
-                    <div className="mt-2 h-1.5 overflow-hidden rounded-full bg-muted">
+                    <div className="mt-2 h-1 overflow-hidden bg-muted">
                       <div
-                        className="h-full rounded-full bg-primary"
+                        className="h-full bg-foreground"
                         style={{ width: `${pct}%` }}
                       />
                     </div>
@@ -388,7 +388,7 @@ function StatCard({
 }) {
   return (
     <div className="surface flex items-start gap-3 p-4">
-      <span className="flex size-9 items-center justify-center rounded-lg bg-primary/15 text-primary">
+      <span className="flex size-9 items-center justify-center bg-muted text-muted-foreground">
         <Icon className="size-4" />
       </span>
       <div className="min-w-0">
