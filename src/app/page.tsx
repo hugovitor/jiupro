@@ -195,7 +195,7 @@ function ProductPreview() {
                 key={item}
                 className={`border-l-2 px-4 py-2 text-[13px] ${
                   i === 0
-                    ? "border-foreground bg-[#f3f2f1] font-medium"
+                    ? "border-primary bg-[#f3f2f1] font-medium text-primary"
                     : "border-transparent text-muted-foreground"
                 }`}
               >
@@ -222,7 +222,7 @@ function ProductPreview() {
                 </div>
                 <div className="h-1 bg-[#edebe9]">
                   <div
-                    className="h-full bg-foreground"
+                    className="h-full bg-primary"
                     style={{ width: `${(Number(c) / Number(cap)) * 100}%` }}
                   />
                 </div>

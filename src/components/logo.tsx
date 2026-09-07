@@ -9,13 +9,7 @@ export function Logo({
 }) {
   return (
     <span className={cn("inline-flex items-center gap-2.5", className)}>
-      <span
-        className={cn(
-          "block h-3.5 w-3.5",
-          inverted ? "bg-white" : "bg-foreground",
-        )}
-        aria-hidden
-      />
+      <span className="block h-3.5 w-3.5 bg-primary" aria-hidden />
       <span
         className={cn(
           "text-[13px] font-semibold tracking-[0.28em] uppercase",

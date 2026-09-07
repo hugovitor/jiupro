@@ -136,7 +136,7 @@ function CadastroForm() {
                 onClick={() => setPlan(p.id)}
                 className={`border px-3 py-2.5 text-left text-sm ${
                   plan === p.id
-                    ? "border-foreground bg-muted"
+                    ? "border-primary bg-muted"
                     : "border-border"
                 }`}
               >

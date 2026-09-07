@@ -67,7 +67,7 @@
   --destructive: #a4262c;
   --border: #e1dfdd;
   --input: #e1dfdd;
-  --ring: #201f1e;
+  --ring: #c41e3a;
   --chart-1: #c41e3a;
   --chart-2: #201f1e;
   --chart-3: #8a8886;
@@ -81,7 +81,7 @@
   --sidebar-accent: #f3f2f1;
   --sidebar-accent-foreground: #201f1e;
   --sidebar-border: #e1dfdd;
-  --sidebar-ring: #201f1e;
+  --sidebar-ring: #c41e3a;
 }
 
 @layer base {

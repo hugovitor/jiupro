@@ -142,7 +142,7 @@ export function AcademiaShell({ children }: { children: React.ReactNode }) {
                     className={cn(
                       "flex items-center gap-2 border-l-2 px-4 py-2 text-[13px]",
                       active && group.items.length === 0
-                        ? "border-foreground bg-[#f3f2f1] font-medium"
+                        ? "border-primary bg-[#f3f2f1] font-medium text-primary"
                         : active
                           ? "border-transparent font-medium text-foreground"
                           : "border-transparent text-muted-foreground hover:bg-[#f3f2f1] hover:text-foreground",
@@ -160,7 +160,7 @@ export function AcademiaShell({ children }: { children: React.ReactNode }) {
                           className={cn(
                             "block border-l-2 py-1.5 pr-4 pl-10 text-[13px]",
                             itemIsActive(item.href, pathname)
-                              ? "border-foreground bg-[#f3f2f1] font-medium"
+                              ? "border-primary bg-[#f3f2f1] font-medium text-primary"
                               : "border-transparent text-muted-foreground hover:bg-[#f3f2f1] hover:text-foreground",
                           )}
                         >
@@ -197,7 +197,7 @@ export function AcademiaShell({ children }: { children: React.ReactNode }) {
                   className={cn(
                     "shrink-0 border-b-2 px-4 py-2 text-[12px]",
                     itemIsActive(item.href, pathname)
-                      ? "border-foreground font-medium"
+                      ? "border-primary font-medium text-primary"
                       : "border-transparent text-muted-foreground",
                   )}
                 >
@@ -223,7 +223,7 @@ export function AcademiaShell({ children }: { children: React.ReactNode }) {
                 href={href}
                 className={cn(
                   "flex flex-1 flex-col items-center gap-0.5 py-2 text-[10px]",
-                  active ? "font-medium text-foreground" : "text-muted-foreground",
+                  active ? "font-medium text-primary" : "text-muted-foreground",
                 )}
               >
                 <Icon className="size-4" />

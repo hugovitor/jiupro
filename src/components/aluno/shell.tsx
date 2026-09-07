@@ -58,7 +58,7 @@ export function AlunoShell({ children }: { children: React.ReactNode }) {
                   href={item.href}
                   className={cn(
                     "flex flex-1 flex-col items-center gap-1 py-2 text-[10px]",
-                    active ? "font-medium text-foreground" : "text-muted-foreground",
+                    active ? "font-medium text-primary" : "text-muted-foreground",
                   )}
                 >
                   <item.icon className="size-4" />

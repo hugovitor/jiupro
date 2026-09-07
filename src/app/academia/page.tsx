@@ -183,7 +183,7 @@ export default function AcademiaDashboard() {
                     </div>
                     <div className="mt-2 h-1 overflow-hidden bg-muted">
                       <div
-                        className="h-full bg-foreground"
+                        className="h-full bg-primary"
                         style={{ width: `${pct}%` }}
                       />
                     </div>

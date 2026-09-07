@@ -53,7 +53,7 @@ export default function PlanosPage() {
               <article
                 key={plan.id}
                 className={`surface flex flex-col p-6 ${
-                  plan.popular ? "border-foreground" : ""
+                  plan.popular ? "border-primary" : ""
                 }`}
               >
               <h2 className="text-lg font-semibold tracking-tight">{plan.name}</h2>

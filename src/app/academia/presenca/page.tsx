@@ -163,7 +163,7 @@ export default function PresencaPage() {
               className={cn(
                 "flex shrink-0 items-center gap-2 border-b-2 px-3 py-2.5 text-left text-[13px]",
                 selected
-                  ? "border-foreground font-medium"
+                  ? "border-primary font-medium text-primary"
                   : "border-transparent text-muted-foreground hover:text-foreground",
               )}
             >
