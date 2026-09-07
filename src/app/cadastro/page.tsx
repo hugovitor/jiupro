@@ -4,7 +4,7 @@ import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { Suspense, useState } from "react";
 import { toast } from "sonner";
-import { AuthBeltAside, AuthScreen } from "@/components/auth-screen";
+import { AuthScreen } from "@/components/auth-screen";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -31,26 +31,17 @@ function CadastroForm() {
 
   return (
     <AuthScreen
-      kicker="Cada academia, uma conta"
-      title={
-        <>
-          Abre a
-          <br />
-          sua
-          <br />
-          <span className="text-primary">casa.</span>
-        </>
-      }
+      kicker="Conta da academia"
+      title="Abra a sua casa, isolada da demonstração."
       subtitle={
         remote
-          ? "Isolada da Equipe Origem. Com o projeto ligado, a conta também fica no Supabase."
+          ? "Com o projeto ligado, a conta também fica no Supabase."
           : "Neste navegador, isolada da demo. Em produção, ligue o Supabase em Configurações para não perder os dados."
       }
-      aside={<AuthBeltAside />}
       switchHref="/login"
       switchLabel="Já tenho conta"
     >
-      <h2 className="font-display text-4xl">Abrir academia</h2>
+      <h2 className="text-xl font-semibold tracking-tight">Abrir academia</h2>
       <p className="mt-2 text-sm text-muted-foreground">
         Cadastro cria a sua casa, não entra como Carla. Sem cartão agora — o
         plano é só o teto de alunos.
@@ -146,7 +137,7 @@ function CadastroForm() {
                 className={`rounded-xl border px-3 py-2.5 text-left text-sm ${
                   plan === p.id
                     ? "border-primary bg-primary/10"
-                    : "border-white/8"
+                    : "border-border"
                 }`}
               >
                 <span className="font-medium">{p.name}</span>

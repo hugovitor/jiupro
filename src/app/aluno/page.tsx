@@ -29,7 +29,7 @@ export default function AlunoHome() {
             <p className="text-sm text-muted-foreground">
               {weekdayFull(weekdayToday())}
             </p>
-            <h1 className="font-display text-4xl leading-none">
+            <h1 className="text-2xl font-semibold tracking-tight">
               {student?.name.split(" ")[0] ?? "aluno"}
             </h1>
           </div>

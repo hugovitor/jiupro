@@ -4,7 +4,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { toast } from "sonner";
-import { AuthBeltAside, AuthScreen } from "@/components/auth-screen";
+import { AuthScreen } from "@/components/auth-screen";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -31,22 +31,13 @@ export default function LoginPage() {
 
   return (
     <AuthScreen
-      kicker="Painel e PWA"
-      title={
-        <>
-          Volta
-          <br />
-          pro
-          <br />
-          <span className="text-primary">tatame.</span>
-        </>
-      }
-      subtitle="Painel da academia ou app do aluno. Se ainda não abriu a casa, o cadastro é o caminho."
-      aside={<AuthBeltAside />}
+      kicker="Acesso à academia"
+      title="Entre no painel ou no app do aluno."
+      subtitle="Se ainda não abriu a casa, o cadastro é o caminho. A Equipe Origem continua nos atalhos de demonstração."
       switchHref="/cadastro"
-      switchLabel="Abrir academia"
+      switchLabel="Criar conta"
     >
-      <h2 className="font-display text-4xl">Entrar</h2>
+      <h2 className="text-xl font-semibold tracking-tight">Entrar</h2>
       <p className="mt-2 text-sm text-muted-foreground">
         E-mail da sua academia. A demo da Equipe Origem fica nos atalhos abaixo.
       </p>
@@ -93,7 +84,7 @@ export default function LoginPage() {
               setPassword(a.password);
               void enter(a.email, a.password);
             }}
-            className="flex w-full items-center justify-between rounded-xl border border-white/8 bg-white/5 px-4 py-3 text-left hover:bg-white/10"
+            className="flex w-full items-center justify-between rounded-lg border border-border bg-muted/40 px-4 py-3 text-left hover:bg-muted"
           >
             <span>
               <span className="block text-sm font-medium">{a.label}</span>

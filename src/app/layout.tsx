@@ -1,21 +1,20 @@
 import type { Metadata, Viewport } from "next";
-import { Bebas_Neue, Geist_Mono, Outfit } from "next/font/google";
+import { Geist_Mono, Inter, Source_Serif_4 } from "next/font/google";
 import { Toaster } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { Providers } from "@/components/providers";
 import { metadataBaseUrl } from "@/lib/app-url";
 import "./globals.css";
 
-const outfit = Outfit({
+const inter = Inter({
   variable: "--font-body",
   subsets: ["latin"],
-  weight: ["400", "500", "600", "700"],
 });
 
-const bebas = Bebas_Neue({
-  variable: "--font-bebas",
+const sourceSerif = Source_Serif_4({
+  variable: "--font-serif",
   subsets: ["latin"],
-  weight: "400",
+  weight: ["400", "500", "600"],
 });
 
 const geistMono = Geist_Mono({
@@ -34,21 +33,21 @@ export const metadata: Metadata = {
   applicationName: "JiuPro",
   appleWebApp: {
     capable: true,
-    statusBarStyle: "black-translucent",
+    statusBarStyle: "default",
     title: "JiuPro",
   },
   formatDetection: { telephone: false },
   openGraph: {
     title: "JiuPro — gestão para academias de Jiu-Jitsu",
     description:
-      "O quadro da casa: alunos, Pix, faixas e presença. Cada academia, uma conta.",
+      "Operação da academia: alunos, Pix, faixas e presença. Cada casa, uma conta.",
     locale: "pt_BR",
     type: "website",
   },
 };
 
 export const viewport: Viewport = {
-  themeColor: "#09090b",
+  themeColor: "#f6f5f3",
   width: "device-width",
   initialScale: 1,
   maximumScale: 1,
@@ -59,9 +58,9 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
   return (
     <html
       lang="pt-BR"
-      className={`dark tatame ${outfit.variable} ${bebas.variable} ${geistMono.variable} h-full antialiased`}
+      className={`${inter.variable} ${sourceSerif.variable} ${geistMono.variable} h-full antialiased`}
     >
-      <body className="min-h-full flex flex-col bg-background text-foreground">
+      <body className="flex min-h-full flex-col bg-background text-foreground">
         <Providers>
           <TooltipProvider>
             {children}

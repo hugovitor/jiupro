@@ -12,7 +12,7 @@ const NAV = [
   { href: "/aluno/agenda", label: "Agenda", icon: CalendarDays },
   { href: "/aluno/mural", label: "Mural", icon: MessageSquare },
   { href: "/aluno/evolucao", label: "Faixa", icon: LineChart },
-  { href: "/aluno/perfil", label: "Eu", icon: User },
+  { href: "/aluno/perfil", label: "Perfil", icon: User },
 ];
 
 export function AlunoShell({ children }: { children: React.ReactNode }) {
@@ -22,19 +22,19 @@ export function AlunoShell({ children }: { children: React.ReactNode }) {
   const student = currentStudent(store);
 
   return (
-    <div className="flex min-h-screen justify-center">
-      <div className="flex min-h-screen w-full max-w-lg flex-col">
-        <header className="sticky top-0 z-30 flex items-center gap-3 border-b border-white/8 bg-[#09090b]/90 px-4 py-3 backdrop-blur-md">
-          <Logo markClassName="size-8" />
+    <div className="flex min-h-screen justify-center bg-background">
+      <div className="flex min-h-screen w-full max-w-lg flex-col bg-card shadow-[0_0_0_1px_var(--border)] sm:my-0">
+        <header className="sticky top-0 z-30 flex items-center gap-3 border-b border-border bg-card px-4 py-3">
+          <Logo />
           <div className="min-w-0 flex-1">
             <p className="truncate text-xs text-muted-foreground">{store.academy.name}</p>
-            <p className="truncate font-display text-lg leading-none">
+            <p className="truncate text-sm font-semibold tracking-tight">
               {student?.name.split(" ")[0] ?? "Aluno"}
             </p>
           </div>
           <button
             type="button"
-            className="rounded-full p-2 text-zinc-500 hover:bg-white/5 hover:text-white"
+            className="rounded-md p-2 text-muted-foreground hover:bg-muted hover:text-foreground"
             onClick={() => {
               store.logout();
               router.push("/");
@@ -44,9 +44,9 @@ export function AlunoShell({ children }: { children: React.ReactNode }) {
             <LogOut className="size-4" />
           </button>
         </header>
-        <main className="flex-1 p-4 pb-28">{children}</main>
-        <nav className="fixed bottom-3 left-1/2 z-20 w-[min(100%-1.5rem,32rem)] -translate-x-1/2">
-          <div className="flex rounded-2xl border border-white/10 bg-[#121214]/90 p-1 shadow-[0_12px_40px_rgb(0_0_0_/_0.55)] backdrop-blur-md">
+        <main className="flex-1 p-4 pb-24">{children}</main>
+        <nav className="fixed bottom-0 left-1/2 z-20 w-full max-w-lg -translate-x-1/2 border-t border-border bg-card pb-[max(0.4rem,env(safe-area-inset-bottom))]">
+          <div className="flex">
             {NAV.map((item) => {
               const active =
                 item.href === "/aluno"
@@ -57,8 +57,8 @@ export function AlunoShell({ children }: { children: React.ReactNode }) {
                   key={item.href}
                   href={item.href}
                   className={cn(
-                    "flex flex-1 flex-col items-center gap-1 rounded-xl py-2.5 text-[11px] transition-colors",
-                    active ? "bg-primary text-white" : "text-zinc-500 hover:text-white",
+                    "flex flex-1 flex-col items-center gap-1 py-2.5 text-[11px] font-medium",
+                    active ? "text-primary" : "text-muted-foreground",
                   )}
                 >
                   <item.icon className="size-5" />

@@ -30,7 +30,7 @@ export function GoLiveCard() {
       <p className="text-xs font-medium tracking-wide text-primary uppercase">
         Produção
       </p>
-      <h2 className="mt-1 font-display text-2xl uppercase">A academia já opera</h2>
+      <h2 className="mt-1 text-lg font-semibold tracking-tight">A academia já opera</h2>
       <p className="mt-2 text-sm text-muted-foreground">
         Asaas e Stripe entram depois. Agora o que importa: a casa no ar, os
         alunos no painel e a mensalidade no Pix da casa + WhatsApp.

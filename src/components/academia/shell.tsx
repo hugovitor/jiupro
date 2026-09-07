@@ -29,7 +29,7 @@ const GROUPS: NavGroup[] = [
   { id: "hoje", label: "Hoje", icon: LayoutGrid, href: "/academia", items: [] },
   {
     id: "gente",
-    label: "Gente",
+    label: "Pessoas",
     icon: Users,
     items: [
       { href: "/academia/alunos", label: "Alunos" },
@@ -39,7 +39,7 @@ const GROUPS: NavGroup[] = [
   },
   {
     id: "tatame",
-    label: "Tatame",
+    label: "Operação",
     icon: PersonStanding,
     items: [
       { href: "/academia/turmas", label: "Turmas" },
@@ -49,18 +49,18 @@ const GROUPS: NavGroup[] = [
   },
   {
     id: "caixa",
-    label: "Caixa",
+    label: "Financeiro",
     icon: Banknote,
     items: [
       { href: "/academia/cobrancas", label: "Cobranças" },
-      { href: "/academia/financeiro", label: "Financeiro" },
+      { href: "/academia/financeiro", label: "Lançamentos" },
       { href: "/academia/fechamento", label: "Fechamento" },
       { href: "/academia/estoque", label: "Estoque" },
     ],
   },
   {
     id: "casa",
-    label: "Casa",
+    label: "Academia",
     icon: Building2,
     items: [
       { href: "/academia/mural", label: "Mural" },
@@ -85,28 +85,33 @@ export function AcademiaShell({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
   const user = store.users.find((u) => u.id === store.session?.userId);
   const activeGroup = GROUPS.find((g) => groupIsActive(g, pathname)) ?? GROUPS[0];
+  const pageTitle =
+    activeGroup.items.find((i) => itemIsActive(i.href, pathname))?.label ?? "Visão do dia";
 
   function logout() {
     store.logout();
     router.push("/");
   }
 
+  const initials = (user?.name ?? "A")
+    .split(" ")
+    .slice(0, 2)
+    .map((p) => p[0])
+    .join("")
+    .toUpperCase();
+
   return (
-    <div className="flex min-h-screen">
-      <aside className="sticky top-0 hidden h-screen w-60 shrink-0 flex-col border-r border-white/8 bg-[#0c0c0e] lg:flex">
-        <div className="flex h-16 items-center gap-2 px-4">
+    <div className="flex min-h-screen bg-background">
+      <aside className="sticky top-0 hidden h-screen w-60 shrink-0 flex-col border-r border-border bg-sidebar lg:flex">
+        <div className="flex h-14 items-center px-4">
           <Link href="/academia">
             <Logo />
           </Link>
         </div>
-        <div className="h-px bg-gradient-to-r from-transparent via-primary to-transparent" />
-        <div className="px-4 py-4">
-          <p className="truncate font-display text-lg leading-none tracking-wide">
-            {store.academy.name}
-          </p>
-          <p className="mt-1 truncate text-xs text-muted-foreground">
+        <div className="mx-3 mb-3 rounded-lg bg-muted px-3 py-2">
+          <p className="truncate text-sm font-medium">{store.academy.name}</p>
+          <p className="truncate text-xs text-muted-foreground">
             {store.academy.city}/{store.academy.state}
-            {user?.name ? ` · ${user.name}` : ""}
           </p>
         </div>
         <nav className="flex-1 space-y-5 overflow-y-auto px-3 pb-4">
@@ -119,28 +124,28 @@ export function AcademiaShell({ children }: { children: React.ReactNode }) {
                 <Link
                   href={href}
                   className={cn(
-                    "flex items-center gap-2.5 rounded-lg px-2.5 py-2 text-sm transition-colors",
+                    "flex items-center gap-2.5 rounded-md px-2 py-1.5 text-sm font-medium",
                     active && group.items.length === 0
-                      ? "bg-primary text-white"
+                      ? "bg-primary text-primary-foreground"
                       : active
-                        ? "text-white"
-                        : "text-zinc-400 hover:bg-white/5 hover:text-white",
+                        ? "text-foreground"
+                        : "text-muted-foreground hover:bg-muted hover:text-foreground",
                   )}
                 >
                   <Icon className="size-4 shrink-0" />
-                  <span className="font-display text-base tracking-wide">{group.label}</span>
+                  {group.label}
                 </Link>
                 {group.items.length > 0 && (
-                  <div className="mt-1 ml-6 space-y-0.5 border-l border-white/8 pl-3">
+                  <div className="mt-1 ml-[1.15rem] space-y-0.5 border-l border-border pl-3">
                     {group.items.map((item) => (
                       <Link
                         key={item.href}
                         href={item.href}
                         className={cn(
-                          "block rounded-md px-2 py-1.5 text-sm",
+                          "block rounded-md px-2 py-1 text-sm",
                           itemIsActive(item.href, pathname)
-                            ? "bg-primary/15 text-white"
-                            : "text-zinc-500 hover:text-white",
+                            ? "bg-muted font-medium text-foreground"
+                            : "text-muted-foreground hover:text-foreground",
                         )}
                       >
                         {item.label}
@@ -152,29 +157,31 @@ export function AcademiaShell({ children }: { children: React.ReactNode }) {
             );
           })}
         </nav>
-        <div className="border-t border-white/8 p-3">
-          <Button variant="ghost" className="w-full justify-start" onClick={logout}>
+        <div className="flex items-center gap-2 border-t border-border p-3">
+          <span className="flex size-8 items-center justify-center rounded-full bg-muted text-xs font-medium">
+            {initials}
+          </span>
+          <div className="min-w-0 flex-1">
+            <p className="truncate text-sm font-medium">{user?.name ?? "Conta"}</p>
+            <p className="truncate text-xs text-muted-foreground">{user?.email}</p>
+          </div>
+          <Button variant="ghost" size="icon-sm" onClick={logout} aria-label="Sair">
             <LogOut className="size-4" />
-            Sair
           </Button>
         </div>
       </aside>
 
       <div className="flex min-w-0 flex-1 flex-col">
-        <header className="sticky top-0 z-40 border-b border-white/8 bg-[#09090b]/90 backdrop-blur-md lg:hidden">
+        <header className="sticky top-0 z-40 border-b border-border bg-background/90 backdrop-blur-md lg:hidden">
           <div className="flex h-14 items-center gap-3 px-4">
             <Link href="/academia" className="shrink-0">
-              <Logo markClassName="size-8" />
+              <Logo />
             </Link>
             <div className="min-w-0 flex-1">
-              <p className="truncate font-display text-base leading-none">
-                {store.academy.name}
-              </p>
-              <p className="truncate text-[11px] text-muted-foreground">
-                {store.academy.city}/{store.academy.state}
-              </p>
+              <p className="truncate text-sm font-medium">{store.academy.name}</p>
+              <p className="truncate text-xs text-muted-foreground">{pageTitle}</p>
             </div>
-            <Button variant="ghost" size="sm" onClick={logout}>
+            <Button variant="ghost" size="icon-sm" onClick={logout} aria-label="Sair">
               <LogOut className="size-4" />
             </Button>
           </div>
@@ -185,10 +192,10 @@ export function AcademiaShell({ children }: { children: React.ReactNode }) {
                   key={item.href}
                   href={item.href}
                   className={cn(
-                    "shrink-0 rounded-full px-3 py-1 text-xs",
+                    "shrink-0 rounded-full px-3 py-1 text-xs font-medium",
                     itemIsActive(item.href, pathname)
-                      ? "bg-primary text-white"
-                      : "bg-white/5 text-zinc-400",
+                      ? "bg-primary text-primary-foreground"
+                      : "bg-muted text-muted-foreground",
                   )}
                 >
                   {item.label}
@@ -198,22 +205,17 @@ export function AcademiaShell({ children }: { children: React.ReactNode }) {
           )}
         </header>
 
-        <header className="sticky top-0 z-30 hidden h-16 items-center justify-between border-b border-white/8 bg-[#09090b]/80 px-8 backdrop-blur-md lg:flex">
+        <header className="sticky top-0 z-30 hidden h-14 items-center justify-between border-b border-border bg-background/90 px-8 backdrop-blur-md lg:flex">
           <div>
-            <p className="text-[11px] tracking-[0.18em] text-muted-foreground uppercase">
-              {activeGroup.label}
-            </p>
-            <p className="font-display text-xl leading-none">
-              {activeGroup.items.find((i) => itemIsActive(i.href, pathname))?.label ??
-                "Quadro do dia"}
-            </p>
+            <p className="text-xs text-muted-foreground">{activeGroup.label}</p>
+            <p className="text-sm font-semibold tracking-tight">{pageTitle}</p>
           </div>
           <p className="text-sm text-muted-foreground">{user?.name}</p>
         </header>
 
         <main className="flex-1 p-4 pb-28 lg:p-8">{children}</main>
 
-        <nav className="fixed inset-x-0 bottom-0 z-40 border-t border-white/10 bg-[#09090b]/95 px-2 pb-[max(0.5rem,env(safe-area-inset-bottom))] pt-1 backdrop-blur-md lg:hidden">
+        <nav className="fixed inset-x-0 bottom-0 z-40 border-t border-border bg-background px-2 pb-[max(0.4rem,env(safe-area-inset-bottom))] pt-1 lg:hidden">
           <div className="flex">
             {GROUPS.map((group) => {
               const active = groupIsActive(group, pathname);
@@ -224,8 +226,8 @@ export function AcademiaShell({ children }: { children: React.ReactNode }) {
                   key={group.id}
                   href={href}
                   className={cn(
-                    "flex flex-1 flex-col items-center gap-0.5 py-2 text-[10px]",
-                    active ? "text-primary" : "text-zinc-500",
+                    "flex flex-1 flex-col items-center gap-0.5 py-2 text-[10px] font-medium",
+                    active ? "text-primary" : "text-muted-foreground",
                   )}
                 >
                   <Icon className="size-5" />

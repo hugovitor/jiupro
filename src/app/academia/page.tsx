@@ -61,7 +61,7 @@ export default function AcademiaDashboard() {
           <p className="text-xs tracking-[0.18em] text-muted-foreground uppercase">
             {weekdayFull(weekdayToday())} · {monthLabel(month)}
           </p>
-          <h1 className="font-display mt-1 text-5xl leading-none">Quadro do dia</h1>
+          <h1 className="mt-1 text-2xl font-semibold tracking-tight">Visão do dia</h1>
           {store.isDemo ? (
             <p className="mt-2 text-sm text-muted-foreground">
               Equipe Origem (demonstração).{" "}
@@ -103,7 +103,7 @@ export default function AcademiaDashboard() {
       <div className="mt-8 grid gap-4 lg:grid-cols-[minmax(0,1.1fr)_minmax(0,0.9fr)]">
         <section className="surface p-5">
           <div className="flex items-end justify-between gap-4">
-            <h2 className="font-display text-2xl">Hoje no tatame</h2>
+            <h2 className="text-base font-semibold tracking-tight">Turmas de hoje</h2>
             <Link href="/academia/presenca" className="text-xs text-primary hover:underline">
               Fazer chamada
             </Link>
@@ -144,13 +144,13 @@ export default function AcademiaDashboard() {
             </Button>
           </div>
           <div className="mt-4 grid grid-cols-2 gap-2 text-sm sm:grid-cols-3">
-            <Link className="surface px-3 py-3 text-sm hover:bg-white/5" href="/academia/cobrancas">
+            <Link className="surface px-3 py-3 text-sm hover:bg-muted" href="/academia/cobrancas">
               Cobrar no Zap
             </Link>
-            <Link className="surface px-3 py-3 text-sm hover:bg-white/5" href="/academia/experimentais">
+            <Link className="surface px-3 py-3 text-sm hover:bg-muted" href="/academia/experimentais">
               Experimentais
             </Link>
-            <Link className="surface px-3 py-3 text-sm hover:bg-white/5" href="/academia/fechamento">
+            <Link className="surface px-3 py-3 text-sm hover:bg-muted" href="/academia/fechamento">
               Fechamento
             </Link>
           </div>
@@ -158,7 +158,7 @@ export default function AcademiaDashboard() {
 
         <section className="surface p-5">
           <div className="flex items-end justify-between gap-4">
-            <h2 className="font-display text-2xl">Pararam de aparecer</h2>
+            <h2 className="text-base font-semibold tracking-tight">Pararam de aparecer</h2>
             <p className="text-xs text-muted-foreground">
               {brl(revenue)} no mês · despesas {brl(expenses)}
             </p>
@@ -329,7 +329,7 @@ function BoardCol({
   return (
     <section className="surface p-5">
       <div className="flex items-end justify-between">
-        <h2 className="font-display text-2xl">{title}</h2>
+        <h2 className="text-base font-semibold tracking-tight">{title}</h2>
         <Link href={href} className="text-xs text-muted-foreground hover:text-foreground">
           Ver
         </Link>
