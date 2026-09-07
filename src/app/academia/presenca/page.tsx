@@ -236,7 +236,7 @@ export default function PresencaPage() {
             </div>
           </div>
 
-          <div className="grid grid-cols-2 border border-border bg-white sm:grid-cols-4">
+          <div className="grid grid-cols-2 border border-border bg-card sm:grid-cols-4">
             <Kpi k="Aguardando" v={String(waiting.length)} hint="aluno confirmou" />
             <Kpi k="Validados" v={String(validated.length)} hint="no tatame" />
             <Kpi
@@ -302,7 +302,7 @@ export default function PresencaPage() {
               {visitors.map((v) => (
                 <div
                   key={v.id}
-                  className="flex items-center justify-between border border-border bg-white px-3 py-3 text-sm"
+                  className="flex items-center justify-between border border-border bg-card px-3 py-3 text-sm"
                 >
                   <span>
                     {v.name}
@@ -515,12 +515,12 @@ function Group({
       </div>
       {count === 0 ? (
         empty ? (
-          <p className="border border-dashed border-border bg-white px-3 py-4 text-sm text-muted-foreground">
+          <p className="border border-dashed border-border bg-card px-3 py-4 text-sm text-muted-foreground">
             {empty}
           </p>
         ) : null
       ) : (
-        <div className="divide-y divide-border border border-border bg-white">{children}</div>
+        <div className="divide-y divide-border border border-border bg-card">{children}</div>
       )}
     </section>
   );

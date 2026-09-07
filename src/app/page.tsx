@@ -10,7 +10,7 @@ const modules = [
   ["Presença", "Aluno confirma, a turma vê, o professor valida."],
   ["Graduação", "Tempo de faixa, graus e quem está pronto."],
   ["Estoque", "Kimono e faixa no nome do aluno."],
-  ["Aplicativo", "Confirma a aula, vê quem vai e espera o aceite."],
+  ["Aplicativo", "Check-in em um toque e frequência no calendário."],
 ];
 
 export default function HomePage() {
@@ -19,62 +19,162 @@ export default function HomePage() {
       dark
       nav={
         <nav className="hidden items-center gap-8 text-[13px] md:flex">
-          <a href="#produto" className="hover:text-white">
-            Produto
-          </a>
-          <a href="#app" className="hover:text-white">
-            Aplicativo
+          <a href="#aulas" className="hover:text-white">
+            Aulas
           </a>
           <a href="#planos" className="hover:text-white">
-            Planos
+            Pagamentos
+          </a>
+          <a href="#professores" className="hover:text-white">
+            Professores
+          </a>
+          <a href="#produto" className="hover:text-white">
+            Produto
           </a>
         </nav>
       }
     >
-      <section className="bg-[#111] text-white">
-        <div className="mx-auto flex min-h-[calc(100vh-3rem)] max-w-[720px] flex-col items-center justify-center px-5 py-24 text-center">
-          <p className="text-[12px] font-medium tracking-[0.22em] text-white/50 uppercase">
-            Sistema de gestão
-          </p>
-          <h1 className="mt-5 text-[40px] leading-[1.1] font-medium tracking-[-0.03em] sm:text-[52px]">
-            Operação da academia.
-          </h1>
-          <p className="mt-5 max-w-md text-[16px] leading-relaxed text-white/60">
-            Alunos, mensalidades, presença, faixas e estoque. Uma conta por
-            casa. O aluno confirma a aula; os colegas veem a lista; o professor
-            valida quem realmente treinou.
-          </p>
-          <div className="mt-10 flex w-full max-w-sm flex-col gap-3 sm:flex-row sm:justify-center">
-            <Button
-              size="lg"
-              className="h-11 flex-1 rounded-[2px] bg-white text-[#111] hover:bg-white/90"
-              render={<Link href="/cadastro" />}
-            >
-              Começar
-            </Button>
-            <Button
-              size="lg"
-              variant="outline"
-              className="h-11 flex-1 rounded-[2px] border-white/30 bg-transparent text-white hover:bg-white/10 hover:text-white"
-              render={<Link href="/demo" />}
-            >
-              Demonstração
-            </Button>
+      <section className="tatame-hero text-white">
+        <div className="mx-auto grid min-h-[calc(100vh-3.5rem)] max-w-[1100px] items-center gap-10 px-5 py-16 lg:grid-cols-[minmax(0,1.1fr)_minmax(0,0.9fr)]">
+          <div>
+            <p className="text-[12px] font-medium tracking-[0.22em] text-teal-300/80 uppercase">
+              Bem-vindo à Origem
+            </p>
+            <h1 className="mt-4 max-w-lg text-[40px] leading-[1.08] font-semibold tracking-[-0.03em] sm:text-[52px]">
+              Operação da academia no tatame e no celular.
+            </h1>
+            <p className="mt-5 max-w-md text-[16px] leading-relaxed text-white/65">
+              O aluno confirma a aula. Os colegas veem quem vai. O professor
+              valida quem treinou — sem código no quadro.
+            </p>
+            <div className="mt-10 flex w-full max-w-md flex-col gap-3 sm:flex-row">
+              <Button size="lg" className="h-12 flex-1" render={<Link href="/cadastro" />}>
+                Matricule-se agora
+              </Button>
+              <Button
+                size="lg"
+                variant="outline"
+                className="h-12 flex-1 border-white/20 text-white hover:bg-white/10 hover:text-white"
+                render={<Link href="#aulas" />}
+              >
+                Conheça as aulas
+              </Button>
+            </div>
+          </div>
+          <div className="surface overflow-hidden p-0">
+            <div className="border-b border-border px-5 py-4">
+              <p className="text-[12px] text-muted-foreground">Painel · Equipe Origem</p>
+              <p className="mt-1 text-[15px] font-medium">6 aulas hoje · 14 confirmados</p>
+            </div>
+            <div className="space-y-3 p-5">
+              {[
+                ["17:00", "Kids Gi", 9, 16],
+                ["19:30", "Adultos Gi", 14, 28],
+                ["20:30", "No-Gi", 8, 22],
+              ].map(([t, n, c, cap]) => (
+                <div key={String(t)}>
+                  <div className="mb-1.5 flex items-center justify-between text-[13px]">
+                    <span>
+                      <span className="font-mono tabular-nums">{t}</span>
+                      <span className="text-muted-foreground"> · {n}</span>
+                    </span>
+                    <span className="text-teal-300">{c} confirmados</span>
+                  </div>
+                  <div className="h-1.5 overflow-hidden rounded-full bg-muted">
+                    <div
+                      className="h-full rounded-full bg-primary"
+                      style={{ width: `${(Number(c) / Number(cap)) * 100}%` }}
+                    />
+                  </div>
+                </div>
+              ))}
+            </div>
           </div>
         </div>
       </section>
 
-      <section id="produto" className="border-b border-border bg-white">
+      <section id="professores" className="border-b border-border bg-background">
         <div className="mx-auto max-w-[1100px] px-5 py-16">
-          <p className="text-[12px] font-medium tracking-[0.18em] text-muted-foreground uppercase">
+          <p className="text-[12px] font-medium tracking-[0.18em] text-primary uppercase">
+            Professores destacados
+          </p>
+          <h2 className="mt-2 text-[28px] font-medium tracking-[-0.02em]">
+            Quem está no canto.
+          </h2>
+          <div className="mt-10 grid gap-6 sm:grid-cols-2">
+            {[
+              ["Carla Mendes", "Faixa preta · dona da casa", 38],
+              ["Rafael Costa", "Faixa marrom · kids e gi", 160],
+            ].map(([name, role, hue]) => (
+              <div key={String(name)} className="surface flex items-center gap-4 p-5">
+                <span
+                  className="flex size-16 items-center justify-center rounded-full text-lg font-medium text-white"
+                  style={{ background: `hsl(${hue} 18% 28%)` }}
+                >
+                  {String(name)
+                    .split(" ")
+                    .slice(0, 2)
+                    .map((p) => p[0])
+                    .join("")}
+                </span>
+                <div>
+                  <p className="font-medium">{name}</p>
+                  <p className="text-sm text-muted-foreground">{role}</p>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      <section id="aulas" className="border-b border-border bg-card">
+        <div className="mx-auto max-w-[1100px] px-5 py-16">
+          <p className="text-[12px] font-medium tracking-[0.18em] text-primary uppercase">
+            Grade de horários
+          </p>
+          <h2 className="mt-2 text-[28px] font-medium tracking-[-0.02em]">
+            A semana da Equipe Origem.
+          </h2>
+          <div className="mt-8 overflow-x-auto">
+            <table className="w-full min-w-[560px] text-left text-[13px]">
+              <thead className="text-[12px] tracking-wide text-muted-foreground uppercase">
+                <tr>
+                  <th className="px-3 py-3 font-medium">Horário</th>
+                  <th className="px-3 py-3 font-medium">Turma</th>
+                  <th className="px-3 py-3 font-medium">Dias</th>
+                  <th className="px-3 py-3 font-medium">Professor</th>
+                </tr>
+              </thead>
+              <tbody>
+                {[
+                  ["18:00", "Kids 7–12", "Ter e qui", "Rafael"],
+                  ["18:30", "Turma feminina", "Quarta", "Carla"],
+                  ["19:30", "Adultos Gi", "Seg, qua e sex", "Carla"],
+                  ["20:30", "No-Gi", "Ter e qui", "Rafael"],
+                  ["10:00", "Competição", "Sábado", "Carla"],
+                ].map((row) => (
+                  <tr key={row.join()} className="border-t border-border">
+                    {row.map((cell) => (
+                      <td key={cell} className="px-3 py-3">
+                        {cell}
+                      </td>
+                    ))}
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </section>
+
+      <section id="produto" className="border-b border-border bg-background">
+        <div className="mx-auto max-w-[1100px] px-5 py-16">
+          <p className="text-[12px] font-medium tracking-[0.18em] text-primary uppercase">
             Painel
           </p>
           <h2 className="mt-2 max-w-xl text-[28px] leading-tight font-medium tracking-[-0.02em]">
-            O mesmo recorte de um sistema corporativo: navegação, dados, ação.
+            Confirmados na aula, atraso no caixa, faixa no aluno.
           </h2>
-          <div className="mt-10 overflow-hidden border border-border">
-            <ProductPreview />
-          </div>
           <dl className="mt-12 grid gap-x-10 gap-y-8 sm:grid-cols-2 lg:grid-cols-3">
             {modules.map(([title, body]) => (
               <div key={title} className="border-t border-border pt-4">
@@ -88,41 +188,10 @@ export default function HomePage() {
         </div>
       </section>
 
-      <section id="app" className="border-b border-border bg-[#f3f2f1]">
-        <div className="mx-auto grid max-w-[1100px] items-center gap-12 px-5 py-16 lg:grid-cols-2">
-          <div>
-            <p className="text-[12px] font-medium tracking-[0.18em] text-muted-foreground uppercase">
-              Aplicativo do aluno
-            </p>
-            <h2 className="mt-2 text-[28px] leading-tight font-medium tracking-[-0.02em]">
-              Presença confirmada. Faixa visível.
-            </h2>
-            <ul className="mt-6 space-y-2 text-[14px] text-muted-foreground">
-              <li>Um toque confirma a aula. Os colegas veem quem vai.</li>
-              <li>Grade da semana e mural da casa.</li>
-              <li>Histórico de faixa, graus e treinos.</li>
-              <li>Pix da academia na mensalidade.</li>
-            </ul>
-            <Button className="mt-8" render={<Link href="/demo?as=aluno" />}>
-              Abrir o aplicativo
-            </Button>
-          </div>
-          <div className="border border-border bg-white p-6">
-            <p className="text-[12px] text-muted-foreground">Confirmou · Adultos Gi</p>
-            <p className="mt-4 font-mono text-[32px] tracking-tight">19:30</p>
-            <p className="mt-1 text-[13px] text-muted-foreground">Gi · 75 min</p>
-            <div className="mt-5 bg-[#111] px-4 py-3 text-center text-[13px] font-medium text-white">
-              Confirmar que vou
-            </div>
-            <p className="mt-4 text-[12px] text-muted-foreground">Na lista · Ana, Marina, Thiago</p>
-          </div>
-        </div>
-      </section>
-
-      <section id="planos" className="bg-white">
+      <section id="planos" className="bg-card">
         <div className="mx-auto max-w-[1100px] px-5 py-16">
-          <p className="text-[12px] font-medium tracking-[0.18em] text-muted-foreground uppercase">
-            Contratação
+          <p className="text-[12px] font-medium tracking-[0.18em] text-primary uppercase">
+            Pagamentos
           </p>
           <h2 className="mt-2 text-[28px] font-medium tracking-[-0.02em]">
             Uma assinatura por academia.
@@ -131,9 +200,9 @@ export default function HomePage() {
             Alunos pagam a mensalidade para você, pelo Pix da casa. A cobrança
             do JiuPro entra depois — a operação já funciona.
           </p>
-          <div className="mt-10 overflow-x-auto border border-border">
+          <div className="mt-10 overflow-x-auto">
             <table className="w-full min-w-[640px] text-left text-[13px]">
-              <thead className="bg-[#f3f2f1] text-[12px] tracking-wide text-muted-foreground uppercase">
+              <thead className="text-[12px] tracking-wide text-muted-foreground uppercase">
                 <tr>
                   <th className="px-4 py-3 font-medium">Plano</th>
                   <th className="px-4 py-3 font-medium">Alunos</th>
@@ -169,71 +238,12 @@ export default function HomePage() {
         </div>
       </section>
 
-      <footer className="border-t border-border bg-white py-8">
+      <footer className="border-t border-border bg-background py-8">
         <div className="mx-auto flex max-w-[1100px] flex-col gap-2 px-5 text-[12px] text-muted-foreground sm:flex-row sm:items-center sm:justify-between">
           <span>JiuPro</span>
           <span>Gestão para academias de Jiu-Jitsu. Cada academia, uma conta.</span>
         </div>
       </footer>
     </MarketingChrome>
-  );
-}
-
-function ProductPreview() {
-  return (
-    <div className="bg-white">
-      <div className="flex h-10 items-center border-b border-border bg-white px-4 text-[12px]">
-        <span className="font-medium tracking-[0.2em] uppercase">JiuPro</span>
-        <span className="mx-3 text-muted-foreground">/</span>
-        <span>Equipe Origem</span>
-        <span className="ml-auto text-muted-foreground">Campinas/SP</span>
-      </div>
-      <div className="grid min-h-[280px] lg:grid-cols-[200px_minmax(0,1fr)]">
-        <div className="hidden border-r border-border py-2 lg:block">
-          {["Início", "Alunos", "Presença", "Cobranças", "Configurações"].map(
-            (item, i) => (
-              <div
-                key={item}
-                className={`border-l-2 px-4 py-2 text-[13px] ${
-                  i === 2
-                    ? "border-foreground bg-[#f3f2f1] font-medium"
-                    : "border-transparent text-muted-foreground"
-                }`}
-              >
-                {item}
-              </div>
-            ),
-          )}
-        </div>
-        <div className="p-5">
-          <p className="text-[12px] text-muted-foreground">Operação / Presença</p>
-          <p className="mt-1 text-[16px] font-medium">Adultos Gi · 19:30</p>
-          <div className="mt-4 grid grid-cols-3 border border-border">
-            {[
-              ["Aguardando", "2"],
-              ["Validados", "1"],
-              ["Vagas", "25"],
-            ].map(([k, v], i) => (
-              <div
-                key={k}
-                className={`px-3 py-3 ${i ? "border-l border-border" : ""}`}
-              >
-                <p className="text-[11px] text-muted-foreground">{k}</p>
-                <p className="mt-1 text-[16px] font-medium tabular-nums">{v}</p>
-              </div>
-            ))}
-          </div>
-          <div className="mt-4 flex items-end justify-between border border-border px-3 py-3">
-            <div>
-              <p className="text-[11px] tracking-[0.16em] text-muted-foreground uppercase">
-                Confirmados no app
-              </p>
-              <p className="mt-1 text-[28px] font-medium tabular-nums">3</p>
-            </div>
-            <p className="text-[12px] text-muted-foreground">Aceite do professor</p>
-          </div>
-        </div>
-      </div>
-    </div>
   );
 }

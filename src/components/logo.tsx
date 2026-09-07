@@ -11,14 +11,14 @@ export function Logo({
     <span className={cn("inline-flex items-center gap-2.5", className)}>
       <span
         className={cn(
-          "block h-3.5 w-3.5",
-          inverted ? "bg-white" : "bg-foreground",
+          "block size-3.5 rounded-sm",
+          inverted ? "bg-teal-400" : "bg-primary",
         )}
         aria-hidden
       />
       <span
         className={cn(
-          "text-[13px] font-semibold tracking-[0.28em] uppercase",
+          "text-[13px] font-semibold tracking-[0.22em] uppercase",
           inverted ? "text-white" : "text-foreground",
         )}
       >

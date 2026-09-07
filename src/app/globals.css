@@ -40,48 +40,48 @@
   --color-popover: var(--popover);
   --color-card-foreground: var(--card-foreground);
   --color-card: var(--card);
-  --radius-sm: 2px;
-  --radius-md: 2px;
-  --radius-lg: 4px;
-  --radius-xl: 4px;
-  --radius-2xl: 4px;
-  --radius-3xl: 4px;
-  --radius-4xl: 4px;
+  --radius-sm: 8px;
+  --radius-md: 12px;
+  --radius-lg: 14px;
+  --radius-xl: 16px;
+  --radius-2xl: 20px;
+  --radius-3xl: 24px;
+  --radius-4xl: 28px;
 }
 
 :root {
-  --background: #f3f2f1;
-  --foreground: #201f1e;
-  --card: #ffffff;
-  --card-foreground: #201f1e;
-  --popover: #ffffff;
-  --popover-foreground: #201f1e;
-  --primary: #c41e3a;
-  --primary-foreground: #ffffff;
-  --secondary: #edebe9;
-  --secondary-foreground: #201f1e;
-  --muted: #edebe9;
-  --muted-foreground: #605e5c;
-  --accent: #edebe9;
-  --accent-foreground: #201f1e;
-  --destructive: #a4262c;
-  --border: #e1dfdd;
-  --input: #e1dfdd;
-  --ring: #201f1e;
-  --chart-1: #c41e3a;
-  --chart-2: #201f1e;
-  --chart-3: #8a8886;
-  --chart-4: #5c2e2e;
-  --chart-5: #a4262c;
-  --radius: 2px;
-  --sidebar: #ffffff;
-  --sidebar-foreground: #201f1e;
-  --sidebar-primary: #c41e3a;
-  --sidebar-primary-foreground: #ffffff;
-  --sidebar-accent: #f3f2f1;
-  --sidebar-accent-foreground: #201f1e;
-  --sidebar-border: #e1dfdd;
-  --sidebar-ring: #201f1e;
+  --background: #0b1220;
+  --foreground: #f4f7fb;
+  --card: #121a2b;
+  --card-foreground: #f4f7fb;
+  --popover: #121a2b;
+  --popover-foreground: #f4f7fb;
+  --primary: #0d9488;
+  --primary-foreground: #04110f;
+  --secondary: #1a2438;
+  --secondary-foreground: #e2e8f0;
+  --muted: #1a2438;
+  --muted-foreground: #94a3b8;
+  --accent: #152033;
+  --accent-foreground: #f4f7fb;
+  --destructive: #f87171;
+  --border: #243044;
+  --input: #243044;
+  --ring: #14b8a6;
+  --chart-1: #14b8a6;
+  --chart-2: #38bdf8;
+  --chart-3: #a78bfa;
+  --chart-4: #f59e0b;
+  --chart-5: #f43f5e;
+  --radius: 0.75rem;
+  --sidebar: #0e1626;
+  --sidebar-foreground: #f4f7fb;
+  --sidebar-primary: #0d9488;
+  --sidebar-primary-foreground: #04110f;
+  --sidebar-accent: #152033;
+  --sidebar-accent-foreground: #f4f7fb;
+  --sidebar-border: #243044;
+  --sidebar-ring: #14b8a6;
 }
 
 @layer base {
@@ -93,7 +93,7 @@
   }
   html {
     @apply font-sans;
-    background: #f3f2f1;
+    background: #0b1220;
   }
 }
 
@@ -106,11 +106,18 @@
 
 .surface {
   border: 1px solid var(--border);
-  background: #fff;
-  border-radius: 2px;
+  background: var(--card);
+  border-radius: var(--radius);
 }
 
 .ponteira {
   height: 2px;
   background: var(--primary);
+}
+
+.tatame-hero {
+  background:
+    radial-gradient(1200px 500px at 80% 20%, rgb(13 148 136 / 0.28), transparent 55%),
+    radial-gradient(900px 400px at 10% 80%, rgb(15 23 42 / 0.9), transparent 50%),
+    linear-gradient(180deg, #070b14 0%, #0b1220 70%);
 }

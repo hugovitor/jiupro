@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { useSyncExternalStore } from "react";
+import { CalendarDays, Clock3, UserPlus, Users } from "lucide-react";
 import { BeltBadge, PersonAvatar } from "@/components/belt-badge";
 import { Button } from "@/components/ui/button";
 import {
@@ -57,6 +58,8 @@ export default function AcademiaDashboard() {
   const todayCount = store.attendance.filter(
     (a) => a.date === today && isValidated(a),
   ).length;
+  const newThisMonth = store.students.filter((s) => s.joinDate.startsWith(month)).length;
+  const overduePays = store.payments.filter((p) => p.status === "overdue").length;
   const candidates = store.students.filter((s) => isPromotionCandidate(store, s));
   const risk = store.students.filter((s) => isAtRisk(store, s));
   const lowStock = store.inventory.filter((i) => i.quantity <= i.minQuantity);
@@ -78,16 +81,16 @@ export default function AcademiaDashboard() {
 
   return (
     <div className="mx-auto max-w-6xl">
-      <div className="flex flex-col gap-4 border-b border-border pb-6 sm:flex-row sm:items-end sm:justify-between">
+      <div className="flex flex-col gap-4 pb-2 sm:flex-row sm:items-end sm:justify-between">
         <div>
           <p className="text-[12px] text-muted-foreground">
             {weekdayFull(weekdayToday())} · {monthLabel(month)}
           </p>
-          <h1 className="mt-1 text-[22px] font-medium">Início</h1>
+          <h1 className="mt-1 text-[22px] font-medium">Dashboard</h1>
           {store.isDemo ? (
             <p className="mt-2 text-sm text-muted-foreground">
               Equipe Origem (demonstração).{" "}
-              <Link href="/cadastro" className="text-foreground underline">
+              <Link href="/cadastro" className="text-primary underline">
                 Abra a sua academia
               </Link>
               .
@@ -98,15 +101,17 @@ export default function AcademiaDashboard() {
             </p>
           ) : (
             <p className="mt-2 text-sm text-muted-foreground">
-              O que precisa de você hoje, não um gráfico.
+              Confirmados na aula, atraso no caixa.
             </p>
           )}
         </div>
-        <div className="flex items-center gap-3">
-          <Stat k="No tatame" v={String(todayCount)} />
-          <Stat k="Ativos" v={String(active.length)} hint={`${trials.length} experimental`} />
-          <Stat k="Atraso" v={brl(overdue)} warn={overdue > 0} />
-        </div>
+      </div>
+
+      <div className="mt-6 grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
+        <StatCard icon={Users} k="Alunos ativos" v={String(active.length)} hint={`${trials.length} experimental`} />
+        <StatCard icon={UserPlus} k="Alunos novos" v={String(newThisMonth)} hint={monthLabel(month)} />
+        <StatCard icon={Clock3} k="Pagamentos atrasados" v={String(overduePays)} hint={brl(overdue)} warn={overduePays > 0} />
+        <StatCard icon={CalendarDays} k="Aulas hoje" v={String(classes.length)} hint={`${todayCount} validados no tatame`} />
       </div>
 
       {!store.isDemo && !cloudReady && (
@@ -125,7 +130,7 @@ export default function AcademiaDashboard() {
       <div className="mt-8 grid gap-4 lg:grid-cols-[minmax(0,1.1fr)_minmax(0,0.9fr)]">
         <section className="surface p-5">
           <div className="flex items-end justify-between gap-4">
-            <h2 className="text-[14px] font-medium">Turmas de hoje</h2>
+            <h2 className="text-[14px] font-medium">Próximas aulas</h2>
             <Link href="/academia/presenca" className="text-xs text-primary hover:underline">
               Fazer chamada
             </Link>
@@ -133,10 +138,10 @@ export default function AcademiaDashboard() {
           {classes.length === 0 ? (
             <p className="mt-4 text-sm text-muted-foreground">Sem turma na grade hoje.</p>
           ) : (
-            <ul className="mt-4 divide-y divide-border">
+            <ul className="mt-4 space-y-4">
               {classes.map((c) => {
-                const count = store.attendance.filter(
-                  (a) => a.classId === c.id && a.date === today && isValidated(a),
+                const confirmed = store.attendance.filter(
+                  (a) => a.classId === c.id && a.date === today && isOnRoster(a),
                 ).length;
                 const waiting = store.attendance.filter(
                   (a) =>
@@ -145,30 +150,43 @@ export default function AcademiaDashboard() {
                     isOnRoster(a) &&
                     !isValidated(a),
                 ).length;
+                const instructor =
+                  store.users.find((u) => u.id === c.instructorId)?.name.split(" ")[0] ??
+                  "—";
                 const phase = classPhase(c, now);
                 const suggested = live?.id === c.id;
+                const pct = c.capacity ? Math.min(100, (confirmed / c.capacity) * 100) : 0;
                 return (
-                  <li key={c.id} className="flex items-baseline justify-between gap-3 py-3">
-                    <div>
-                      <p className="font-mono text-3xl leading-none tracking-tight">
-                        {c.startTime}
-                      </p>
-                      <p className="mt-1 text-sm text-muted-foreground">
-                        {c.name} · {c.gi ? "Gi" : "No-Gi"} · {c.durationMin} min
-                        {suggested ? " · agora" : ""}
-                      </p>
-                      <p className="mt-0.5 text-[11px] text-muted-foreground">
-                        {phaseLabel(phase)} · {phaseHint(c, now)}
+                  <li key={c.id}>
+                    <div className="flex items-center justify-between gap-3 text-sm">
+                      <div>
+                        <p>
+                          <span className="font-mono tabular-nums">{c.startTime}</span>
+                          <span className="text-muted-foreground">
+                            {" "}
+                            · {c.name}
+                            {suggested ? " · agora" : ""}
+                          </span>
+                        </p>
+                        <p className="text-[11px] text-muted-foreground">
+                          {instructor} · {phaseLabel(phase)} · {phaseHint(c, now)}
+                        </p>
+                      </div>
+                      <p className="text-right text-[12px] text-primary">
+                        {confirmed} confirmados
+                        {waiting ? (
+                          <span className="block text-[11px] text-muted-foreground">
+                            {waiting} aguardando aceite
+                          </span>
+                        ) : null}
                       </p>
                     </div>
-                    <p className="text-sm tabular-nums">
-                      {count}/{c.capacity}
-                      {waiting ? (
-                        <span className="block text-[11px] font-normal text-muted-foreground">
-                          {waiting} aguardando
-                        </span>
-                      ) : null}
-                    </p>
+                    <div className="mt-2 h-1.5 overflow-hidden rounded-full bg-muted">
+                      <div
+                        className="h-full rounded-full bg-primary"
+                        style={{ width: `${pct}%` }}
+                      />
+                    </div>
                   </li>
                 );
               })}
@@ -355,24 +373,31 @@ export default function AcademiaDashboard() {
   );
 }
 
-function Stat({
+function StatCard({
+  icon: Icon,
   k,
   v,
   hint,
   warn,
 }: {
+  icon: typeof Users;
   k: string;
   v: string;
   hint?: string;
   warn?: boolean;
 }) {
   return (
-    <div className="surface min-w-[5.5rem] px-3 py-2.5 text-right">
-      <p className="text-[11px] tracking-wide text-muted-foreground uppercase">{k}</p>
-      <p className={`font-display text-2xl leading-none ${warn ? "text-destructive" : ""}`}>
-        {v}
-      </p>
-      {hint && <p className="mt-0.5 text-[11px] text-muted-foreground">{hint}</p>}
+    <div className="surface flex items-start gap-3 p-4">
+      <span className="flex size-9 items-center justify-center rounded-lg bg-primary/15 text-primary">
+        <Icon className="size-4" />
+      </span>
+      <div className="min-w-0">
+        <p className="text-[11px] tracking-wide text-muted-foreground uppercase">{k}</p>
+        <p className={`mt-1 text-2xl font-semibold tabular-nums ${warn ? "text-destructive" : ""}`}>
+          {v}
+        </p>
+        {hint ? <p className="mt-0.5 text-[11px] text-muted-foreground">{hint}</p> : null}
+      </div>
     </div>
   );
 }

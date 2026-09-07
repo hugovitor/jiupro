@@ -17,7 +17,7 @@ Feito para o dono que treina de manhã e administra de noite: mensalidades em at
 - **Retenção** — aluno que some ganha WhatsApp de volta no painel
 - **Agenda** — seminário, campeonato, open mat; confirmação no PWA e Zap para quem falta
 - **Loja** — venda no nome do aluno, baixa o estoque, entra no financeiro
-- **PWA do aluno** — check-in do dia, agenda, mural, evolução, Pix e perfil (instalável no celular)
+- **PWA do aluno** — confirma a aula, vê quem vai, agenda, mural, faixa e Pix
 - **Planos mensais** — Essencial, Academia e Equipe. Escolhe no cadastro; Stripe cobra o JiuPro depois
 - **Cadastro real** — abre a sua academia, vazia, isolada da Equipe Origem
 - **Demo completa** — Equipe Origem (Campinas) nos atalhos de Entrar ou em `/demo`
@@ -170,7 +170,7 @@ Webhook Asaas: `https://SEU-PROJETO.vercel.app/api/asaas/webhook` (v3, sequencia
 
 ## PWA do aluno
 
-No celular, abra `/aluno` e adicione à tela inicial. O service worker em `public/sw.js` guarda o check-in para rede instável.
+No celular, abra `/aluno` e adicione à tela inicial. Um toque confirma a aula; o professor valida no tatame.
 
 ## Stack
 

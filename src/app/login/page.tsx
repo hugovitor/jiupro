@@ -69,7 +69,7 @@ export default function LoginPage() {
             autoComplete="current-password"
           />
         </div>
-        <Button type="submit" className="w-full" size="lg" disabled={busy}>
+        <Button type="submit" className="w-full uppercase tracking-wide" size="lg" disabled={busy}>
           {busy ? "Entrando…" : "Entrar"}
         </Button>
       </form>

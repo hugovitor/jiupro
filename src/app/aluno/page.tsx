@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { toast } from "sonner";
-import { BeltBadge, PersonAvatar } from "@/components/belt-badge";
+import { BeltBadge, BeltStrip, PersonAvatar } from "@/components/belt-badge";
 import { Button } from "@/components/ui/button";
 import {
   attendanceStatus,
@@ -17,8 +17,9 @@ import {
   studentCanSelfCheckIn,
   type ClassPhase,
 } from "@/lib/attendance";
-import { formatDay, isoDate, minutes, weekdayFull, weekdayToday } from "@/lib/format";
+import { formatDay, isoDate, minutes, weekdayFull, weekdayToday, currentMonth } from "@/lib/format";
 import { attendanceInDays } from "@/lib/insights";
+import { ADULT_ORDER, beltMeta } from "@/lib/belts";
 import { currentStudent, useStore } from "@/lib/store";
 import type { Attendance, ClassSession, Student } from "@/lib/types";
 import { useNow } from "@/lib/use-now";
@@ -65,8 +66,8 @@ export default function AlunoHome() {
       </div>
 
       <section className="surface p-4">
-        <p className="text-[11px] tracking-[0.16em] text-muted-foreground uppercase">
-          Sua aula agora
+        <p className="text-[11px] tracking-[0.16em] text-primary uppercase">
+          Minhas próximas aulas
         </p>
         {classes.length === 0 && (
           <p className="mt-2 text-sm text-muted-foreground">
@@ -173,16 +174,8 @@ export default function AlunoHome() {
         )}
       </section>
 
-      <div className="grid grid-cols-2 gap-3">
-        <div className="surface p-4">
-          <p className="text-xs text-muted-foreground">Treinos no mês</p>
-          <p className="mt-1 text-3xl font-medium tabular-nums">{att}</p>
-        </div>
-        <div className="surface p-4">
-          <p className="text-xs text-muted-foreground">Plano da casa</p>
-          <p className="mt-1 text-xl capitalize">{store.academy.plan}</p>
-        </div>
-      </div>
+      <FrequencyMonth studentId={student?.id} count={att} />
+      {student ? <BeltTrack belt={student.belt} /> : null}
 
       <GradeSemana />
       <ProximoEvento />
@@ -246,29 +239,29 @@ function FeaturedClass({
         {phaseLabel(phase)} · {hint}
       </p>
       {validated ? (
-        <div className="mt-4 border border-border bg-[#f3f2f1] px-3 py-3 text-sm">
+        <div className="mt-4 rounded-xl border border-border bg-muted px-3 py-3 text-sm">
           Presença validada pelo professor.
         </div>
       ) : pending ? (
-        <div className="mt-4 space-y-2 border border-border bg-[#f3f2f1] px-3 py-3">
+        <div className="mt-4 space-y-2 rounded-xl border border-border bg-muted px-3 py-3">
           <p className="text-sm">Você confirmou. Esperando o aceite no tatame.</p>
           <Button size="sm" variant="ghost" onClick={onCancel}>
             Desistir desta aula
           </Button>
         </div>
       ) : full ? (
-        <p className="mt-4 border border-border bg-[#f3f2f1] px-3 py-3 text-sm text-muted-foreground">
+        <p className="mt-4 rounded-xl border border-border bg-muted px-3 py-3 text-sm text-muted-foreground">
           Turma lotada. Fale com o professor na recepção.
         </p>
       ) : canCheck ? (
         <>
-          <Button className="mt-4 w-full" size="lg" onClick={onConfirm}>
-            Confirmar que vou
+          <Button className="mt-4 h-12 w-full text-base" size="lg" onClick={onConfirm}>
+            Check-in
           </Button>
           <p className="mt-2 text-center text-xs text-muted-foreground">{lockHint}</p>
         </>
       ) : (
-        <p className="mt-4 border border-border bg-[#f3f2f1] px-3 py-3 text-sm text-muted-foreground">
+        <p className="mt-4 rounded-xl border border-border bg-muted px-3 py-3 text-sm text-muted-foreground">
           {lockHint}
         </p>
       )}
@@ -300,7 +293,7 @@ function Classmates({
           Seja o primeiro. Os colegas vão ver o seu nome aqui.
         </p>
       ) : (
-        <ul className="mt-3 divide-y divide-border border border-border">
+        <ul className="mt-3 divide-y divide-border overflow-hidden rounded-xl border border-border">
           {people.map(({ student, row }) => (
             <li key={student.id} className="flex items-center gap-3 px-3 py-2">
               <PersonAvatar name={student.name} hue={student.avatarHue} size="sm" />
@@ -318,6 +311,94 @@ function Classmates({
         </ul>
       )}
     </div>
+  );
+}
+
+function FrequencyMonth({ studentId, count }: { studentId?: string; count: number }) {
+  const store = useStore();
+  const month = currentMonth();
+  const [y, m] = month.split("-").map(Number);
+  const days = new Date(Date.UTC(y, m, 0)).getUTCDate();
+  const start = new Date(Date.UTC(y, m - 1, 1)).getUTCDay();
+  const trained = new Set(
+    store.attendance
+      .filter(
+        (a) =>
+          studentId &&
+          a.studentId === studentId &&
+          a.date.startsWith(month) &&
+          isValidated(a),
+      )
+      .map((a) => Number(a.date.slice(8, 10))),
+  );
+  const todayN = isoDate(0).startsWith(month) ? Number(isoDate(0).slice(8, 10)) : 0;
+
+  return (
+    <section className="surface p-4">
+      <div className="flex items-baseline justify-between">
+        <p className="text-xs text-muted-foreground">Frequência mensal</p>
+        <p className="text-xs text-primary tabular-nums">{count} treinos</p>
+      </div>
+      <div className="mt-3 grid grid-cols-7 gap-1 text-center text-[10px] text-muted-foreground">
+        {["D", "S", "T", "Q", "Q", "S", "S"].map((d, i) => (
+          <span key={`${d}${i}`}>{d}</span>
+        ))}
+      </div>
+      <div className="mt-1 grid grid-cols-7 gap-1">
+        {Array.from({ length: start }, (_, i) => (
+          <span key={`e${i}`} />
+        ))}
+        {Array.from({ length: days }, (_, i) => {
+          const day = i + 1;
+          const on = trained.has(day);
+          const isToday = day === todayN;
+          return (
+            <span
+              key={day}
+              className={cn(
+                "flex size-8 items-center justify-center rounded-full text-[11px]",
+                on && "bg-primary text-primary-foreground",
+                !on && isToday && "ring-1 ring-primary text-primary",
+                !on && !isToday && "text-muted-foreground",
+              )}
+            >
+              {day}
+            </span>
+          );
+        })}
+      </div>
+    </section>
+  );
+}
+
+function BeltTrack({ belt }: { belt: string }) {
+  const path = ADULT_ORDER.filter((id) =>
+    ["white", "blue", "purple", "brown", "black"].includes(id),
+  );
+  const idx = path.indexOf(belt as (typeof path)[number]);
+  return (
+    <section className="surface p-4">
+      <p className="text-xs text-muted-foreground">Graduação</p>
+      <div className="mt-3 flex items-end justify-between gap-1">
+        {path.map((id, i) => (
+          <div key={id} className="flex min-w-0 flex-1 flex-col items-center gap-1.5">
+            <BeltStrip
+              belt={id}
+              stripes={0}
+              className={cn("w-full max-w-[3.2rem]", idx >= 0 && i <= idx ? "opacity-100" : "opacity-25")}
+            />
+            <span
+              className={cn(
+                "text-[10px]",
+                i === idx ? "font-medium text-primary" : "text-muted-foreground",
+              )}
+            >
+              {beltMeta(id).label}
+            </span>
+          </div>
+        ))}
+      </div>
+    </section>
   );
 }
 
