@@ -2,11 +2,15 @@
 
 import Link from "next/link";
 import { toast } from "sonner";
-import { BeltBadge } from "@/components/belt-badge";
+import { BeltBadge, PersonAvatar } from "@/components/belt-badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import {
+  attendanceStatus,
+  classHeadcount,
   classPhase,
+  isOnRoster,
+  isValidated,
   phaseHint,
   phaseLabel,
   recommendClass,
@@ -17,8 +21,10 @@ import {
 import { formatDay, isoDate, minutes, weekdayFull, weekdayToday } from "@/lib/format";
 import { attendanceInDays } from "@/lib/insights";
 import { currentStudent, useStore } from "@/lib/store";
+import type { Attendance, ClassSession, Student } from "@/lib/types";
 import { useNow } from "@/lib/use-now";
 import { cn } from "@/lib/utils";
+import { firstName } from "@/lib/whatsapp";
 import { useState } from "react";
 
 export default function AlunoHome() {
@@ -38,11 +44,16 @@ export default function AlunoHome() {
   const att = student ? attendanceInDays(store, student.id, 30) : 0;
   const [code, setCode] = useState("");
 
-  const alreadyIn = (classId: string) =>
-    store.attendance.some(
+  const mineRow = (classId: string) =>
+    store.attendance.find(
       (a) =>
         a.studentId === student?.id && a.classId === classId && a.date === today,
     );
+
+  const onList = (classId: string) => {
+    const row = mineRow(classId);
+    return !!row && isOnRoster(row);
+  };
 
   return (
     <div className="space-y-6">
@@ -67,24 +78,34 @@ export default function AlunoHome() {
         )}
         {featured && (
           <FeaturedClass
-            name={featured.name}
-            startTime={featured.startTime}
-            durationMin={featured.durationMin}
-            gi={featured.gi}
+            session={featured}
             phase={classPhase(featured, now)}
             hint={
-              alreadyIn(featured.id)
-                ? "Você já está na lista. Bom treino."
+              onList(featured.id)
+                ? attendanceStatus(mineRow(featured.id)!) === "validated"
+                  ? "O professor já validou você. Bom treino."
+                  : "Você confirmou. Os colegas já veem. O professor aceita no tatame."
                 : phaseHint(featured, now)
             }
-            already={alreadyIn(featured.id)}
-            canCheck={!!student && studentCanSelfCheckIn(featured, now)}
+            mine={mineRow(featured.id)}
+            canCheck={!!student && studentCanSelfCheckIn(featured, now) && !onList(featured.id)}
             lockHint={selfCheckInHint(featured, now)}
+            full={
+              featured.capacity > 0 &&
+              classHeadcount(
+                store.attendance,
+                store.dropIns ?? [],
+                featured.id,
+                today,
+              ) >= featured.capacity &&
+              !onList(featured.id)
+            }
             code={code}
             onCode={setCode}
+            classmates={rosterFor(store.students, store.attendance, featured.id, today)}
             onConfirm={() => {
               if (!student) return;
-              if (alreadyIn(featured.id)) return;
+              if (onList(featured.id)) return;
               if (!studentCanSelfCheckIn(featured, now)) {
                 toast.error(selfCheckInHint(featured, now));
                 return;
@@ -95,11 +116,19 @@ export default function AlunoHome() {
               }
               const ok = store.checkInWithCode(student.id, featured.id, code);
               if (ok) {
-                toast.success("Presença confirmada. Bom treino.");
+                toast.success(
+                  "Confirmado. A turma já te vê na lista. O professor valida no tatame.",
+                );
                 setCode("");
               } else {
-                toast.error("Código desta aula não confere. Olhe o quadro.");
+                toast.error("Código desta aula não confere, ou a turma lotou.");
               }
+            }}
+            onCancel={() => {
+              if (!student) return;
+              const ok = store.cancelCheckIn(student.id, featured.id);
+              if (ok) toast.message("Você saiu da lista desta aula.");
+              else toast.error("O professor já validou — peça na recepção.");
             }}
           />
         )}
@@ -108,8 +137,11 @@ export default function AlunoHome() {
             {classes
               .filter((c) => c.id !== featured?.id)
               .map((c) => {
-                const already = alreadyIn(c.id);
+                const already = onList(c.id);
                 const open = studentCanSelfCheckIn(c, now);
+                const n = store.attendance.filter(
+                  (a) => a.classId === c.id && a.date === today && isOnRoster(a),
+                ).length;
                 return (
                   <div key={c.id} className="flex items-center justify-between gap-3 text-sm">
                     <div>
@@ -118,12 +150,12 @@ export default function AlunoHome() {
                         <span className="text-muted-foreground"> · {c.name}</span>
                       </p>
                       <p className="text-[11px] text-muted-foreground">
-                        {phaseLabel(classPhase(c, now))}
-                        {already ? " · na lista" : ""}
+                        {phaseLabel(classPhase(c, now))} · {n} confirmado{n === 1 ? "" : "s"}
+                        {already ? " · você está na lista" : ""}
                       </p>
                     </div>
                     {already ? (
-                      <span className="text-[11px] text-muted-foreground">Confirmado</span>
+                      <span className="text-[11px] text-muted-foreground">Na lista</span>
                     ) : (
                       <Button
                         size="sm"
@@ -133,7 +165,7 @@ export default function AlunoHome() {
                           if (!student) return;
                           const ok = store.checkInWithCode(student.id, c.id, code);
                           if (ok) {
-                            toast.success("Presença confirmada.");
+                            toast.success("Confirmado. A turma já te vê.");
                             setCode("");
                           } else if (!open) {
                             toast.error(selfCheckInHint(c, now));
@@ -169,46 +201,80 @@ export default function AlunoHome() {
   );
 }
 
+function rosterFor(
+  students: Student[],
+  attendance: Attendance[],
+  classId: string,
+  date: string,
+) {
+  return attendance
+    .filter((a) => a.classId === classId && a.date === date && isOnRoster(a))
+    .map((row) => {
+      const student = students.find((s) => s.id === row.studentId);
+      return student ? { student, row } : null;
+    })
+    .filter((x): x is { student: Student; row: Attendance } => Boolean(x))
+    .sort((a, b) => {
+      const av = isValidated(a.row) === isValidated(b.row) ? 0 : isValidated(a.row) ? -1 : 1;
+      if (av) return av;
+      return a.student.name.localeCompare(b.student.name, "pt-BR");
+    });
+}
+
 function FeaturedClass({
-  name,
-  startTime,
-  durationMin,
-  gi,
+  session,
   phase,
   hint,
-  already,
+  mine,
   canCheck,
   lockHint,
+  full,
   code,
   onCode,
   onConfirm,
+  onCancel,
+  classmates,
 }: {
-  name: string;
-  startTime: string;
-  durationMin: number;
-  gi: boolean;
+  session: ClassSession;
   phase: ClassPhase;
   hint: string;
-  already: boolean;
+  mine?: Attendance;
   canCheck: boolean;
   lockHint: string;
+  full: boolean;
   code: string;
   onCode: (v: string) => void;
   onConfirm: () => void;
+  onCancel: () => void;
+  classmates: { student: Student; row: Attendance }[];
 }) {
+  const pending = mine ? attendanceStatus(mine) === "pending" : false;
+  const validated = mine ? isValidated(mine) : false;
+
   return (
     <div className="mt-3">
-      <p className="font-mono text-[32px] leading-none tracking-tight">{startTime}</p>
+      <p className="font-mono text-[32px] leading-none tracking-tight">{session.startTime}</p>
       <p className="mt-2 text-sm">
-        {name} · {gi ? "Gi" : "No-Gi"} · {durationMin} min
+        {session.name} · {session.gi ? "Gi" : "No-Gi"} · {session.durationMin} min
       </p>
       <p className="mt-1 text-[12px] text-muted-foreground">
         {phaseLabel(phase)} · {hint}
       </p>
-      {already ? (
+      {validated ? (
         <div className="mt-4 border border-border bg-[#f3f2f1] px-3 py-3 text-sm">
-          Você já está na lista desta aula.
+          Presença validada pelo professor.
         </div>
+      ) : pending ? (
+        <div className="mt-4 space-y-2 border border-border bg-[#f3f2f1] px-3 py-3">
+          <p className="text-sm">Você confirmou. Esperando o aceite no tatame.</p>
+          <Button size="sm" variant="ghost" onClick={onCancel}>
+            Desistir desta aula
+          </Button>
+        </div>
+      ) : full ? (
+        <p className="mt-4 border border-border bg-[#f3f2f1] px-3 py-3 text-sm text-muted-foreground">
+          Turma lotada. Fale com o professor na recepção.
+        </p>
       ) : canCheck ? (
         <>
           <Input
@@ -220,7 +286,7 @@ function FeaturedClass({
             onChange={(e) => onCode(e.target.value.replace(/\D/g, "").slice(0, 4))}
           />
           <Button className="mt-3 w-full" size="lg" onClick={onConfirm}>
-            Confirmar presença
+            Confirmar que vou
           </Button>
           <p className="mt-2 text-center text-xs text-muted-foreground">{lockHint}</p>
         </>
@@ -228,6 +294,51 @@ function FeaturedClass({
         <p className="mt-4 border border-border bg-[#f3f2f1] px-3 py-3 text-sm text-muted-foreground">
           {lockHint}
         </p>
+      )}
+
+      <Classmates mineId={mine?.studentId} people={classmates} />
+    </div>
+  );
+}
+
+function Classmates({
+  mineId,
+  people,
+}: {
+  mineId?: string;
+  people: { student: Student; row: Attendance }[];
+}) {
+  return (
+    <div className="mt-5 border-t border-border pt-4">
+      <div className="flex items-baseline justify-between">
+        <p className="text-[12px] font-medium">Quem confirmou</p>
+        <p className="text-[11px] text-muted-foreground tabular-nums">
+          {people.length === 0
+            ? "ninguém ainda"
+            : `${people.length} na lista`}
+        </p>
+      </div>
+      {people.length === 0 ? (
+        <p className="mt-2 text-sm text-muted-foreground">
+          Seja o primeiro. Os colegas vão ver o seu nome aqui.
+        </p>
+      ) : (
+        <ul className="mt-3 divide-y divide-border border border-border">
+          {people.map(({ student, row }) => (
+            <li key={student.id} className="flex items-center gap-3 px-3 py-2">
+              <PersonAvatar name={student.name} hue={student.avatarHue} size="sm" />
+              <div className="min-w-0 flex-1">
+                <p className="truncate text-sm font-medium">
+                  {firstName(student.name)}
+                  {student.id === mineId ? " · você" : ""}
+                </p>
+                <p className="text-[11px] text-muted-foreground">
+                  {isValidated(row) ? "No tatame" : "Confirmou"}
+                </p>
+              </div>
+            </li>
+          ))}
+        </ul>
       )}
     </div>
   );

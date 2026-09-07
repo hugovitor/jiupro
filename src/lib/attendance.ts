@@ -1,4 +1,4 @@
-import type { Attendance, ClassSession, Student } from "@/lib/types";
+import type { Attendance, AttendanceStatus, ClassSession, Student } from "@/lib/types";
 import { isoDate, minutes } from "@/lib/format";
 import { dayCode } from "@/lib/whatsapp";
 
@@ -32,7 +32,7 @@ export function classPhase(session: ClassSession, now = new Date()): ClassPhase 
 
 export function studentCanSelfCheckIn(session: ClassSession, now = new Date()) {
   const phase = classPhase(session, now);
-  return phase === "open" || phase === "live" || phase === "grace";
+  return phase !== "closed";
 }
 
 export function isLateCheckIn(session: ClassSession, checkedInAt: string) {
@@ -73,16 +73,10 @@ export function phaseHint(session: ClassSession, now = new Date()) {
 
 export function selfCheckInHint(session: ClassSession, now = new Date()) {
   const phase = classPhase(session, now);
-  if (phase === "upcoming") {
-    const openAt = minutes(session.startTime) - OPEN_BEFORE_MIN;
-    const h = Math.floor(openAt / 60);
-    const m = openAt % 60;
-    return `A chamada abre às ${String(h).padStart(2, "0")}:${String(m).padStart(2, "0")}. Peça ao professor se já estiver no tatame.`;
-  }
   if (phase === "closed") {
     return "A chamada desta aula já fechou. Peça ao professor na recepção.";
   }
-  return "Digite o código de 4 dígitos desta turma, no quadro da recepção.";
+  return "Confirme com o código desta turma. Os colegas veem sua confirmação; o professor valida quem treinou.";
 }
 
 /** Aula ao vivo → janela aberta → próxima hoje → última de hoje. */
@@ -112,7 +106,7 @@ export function habitualStudentIds(classId: string, attendance: Attendance[]) {
   const from = daysAgoIso(HABITUAL_WINDOW_DAYS);
   const counts = new Map<string, number>();
   for (const a of attendance) {
-    if (a.classId !== classId || a.date < from) continue;
+    if (a.classId !== classId || a.date < from || !isValidated(a)) continue;
     counts.set(a.studentId, (counts.get(a.studentId) ?? 0) + 1);
   }
   const ids = new Set<string>();
@@ -123,7 +117,9 @@ export function habitualStudentIds(classId: string, attendance: Attendance[]) {
 }
 
 export function lastVisitIso(studentId: string, attendance: Attendance[]) {
-  const dates = attendance.filter((a) => a.studentId === studentId).map((a) => a.date);
+  const dates = attendance
+    .filter((a) => a.studentId === studentId && isValidated(a))
+    .map((a) => a.date);
   if (dates.length === 0) return null;
   return dates.sort().at(-1) ?? null;
 }
@@ -148,4 +144,42 @@ export function methodLabel(method: Attendance["method"]) {
     case "app":
       return "App";
   }
+}
+
+export function attendanceStatus(row: Attendance): AttendanceStatus {
+  return row.status ?? "validated";
+}
+
+export function isValidated(row: Attendance) {
+  return attendanceStatus(row) === "validated";
+}
+
+/** Confirmou no app ou já foi aceito — ocupa vaga e aparece para a turma. */
+export function isOnRoster(row: Attendance) {
+  const status = attendanceStatus(row);
+  return status === "pending" || status === "validated";
+}
+
+export function statusLabel(row: Attendance) {
+  switch (attendanceStatus(row)) {
+    case "pending":
+      return "Aguardando o professor";
+    case "validated":
+      return "Validado no tatame";
+    case "no_show":
+      return "Não veio";
+  }
+}
+
+export function classHeadcount(
+  attendance: Attendance[],
+  dropIns: { classId: string; date: string }[],
+  classId: string,
+  date: string,
+) {
+  const claimed = attendance.filter(
+    (a) => a.classId === classId && a.date === date && isOnRoster(a),
+  ).length;
+  const visitors = dropIns.filter((d) => d.classId === classId && d.date === date).length;
+  return claimed + visitors;
 }

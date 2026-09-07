@@ -37,7 +37,7 @@ import {
   takenSlugs,
   writeActive,
 } from "./vault";
-import { classCode, studentCanSelfCheckIn } from "./attendance";
+import { classCode, attendanceStatus, classHeadcount, isOnRoster, isValidated, studentCanSelfCheckIn } from "./attendance";
 import type {
   AcademyEvent,
   AppState,
@@ -95,6 +95,10 @@ type Store = AppState & {
     method?: Attendance["method"],
   ) => number;
   checkOut: (studentId: string, classId: string) => void;
+  validateCheckIn: (studentId: string, classId: string) => boolean;
+  markNoShow: (studentId: string, classId: string) => boolean;
+  validatePending: (classId: string) => number;
+  cancelCheckIn: (studentId: string, classId: string) => boolean;
   promote: (studentId: string, notes: string) => void;
   addStripe: (studentId: string) => void;
   adjustStock: (id: string, delta: number) => void;
@@ -492,61 +496,61 @@ export function StoreProvider({ children }: { children: ReactNode }) {
 
   const checkIn: Store["checkIn"] = useCallback((studentId, classId, method = "app") => {
     const today = isoDate(0);
-    const current = getSnapshot();
-    const already = current.attendance.some(
-      (a) =>
-        a.studentId === studentId && a.classId === classId && a.date === today,
-    );
-    if (already) return false;
-    commit((prev) => ({
-      ...prev,
-      attendance: [
-        {
-          id: uid("at"),
-          academyId: prev.academy.id,
-          studentId,
-          classId,
-          date: today,
-          checkedInAt: new Date().toISOString(),
-          method,
-        },
-        ...prev.attendance,
-      ],
-    }));
-    return true;
-  }, []);
-
-  const checkInMany: Store["checkInMany"] = useCallback(
-    (studentIds, classId, method = "manual") => {
-      const today = isoDate(0);
-      let added = 0;
-      commit((prev) => {
-        const seen = new Set(
-          prev.attendance
-            .filter((a) => a.classId === classId && a.date === today)
-            .map((a) => a.studentId),
-        );
-        const fresh: Attendance[] = [];
-        for (const studentId of studentIds) {
-          if (seen.has(studentId)) continue;
-          seen.add(studentId);
-          fresh.push({
+    let ok = false;
+    commit((prev) => {
+      const existing = prev.attendance.find(
+        (a) =>
+          a.studentId === studentId && a.classId === classId && a.date === today,
+      );
+      const status = method === "manual" ? "validated" : "pending";
+      const now = new Date().toISOString();
+      const stamp =
+        status === "validated"
+          ? { validatedAt: now, validatedBy: prev.session?.userId }
+          : { validatedAt: undefined, validatedBy: undefined };
+      if (existing) {
+        if (attendanceStatus(existing) !== "no_show") return prev;
+        ok = true;
+        return {
+          ...prev,
+          attendance: prev.attendance.map((a) =>
+            a.id === existing.id
+              ? { ...a, status, method, checkedInAt: now, ...stamp }
+              : a,
+          ),
+        };
+      }
+      ok = true;
+      return {
+        ...prev,
+        attendance: [
+          {
             id: uid("at"),
             academyId: prev.academy.id,
             studentId,
             classId,
             date: today,
-            checkedInAt: new Date().toISOString(),
+            checkedInAt: now,
             method,
-          });
-        }
-        added = fresh.length;
-        if (fresh.length === 0) return prev;
-        return { ...prev, attendance: [...fresh, ...prev.attendance] };
-      });
+            status,
+            ...stamp,
+          },
+          ...prev.attendance,
+        ],
+      };
+    });
+    return ok;
+  }, []);
+
+  const checkInMany: Store["checkInMany"] = useCallback(
+    (studentIds, classId, method = "manual") => {
+      let added = 0;
+      for (const id of studentIds) {
+        if (checkIn(id, classId, method)) added += 1;
+      }
       return added;
     },
-    [],
+    [checkIn],
   );
 
   const checkOut: Store["checkOut"] = useCallback((studentId, classId) => {
@@ -559,6 +563,98 @@ export function StoreProvider({ children }: { children: ReactNode }) {
       ),
     }));
   }, []);
+
+  const validateCheckIn: Store["validateCheckIn"] = useCallback((studentId, classId) => {
+    const today = isoDate(0);
+    let ok = false;
+    commit((prev) => {
+      const now = new Date().toISOString();
+      const who = prev.session?.userId;
+      return {
+        ...prev,
+        attendance: prev.attendance.map((a) => {
+          if (
+            a.studentId !== studentId ||
+            a.classId !== classId ||
+            a.date !== today ||
+            attendanceStatus(a) !== "pending"
+          ) {
+            return a;
+          }
+          ok = true;
+          return {
+            ...a,
+            status: "validated" as const,
+            validatedAt: now,
+            validatedBy: who,
+          };
+        }),
+      };
+    });
+    return ok;
+  }, []);
+
+  const markNoShow: Store["markNoShow"] = useCallback((studentId, classId) => {
+    const today = isoDate(0);
+    let ok = false;
+    commit((prev) => ({
+      ...prev,
+      attendance: prev.attendance.map((a) => {
+        if (
+          a.studentId !== studentId ||
+          a.classId !== classId ||
+          a.date !== today ||
+          !isOnRoster(a)
+        ) {
+          return a;
+        }
+        ok = true;
+        return { ...a, status: "no_show" as const };
+      }),
+    }));
+    return ok;
+  }, []);
+
+  const validatePending: Store["validatePending"] = useCallback((classId) => {
+    const today = isoDate(0);
+    let n = 0;
+    commit((prev) => {
+      const now = new Date().toISOString();
+      const who = prev.session?.userId;
+      return {
+        ...prev,
+        attendance: prev.attendance.map((a) => {
+          if (
+            a.classId !== classId ||
+            a.date !== today ||
+            attendanceStatus(a) !== "pending"
+          ) {
+            return a;
+          }
+          n += 1;
+          return {
+            ...a,
+            status: "validated" as const,
+            validatedAt: now,
+            validatedBy: who,
+          };
+        }),
+      };
+    });
+    return n;
+  }, []);
+
+  const cancelCheckIn: Store["cancelCheckIn"] = useCallback((studentId, classId) => {
+    const today = isoDate(0);
+    const current = getSnapshot();
+    const row = current.attendance.find(
+      (a) =>
+        a.studentId === studentId && a.classId === classId && a.date === today,
+    );
+    if (!row || attendanceStatus(row) !== "pending") return false;
+    checkOut(studentId, classId);
+    return true;
+  }, [checkOut]);
 
   const promote: Store["promote"] = useCallback((studentId, notes) => {
     commit((prev) => {
@@ -668,7 +764,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
   const lastAttendance = useCallback(
     (studentId: string) => {
       return state.attendance
-        .filter((a) => a.studentId === studentId)
+        .filter((a) => a.studentId === studentId && isValidated(a))
         .sort((a, b) => b.date.localeCompare(a.date))[0];
     },
     [state],
@@ -678,7 +774,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
     (studentId: string, days = 30) => {
       const cutoff = isoDate(-days);
       return state.attendance.filter(
-        (a) => a.studentId === studentId && a.date >= cutoff,
+        (a) => a.studentId === studentId && a.date >= cutoff && isValidated(a),
       ).length;
     },
     [state],
@@ -744,6 +840,19 @@ export function StoreProvider({ children }: { children: ReactNode }) {
       if (!studentCanSelfCheckIn(session)) return false;
       const expected = classCode(isoDate(0), current.academy.slug, classId);
       if (code.replace(/\s/g, "") !== expected) return false;
+      const today = isoDate(0);
+      const mine = current.attendance.find(
+        (a) =>
+          a.studentId === studentId && a.classId === classId && a.date === today,
+      );
+      if (mine && isOnRoster(mine)) return false;
+      const heads = classHeadcount(
+        current.attendance,
+        current.dropIns ?? [],
+        classId,
+        today,
+      );
+      if (session.capacity > 0 && heads >= session.capacity) return false;
       return checkIn(studentId, classId, "code");
     },
     [checkIn],
@@ -945,6 +1054,10 @@ export function StoreProvider({ children }: { children: ReactNode }) {
       checkIn,
       checkInMany,
       checkOut,
+      validateCheckIn,
+      markNoShow,
+      validatePending,
+      cancelCheckIn,
       promote,
       addStripe,
       adjustStock,
@@ -987,6 +1100,10 @@ export function StoreProvider({ children }: { children: ReactNode }) {
       checkIn,
       checkInMany,
       checkOut,
+      validateCheckIn,
+      markNoShow,
+      validatePending,
+      cancelCheckIn,
       promote,
       addStripe,
       adjustStock,

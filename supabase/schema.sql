@@ -75,6 +75,9 @@ create table if not exists public.attendance (
   date date not null default current_date,
   checked_in_at timestamptz not null default now(),
   method text not null default 'app',
+  status text not null default 'validated',
+  validated_at timestamptz,
+  validated_by uuid,
   unique (student_id, class_id, date)
 );
 
@@ -388,6 +391,9 @@ alter table public.payments add column if not exists asaas_payment_id text;
 alter table public.payments add column if not exists asaas_invoice_url text;
 alter table public.payments add column if not exists asaas_pix_copy text;
 alter table public.payments add column if not exists asaas_status text;
+alter table public.attendance add column if not exists status text not null default 'validated';
+alter table public.attendance add column if not exists validated_at timestamptz;
+alter table public.attendance add column if not exists validated_by uuid;
 
 -- Faz o PostgREST (API) enxergar as tabelas novas neste projeto vazio.
 notify pgrst, 'reload schema';

@@ -10,8 +10,8 @@ Feito para o dono que treina de manhã e administra de noite: mensalidades em at
 - **Cobranças agora** — WhatsApp + chave Pix da casa + baixa manual (Asaas entra depois)
 - **Fechamento do mês** — recebido × despesa, gerar mensalidades do próximo mês, CSV
 - **Experimentais** — captar aula experimental e converter em mensalista
-- **Código da aula** — cada turma tem o seu número de 4 dígitos; o aluno confirma no PWA só na janela da aula (20 min antes até 15 min depois)
-- **Chamada inteligente** — sugere a aula ao vivo, separa habituais ausentes e deixa desfazer na recepção
+- **Presença em duas etapas** — o aluno confirma a aula no PWA; os colegas veem quem está na lista; o professor aceita quem treinou ou marca quem confirmou e não veio
+- **Código da aula** — cada turma tem o seu número de 4 dígitos, no painel e no quadro
 - **Visitante / aula avulsa** — quem aparece na porta entra na chamada e no caixa
 - **Grade da semana** — o aluno vê os horários da divisão no PWA
 - **Avaliação no tatame** — nota do professor na ficha, com indicação de graduação

@@ -107,6 +107,8 @@ export type ClassSession = {
   capacity: number;
 };
 
+export type AttendanceStatus = "pending" | "validated" | "no_show";
+
 export type Attendance = {
   id: string;
   academyId: string;
@@ -115,6 +117,10 @@ export type Attendance = {
   date: string;
   checkedInAt: string;
   method: "app" | "manual" | "code";
+  /** Ausente = registro antigo (já valido). */
+  status?: AttendanceStatus;
+  validatedAt?: string;
+  validatedBy?: string;
 };
 
 export type Evaluation = {

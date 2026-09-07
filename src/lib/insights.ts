@@ -1,18 +1,20 @@
 import { currentMonth, daysSince, isoDate, monthsBetween, parseDate } from "./format";
 import { maxDegrees, monthsForNextStep } from "./belts";
+import { isValidated } from "./attendance";
 import type { AppState, Student } from "./types";
 
 export function lastClassDate(state: AppState, studentId: string) {
   const rows = state.attendance
-    .filter((a) => a.studentId === studentId)
+    .filter((a) => a.studentId === studentId && isValidated(a))
     .sort((a, b) => b.date.localeCompare(a.date));
   return rows[0]?.date;
 }
 
 export function attendanceInDays(state: AppState, studentId: string, days: number) {
   const from = isoDate(-days);
-  return state.attendance.filter((a) => a.studentId === studentId && a.date >= from)
-    .length;
+  return state.attendance.filter(
+    (a) => a.studentId === studentId && a.date >= from && isValidated(a),
+  ).length;
 }
 
 export function isAtRisk(state: AppState, student: Student) {
@@ -84,7 +86,7 @@ export function birthdaysSoon(students: Student[], withinDays = 7) {
 export function attendanceThisMonth(state: AppState, studentId: string) {
   const month = currentMonth();
   return state.attendance.filter(
-    (a) => a.studentId === studentId && a.date.startsWith(month),
+    (a) => a.studentId === studentId && a.date.startsWith(month) && isValidated(a),
   ).length;
 }
 
@@ -108,7 +110,7 @@ export function monthChargeStats(state: AppState, month: string) {
 }
 
 export function monthAttendanceCount(state: AppState, month: string) {
-  return state.attendance.filter((a) => a.date.startsWith(month)).length;
+  return state.attendance.filter((a) => a.date.startsWith(month) && isValidated(a)).length;
 }
 
 export function monthStoreSales(state: AppState, month: string) {

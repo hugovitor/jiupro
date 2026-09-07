@@ -57,6 +57,7 @@ export function ensureUuidState(state: AppState): AppState {
       academyId,
       studentId: id(a.studentId),
       classId: id(a.classId),
+      validatedBy: a.validatedBy ? id(a.validatedBy) : a.validatedBy,
     })),
     payments: state.payments.map((p) => ({
       ...p,
@@ -253,6 +254,9 @@ export function stateToTables(state: AppState, allowedProfiles?: Set<string>) {
         date: a.date,
         checked_in_at: a.checkedInAt,
         method: a.method,
+        status: a.status ?? "validated",
+        validated_at: a.validatedAt ?? null,
+        validated_by: a.validatedBy && isUuid(a.validatedBy) ? a.validatedBy : null,
       })),
     payments: state.payments.filter((p) => isUuid(p.id) && isUuid(p.studentId)).map((p) => ({
       id: p.id,
@@ -483,6 +487,10 @@ export function tablesToState(input: {
       date: str(x.date),
       checkedInAt: str(x.checked_in_at),
       method: (str(x.method, "manual") as Attendance["method"]) || "manual",
+      status:
+        (str(x.status, "validated") as Attendance["status"]) || "validated",
+      validatedAt: str(x.validated_at) || undefined,
+      validatedBy: str(x.validated_by) || undefined,
     })),
     payments: input.payments.map((p) => ({
       id: str(p.id),

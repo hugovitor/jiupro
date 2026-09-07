@@ -496,7 +496,65 @@ export function createSeed(): AppState {
     date: camilaLast,
     checkedInAt: `${camilaLast}T19:40:00.000Z`,
     method: "manual",
+    status: "validated",
   });
+
+  const todayIso = isoDate(0);
+  const todayAdult = classes.find(
+    (c) => c.weekday === weekdayToday() && c.division === "adult",
+  );
+  const todayKids = classes.find(
+    (c) => c.weekday === weekdayToday() && c.division === "kids",
+  );
+  if (todayAdult) {
+    const now = new Date().toISOString();
+    attendance.push(
+      {
+        id: seedId("at"),
+        academyId: ACADEMY_ID,
+        studentId: "s_ana",
+        classId: todayAdult.id,
+        date: todayIso,
+        checkedInAt: now,
+        method: "code",
+        status: "pending",
+      },
+      {
+        id: seedId("at"),
+        academyId: ACADEMY_ID,
+        studentId: "s_marina",
+        classId: todayAdult.id,
+        date: todayIso,
+        checkedInAt: now,
+        method: "code",
+        status: "pending",
+      },
+      {
+        id: seedId("at"),
+        academyId: ACADEMY_ID,
+        studentId: "s_thiago",
+        classId: todayAdult.id,
+        date: todayIso,
+        checkedInAt: now,
+        method: "manual",
+        status: "validated",
+        validatedAt: now,
+        validatedBy: "u_carla",
+      },
+    );
+  }
+  if (todayKids) {
+    attendance.push({
+      id: seedId("at"),
+      academyId: ACADEMY_ID,
+      studentId: "s_bia",
+      classId: todayKids.id,
+      date: todayIso,
+      checkedInAt: new Date().toISOString(),
+      method: "code",
+      status: "pending",
+    });
+  }
 
   const thisMonth = monthOffset(0);
   const lastMonth = monthOffset(-1);

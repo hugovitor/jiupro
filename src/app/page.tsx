@@ -7,10 +7,10 @@ import { brl } from "@/lib/format";
 const modules = [
   ["Cadastro", "Alunos, responsáveis, turmas e status."],
   ["Financeiro", "Mensalidade, atraso, isenção e fechamento."],
-  ["Presença", "Chamada da aula ao vivo, código da turma e habituais."],
+  ["Presença", "Aluno confirma, a turma vê, o professor valida."],
   ["Graduação", "Tempo de faixa, graus e quem está pronto."],
   ["Estoque", "Kimono e faixa no nome do aluno."],
-  ["Aplicativo", "O aluno marca presença e vê a própria faixa."],
+  ["Aplicativo", "Confirma a aula, vê quem vai e espera o aceite."],
 ];
 
 export default function HomePage() {
@@ -41,8 +41,8 @@ export default function HomePage() {
           </h1>
           <p className="mt-5 max-w-md text-[16px] leading-relaxed text-white/60">
             Alunos, mensalidades, presença, faixas e estoque. Uma conta por
-            casa. A chamada escolhe a aula certa; o aluno confirma com o código
-            da turma.
+            casa. O aluno confirma a aula; os colegas veem a lista; o professor
+            valida quem realmente treinou.
           </p>
           <div className="mt-10 flex w-full max-w-sm flex-col gap-3 sm:flex-row sm:justify-center">
             <Button
@@ -98,7 +98,7 @@ export default function HomePage() {
               Presença confirmada. Faixa visível.
             </h2>
             <ul className="mt-6 space-y-2 text-[14px] text-muted-foreground">
-              <li>Check-in com o código desta aula, só na janela do treino.</li>
+              <li>Confirma a aula com o código da turma. Os colegas veem quem vai.</li>
               <li>Grade da semana e mural da casa.</li>
               <li>Histórico de faixa, graus e treinos.</li>
               <li>Pix da academia na mensalidade.</li>
@@ -108,15 +108,16 @@ export default function HomePage() {
             </Button>
           </div>
           <div className="border border-border bg-white p-6">
-            <p className="text-[12px] text-muted-foreground">Chamada aberta · Adultos Gi</p>
+            <p className="text-[12px] text-muted-foreground">Confirmou · Adultos Gi</p>
             <p className="mt-4 font-mono text-[32px] tracking-tight">19:30</p>
             <p className="mt-1 text-[13px] text-muted-foreground">Gi · 75 min · código da turma</p>
             <div className="mt-5 border border-border py-3 text-center font-mono text-[18px] tracking-[0.35em]">
               4821
             </div>
             <div className="mt-3 bg-[#111] px-4 py-3 text-center text-[13px] font-medium text-white">
-              Confirmar presença
+              Confirmar que vou
             </div>
+            <p className="mt-4 text-[12px] text-muted-foreground">Na lista · Ana, Marina, Thiago</p>
           </div>
         </div>
       </section>
@@ -212,9 +213,9 @@ function ProductPreview() {
           <p className="mt-1 text-[16px] font-medium">Adultos Gi · 19:30</p>
           <div className="mt-4 grid grid-cols-3 border border-border">
             {[
-              ["Presentes", "0"],
-              ["Habituais fora", "7"],
-              ["Vagas", "28"],
+              ["Aguardando", "2"],
+              ["Validados", "1"],
+              ["Vagas", "25"],
             ].map(([k, v], i) => (
               <div
                 key={k}
@@ -232,7 +233,7 @@ function ProductPreview() {
               </p>
               <p className="mt-1 font-mono text-[28px] tracking-[0.22em]">4821</p>
             </div>
-            <p className="text-[12px] text-muted-foreground">Chamada abre em 18 min</p>
+            <p className="text-[12px] text-muted-foreground">Aceite do professor</p>
           </div>
         </div>
       </div>

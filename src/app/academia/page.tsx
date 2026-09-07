@@ -7,6 +7,8 @@ import { Button } from "@/components/ui/button";
 import {
   classCode,
   classPhase,
+  isOnRoster,
+  isValidated,
   phaseHint,
   phaseLabel,
   recommendClass,
@@ -53,7 +55,9 @@ export default function AcademiaDashboard() {
   const expenses = monthExpenses(store, month);
   const overdue = overdueTotal(store);
   const today = isoDate(0);
-  const todayCount = store.attendance.filter((a) => a.date === today).length;
+  const todayCount = store.attendance.filter(
+    (a) => a.date === today && isValidated(a),
+  ).length;
   const candidates = store.students.filter((s) => isPromotionCandidate(store, s));
   const risk = store.students.filter((s) => isAtRisk(store, s));
   const lowStock = store.inventory.filter((i) => i.quantity <= i.minQuantity);
@@ -128,7 +132,14 @@ export default function AcademiaDashboard() {
             <ul className="mt-4 divide-y divide-border">
               {classes.map((c) => {
                 const count = store.attendance.filter(
-                  (a) => a.classId === c.id && a.date === today,
+                  (a) => a.classId === c.id && a.date === today && isValidated(a),
+                ).length;
+                const waiting = store.attendance.filter(
+                  (a) =>
+                    a.classId === c.id &&
+                    a.date === today &&
+                    isOnRoster(a) &&
+                    !isValidated(a),
                 ).length;
                 const phase = classPhase(c, now);
                 const suggested = live?.id === c.id;
@@ -148,6 +159,11 @@ export default function AcademiaDashboard() {
                     </div>
                     <p className="text-sm tabular-nums">
                       {count}/{c.capacity}
+                      {waiting ? (
+                        <span className="block text-[11px] font-normal text-muted-foreground">
+                          {waiting} aguardando
+                        </span>
+                      ) : null}
                     </p>
                   </li>
                 );

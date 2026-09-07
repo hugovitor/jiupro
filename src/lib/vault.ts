@@ -37,6 +37,10 @@ function migrateState(state: AppState): AppState {
       ...s,
       cpf: s.cpf ?? "",
     })),
+    attendance: (state.attendance ?? []).map((a) => ({
+      ...a,
+      status: a.status ?? "validated",
+    })),
     payments: (state.payments ?? []).map((p) => ({
       ...p,
       asaasPaymentId: p.asaasPaymentId,

@@ -8,16 +8,21 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import {
+  attendanceStatus,
   classCode,
+  classHeadcount,
   classPhase,
   habitualStudentIds,
   isLateCheckIn,
+  isOnRoster,
   isOverdue,
+  isValidated,
   methodLabel,
   phaseHint,
   phaseLabel,
   recommendClass,
   sortByName,
+  statusLabel,
 } from "@/lib/attendance";
 import { brl, clockLabel, currentMonth, formatTime, isoDate, minutes } from "@/lib/format";
 import { useStore } from "@/lib/store";
@@ -57,9 +62,16 @@ export default function PresencaPage() {
   }, [store.students, cls]);
 
   const presentRows = store.attendance.filter(
-    (a) => a.classId === classId && a.date === today,
+    (a) => a.classId === classId && a.date === today && isOnRoster(a),
   );
   const presentByStudent = new Map(presentRows.map((a) => [a.studentId, a]));
+  const noShowRows = store.attendance.filter(
+    (a) =>
+      a.classId === classId &&
+      a.date === today &&
+      attendanceStatus(a) === "no_show",
+  );
+  const noShowByStudent = new Map(noShowRows.map((a) => [a.studentId, a]));
   const habitual = habitualStudentIds(classId, store.attendance);
   const visitors = (store.dropIns ?? []).filter(
     (d) => d.classId === classId && d.date === today,
@@ -73,17 +85,44 @@ export default function PresencaPage() {
     );
   }
 
-  const present = roster
-    .filter((s) => presentByStudent.has(s.id) && matches(s))
+  const waiting = roster
+    .filter(
+      (s) =>
+        presentByStudent.has(s.id) &&
+        attendanceStatus(presentByStudent.get(s.id)!) === "pending" &&
+        matches(s),
+    )
+    .sort(sortByName);
+  const validated = roster
+    .filter(
+      (s) =>
+        presentByStudent.has(s.id) &&
+        isValidated(presentByStudent.get(s.id)!) &&
+        matches(s),
+    )
     .sort(sortByName);
   const habitualMissing = roster
     .filter((s) => habitual.has(s.id) && !presentByStudent.has(s.id) && matches(s))
     .sort(sortByName);
   const others = roster
-    .filter((s) => !habitual.has(s.id) && !presentByStudent.has(s.id) && matches(s))
+    .filter(
+      (s) =>
+        !habitual.has(s.id) &&
+        !presentByStudent.has(s.id) &&
+        !noShowByStudent.has(s.id) &&
+        matches(s),
+    )
+    .sort(sortByName);
+  const noShows = roster
+    .filter((s) => noShowByStudent.has(s.id) && matches(s))
     .sort(sortByName);
 
-  const heads = presentRows.length + visitors.length;
+  const heads = classHeadcount(
+    store.attendance,
+    store.dropIns ?? [],
+    classId,
+    today,
+  );
   const cap = cls?.capacity ?? 0;
   const full = cap > 0 && heads >= cap;
   const open = Math.max(0, cap - heads);
@@ -98,8 +137,8 @@ export default function PresencaPage() {
           </p>
           <h1 className="mt-1 text-[22px] font-medium">Presença</h1>
           <p className="mt-1 max-w-xl text-sm text-muted-foreground">
-            A aula certa, o código desta turma, quem costuma vir. Recepção
-            marca na hora; o aluno confirma no PWA só na janela da aula.
+            Aula certa, código da turma. O aluno confirma no PWA; a recepção
+            aceita quem treinou e marca quem confirmou e não veio.
           </p>
         </div>
         <Visitante classId={classId} disabled={!classId} />
@@ -110,7 +149,13 @@ export default function PresencaPage() {
           const selected = c.id === classId;
           const live = classPhase(c, now);
           const n = store.attendance.filter(
-            (a) => a.classId === c.id && a.date === today,
+            (a) => a.classId === c.id && a.date === today && isOnRoster(a),
+          ).length;
+          const pending = store.attendance.filter(
+            (a) =>
+              a.classId === c.id &&
+              a.date === today &&
+              attendanceStatus(a) === "pending",
           ).length;
           return (
             <button
@@ -129,7 +174,10 @@ export default function PresencaPage() {
               ) : null}
               <span className="font-mono tabular-nums">{c.startTime}</span>
               <span>{c.name}</span>
-              <span className="text-[11px] text-muted-foreground">{n}</span>
+              <span className="text-[11px] text-muted-foreground">
+                {n}
+                {pending ? ` · ${pending}` : ""}
+              </span>
             </button>
           );
         })}
@@ -184,12 +232,14 @@ export default function PresencaPage() {
             </div>
           </div>
 
-          <div className="grid grid-cols-3 border border-border bg-white">
-            <Kpi k="Presentes" v={String(heads)} hint={full ? "Lotou" : undefined} warn={full} />
+          <div className="grid grid-cols-2 border border-border bg-white sm:grid-cols-4">
+            <Kpi k="Aguardando" v={String(waiting.length)} hint="aluno confirmou" />
+            <Kpi k="Validados" v={String(validated.length)} hint="no tatame" />
             <Kpi
               k="Vagas"
               v={cap ? String(open) : "—"}
               hint={cap ? `de ${cap}` : "sem limite"}
+              warn={full}
             />
             <Kpi
               k="Habituais fora"
@@ -205,25 +255,41 @@ export default function PresencaPage() {
               value={q}
               onChange={(e) => setQ(e.target.value)}
             />
-            {habitualMissing.length > 0 && !needle ? (
-              <Button
-                type="button"
-                onClick={() => {
-                  const n = store.checkInMany(
-                    habitualMissing.map((s) => s.id),
-                    classId,
-                    "manual",
-                  );
-                  toast.success(
-                    n === 1
-                      ? "1 habitual confirmado."
-                      : `${n} habituais confirmados.`,
-                  );
-                }}
-              >
-                Confirmar habituais ({habitualMissing.length})
-              </Button>
-            ) : null}
+            <div className="flex flex-wrap gap-2">
+              {waiting.length > 0 && !needle ? (
+                <Button
+                  type="button"
+                  onClick={() => {
+                    const n = store.validatePending(classId);
+                    toast.success(
+                      n === 1 ? "1 presença validada." : `${n} presenças validadas.`,
+                    );
+                  }}
+                >
+                  Validar quem confirmou ({waiting.length})
+                </Button>
+              ) : null}
+              {habitualMissing.length > 0 && !needle ? (
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={() => {
+                    const n = store.checkInMany(
+                      habitualMissing.map((s) => s.id),
+                      classId,
+                      "manual",
+                    );
+                    toast.success(
+                      n === 1
+                        ? "1 habitual validado na porta."
+                        : `${n} habituais validados na porta.`,
+                    );
+                  }}
+                >
+                  Validar habituais ({habitualMissing.length})
+                </Button>
+              ) : null}
+            </div>
           </div>
 
           {visitors.length > 0 && (
@@ -246,8 +312,12 @@ export default function PresencaPage() {
             </section>
           )}
 
-          <Group title="Presentes" count={present.length} empty="Ninguém nesta aula ainda.">
-            {present.map((s) => {
+          <Group
+            title="Aguardando aceite"
+            count={waiting.length}
+            empty="Ninguém confirmou no app ainda. Quem marcar aparece aqui para você validar."
+          >
+            {waiting.map((s) => {
               const row = presentByStudent.get(s.id)!;
               return (
                 <RosterRow
@@ -258,16 +328,57 @@ export default function PresencaPage() {
                   overdue={store.overdueFor(s.id).length > 0}
                   missing={isOverdue(s, store.attendance)}
                   action={
-                    <Button
-                      size="sm"
-                      variant="ghost"
-                      onClick={() => {
-                        store.checkOut(s.id, classId);
-                        toast.message(`${s.name} removido da lista.`);
-                      }}
-                    >
-                      Desfazer
-                    </Button>
+                    <div className="flex gap-1">
+                      <Button
+                        size="sm"
+                        onClick={() => {
+                          store.validateCheckIn(s.id, classId);
+                          toast.success(`${s.name} validado.`);
+                        }}
+                      >
+                        Aceitar
+                      </Button>
+                      <Button
+                        size="sm"
+                        variant="ghost"
+                        onClick={() => {
+                          store.markNoShow(s.id, classId);
+                          toast.message(`${s.name} marcado como não veio.`);
+                        }}
+                      >
+                        Não veio
+                      </Button>
+                    </div>
+                  }
+                />
+              );
+            })}
+          </Group>
+
+          <Group title="Validados no tatame" count={validated.length} empty="Ninguém validado nesta aula ainda.">
+            {validated.map((s) => {
+              const row = presentByStudent.get(s.id)!;
+              return (
+                <RosterRow
+                  key={s.id}
+                  student={s}
+                  attendance={row}
+                  session={cls}
+                  overdue={store.overdueFor(s.id).length > 0}
+                  missing={isOverdue(s, store.attendance)}
+                  action={
+                    <div className="flex gap-1">
+                      <Button
+                        size="sm"
+                        variant="ghost"
+                        onClick={() => {
+                          store.markNoShow(s.id, classId);
+                          toast.message(`${s.name} saiu da lista — não treinou.`);
+                        }}
+                      >
+                        Não veio
+                      </Button>
+                    </div>
                   }
                 />
               );
@@ -291,10 +402,10 @@ export default function PresencaPage() {
                     disabled={full}
                     onClick={() => {
                       store.checkIn(s.id, classId, "manual");
-                      toast.success(`${s.name} presente.`);
+                      toast.success(`${s.name} validado na porta.`);
                     }}
                   >
-                    Marcar
+                    Validar
                   </Button>
                 }
               />
@@ -315,15 +426,42 @@ export default function PresencaPage() {
                     disabled={full}
                     onClick={() => {
                       store.checkIn(s.id, classId, "manual");
-                      toast.success(`${s.name} presente.`);
+                      toast.success(`${s.name} validado na porta.`);
                     }}
                   >
-                    Marcar
+                    Validar
                   </Button>
                 }
               />
             ))}
           </Group>
+
+          {noShows.length > 0 ? (
+          <Group title="Não vieram" count={noShows.length}>
+            {noShows.map((s) => (
+              <RosterRow
+                key={s.id}
+                student={s}
+                attendance={noShowByStudent.get(s.id)}
+                overdue={store.overdueFor(s.id).length > 0}
+                missing={isOverdue(s, store.attendance)}
+                action={
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    disabled={full}
+                    onClick={() => {
+                      store.checkIn(s.id, classId, "manual");
+                      toast.success(`${s.name} voltou — validado.`);
+                    }}
+                  >
+                    Veio sim
+                  </Button>
+                }
+              />
+            ))}
+          </Group>
+          ) : null}
         </>
       )}
 
@@ -413,6 +551,7 @@ function RosterRow({
                 {formatTime(attendance.checkedInAt)} · {methodLabel(attendance.method)}
               </span>
               {late ? <span className="text-destructive">Atrasado</span> : null}
+              <span>{statusLabel(attendance)}</span>
             </>
           ) : (
             <span>{student.phone}</span>
@@ -485,7 +624,7 @@ function FrequenciaMes() {
     .map((s) => ({
       s,
       n: store.attendance.filter(
-        (a) => a.studentId === s.id && a.date.startsWith(month),
+        (a) => a.studentId === s.id && a.date.startsWith(month) && isValidated(a),
       ).length,
     }))
     .sort((a, b) => b.n - a.n);
