@@ -11,6 +11,7 @@ import { PLANS, planById } from "@/lib/plans";
 import { useStore } from "@/lib/store";
 import type { PlanId } from "@/lib/types";
 import { AsaasConnect } from "@/components/asaas-connect";
+import { GoLiveCard } from "@/components/go-live";
 import { SupabaseConnect } from "@/components/supabase-connect";
 
 function ConfigInner() {
@@ -47,9 +48,12 @@ function ConfigInner() {
       <div>
         <h1 className="font-display text-3xl">Configurações</h1>
         <p className="mt-1 text-sm text-muted-foreground">
-          Projeto Supabase, Pix Asaas (sandbox) e plano Stripe.
+          Produção agora: nuvem + Pix da casa. Asaas e Stripe ficam para o
+          próximo passo.
         </p>
       </div>
+
+      <GoLiveCard />
 
       <section className="border border-border bg-card p-5">
         <h2 className="font-medium">Academia</h2>
@@ -77,6 +81,8 @@ function ConfigInner() {
 
       <SupabaseConnect />
 
+      <PixForm />
+
       <AsaasConnect />
 
       <section className="border border-border bg-card p-5">
@@ -97,12 +103,10 @@ function ConfigInner() {
         </div>
       </section>
 
-      <PixForm />
-
       <DropInFeeForm />
 
       <section className="border border-border bg-card p-5 text-sm">
-        <h2 className="font-medium">Stripe</h2>
+        <h2 className="font-medium">Stripe · depois</h2>
         <p className="mt-2 text-muted-foreground">
           Conta:{" "}
           {store.isDemo
@@ -110,8 +114,8 @@ function ConfigInner() {
             : "sua academia neste navegador"}
         </p>
         <p className="mt-1 text-muted-foreground">
-          As chaves no servidor ligam o checkout real. Sem elas, o plano muda só
-          neste navegador.
+          Sem chaves, o plano muda só neste navegador. Cobrança do JiuPro fica
+          para depois.
         </p>
       </section>
 
@@ -145,11 +149,11 @@ function PixForm() {
 
   return (
     <section className="border border-border bg-card p-5">
-      <h2 className="font-medium">Pix avulso (fallback)</h2>
-      <p className="mt-1 text-sm text-muted-foreground">
-        Entra no WhatsApp se o Asaas não estiver ligado. Com Asaas, a cobrança
-        usa QR dinâmico por mensalidade.
-      </p>
+        <h2 className="font-medium">Pix da academia</h2>
+        <p className="mt-1 text-sm text-muted-foreground">
+          É o caminho de produção agora: a cobrança no WhatsApp usa esta chave.
+          Asaas (QR dinâmico) entra depois.
+        </p>
       <form
         className="mt-4 grid gap-3"
         onSubmit={(e) => {

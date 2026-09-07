@@ -93,12 +93,12 @@ export function AsaasConnect() {
 
   return (
     <section className="border border-border bg-card p-5">
-      <h2 className="font-medium">Asaas · mensalidades (sandbox)</h2>
+      <h2 className="font-medium">Asaas · depois</h2>
       <p className="mt-1 text-sm text-muted-foreground">
-        Gera Pix dinâmico por aluno na conta sandbox. Stripe continua só no
-        plano do JiuPro. Produção entra depois, com chave{" "}
-        <span className="font-mono text-xs">$aact_prod_</span> e{" "}
-        <span className="font-mono text-xs">ASAAS_ENV=production</span>.
+        Opcional. Sem chave, a mensalidade segue no Pix da casa + WhatsApp.
+        Quando for ligar: sandbox primeiro (
+        <span className="font-mono text-xs">$aact_hmlg_</span>), produção depois
+        com <span className="font-mono text-xs">$aact_prod_</span>.
       </p>
       {envConfigured && (
         <p className="mt-2 text-sm text-muted-foreground">

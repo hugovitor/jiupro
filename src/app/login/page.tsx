@@ -44,8 +44,8 @@ export default function LoginPage() {
             <span className="text-primary">tatame.</span>
           </h1>
           <p className="mt-6 max-w-sm text-sm text-neutral-400">
-            Painel da academia ou PWA do aluno. A Equipe Origem está nos atalhos
-            — senha demo.
+            Painel da academia ou PWA do aluno. Se ainda não abriu a casa, o
+            cadastro é o caminho.
           </p>
         </div>
         <p className="text-xs text-neutral-600">JiuPro · cada academia, uma conta</p>
@@ -62,8 +62,8 @@ export default function LoginPage() {
         <div className="mx-auto flex w-full max-w-md flex-1 flex-col justify-center px-4 py-10">
           <h2 className="font-display text-3xl uppercase">Entrar</h2>
           <p className="mt-2 text-sm text-muted-foreground">
-            Use o e-mail da sua academia. Senha da demo:{" "}
-            <span className="text-foreground">demo</span>.
+            E-mail da sua academia. A demo da Equipe Origem fica nos atalhos
+            abaixo.
           </p>
           <form
             className="mt-8 space-y-4"

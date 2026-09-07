@@ -7,7 +7,7 @@ Feito para o dono que treina de manhã e administra de noite: mensalidades em at
 ## O que já funciona nesta fatia
 
 - **Painel da academia** — alunos, faixas/graus, turmas, chamada, financeiro, estoque, mural e plano
-- **Cobranças** — Pix Asaas sandbox (QR + fatura + webhook) ou WhatsApp + chave Pix + baixa manual
+- **Cobranças agora** — WhatsApp + chave Pix da casa + baixa manual (Asaas entra depois)
 - **Fechamento do mês** — recebido × despesa, gerar mensalidades do próximo mês, CSV
 - **Experimentais** — captar aula experimental e converter em mensalista
 - **Código do dia** — recepção mostra, aluno confirma no PWA
@@ -18,10 +18,10 @@ Feito para o dono que treina de manhã e administra de noite: mensalidades em at
 - **Agenda** — seminário, campeonato, open mat; confirmação no PWA e Zap para quem falta
 - **Loja** — venda no nome do aluno, baixa o estoque, entra no financeiro
 - **PWA do aluno** — check-in do dia, agenda, mural, evolução, Pix e perfil (instalável no celular)
-- **Planos mensais** — Essencial, Academia e Equipe. Stripe cobra o plano do JiuPro; Asaas cobra a mensalidade do aluno
-- **Cadastro real** — abre a sua academia, vazia, isolada da Equipe Origem. Sem Supabase fica neste navegador; com o projeto ligado, Auth + tabelas gravam na nuvem
+- **Planos mensais** — Essencial, Academia e Equipe. Escolhe no cadastro; Stripe cobra o JiuPro depois
+- **Cadastro real** — abre a sua academia, vazia, isolada da Equipe Origem
 - **Demo completa** — Equipe Origem (Campinas) nos atalhos de Entrar ou em `/demo`
-- **Supabase** — schema multi-tenant com RLS. Cada entidade (aluno, turma, pagamento, mural…) é uma tabela, não um JSON único
+- **Supabase** — schema multi-tenant com RLS. Cada entidade é uma tabela, não um JSON único
 
 A demo da Equipe Origem continua no navegador. **Cadastro** cria outra academia (não entra como Carla). Sem chaves de Supabase, a casa nova fica no `localStorage` deste browser. Com Project URL + anon key (em Configurações ou `.env.local`), o cadastro cria usuário no Auth, a academia em `academies` e o painel nas tabelas.
 
@@ -65,7 +65,7 @@ NEXT_PUBLIC_SUPABASE_ANON_KEY=
 
 O schema isola dados por `academy_id` (RLS). O cadastro chama `register_academy` e o painel grava em tabelas. A Equipe Origem não sincroniza. A URI do banco não fica salva no navegador.
 
-## Asaas (mensalidades)
+## Asaas (mensalidades) — depois
 
 Sandbox primeiro. Stripe cobra o **plano do JiuPro**; o Asaas cobra a **mensalidade do aluno**.
 
@@ -87,7 +87,7 @@ Produção: chave `$aact_prod_` e `ASAAS_ENV=production`. Sem chave, o WhatsApp 
 
 Webhook no painel Asaas: URL `https://seu-dominio/api/asaas/webhook`, header `asaas-access-token`, eventos `PAYMENT_RECEIVED` e `PAYMENT_CONFIRMED`. Se o Supabase tiver `SUPABASE_SERVICE_ROLE_KEY`, o webhook grava `payments` direto.
 
-## Stripe
+## Stripe — depois
 
 Crie três Prices recorrentes (mensal) e coloque os IDs:
 
@@ -101,34 +101,72 @@ STRIPE_PRICE_EQUIPE=
 
 Webhook: `POST /api/stripe/webhook`. Sem chaves, o checkout só troca o plano na demo.
 
-## Produção no Vercel
+## Produção (o mais rápido possível)
 
-O app é Next.js e sobe direto. Região sugerida: `gru1` (São Paulo), em `vercel.json`.
+O app sobe **sem Asaas e sem Stripe**. Mensalidade do aluno: Pix da casa + WhatsApp. Plano do JiuPro: escolhe no cadastro; cobrança depois.
+
+O único passo obrigatório para não perder dados é o **Supabase**.
+
+### 1. Publicar
+
+Região: `gru1` (São Paulo), em `vercel.json`. Node 22 (`.nvmrc`).
 
 ```bash
 npx vercel login
 npx vercel --prod
 ```
 
-No dashboard da Vercel, Project → Settings → Environment Variables (Production):
+Ou importe o repositório `hugo-vitor/jiupro` no [Vercel](https://vercel.com/new). Cada push em `main` gera produção.
+
+Health check: `GET /api/health` (não revela chaves).
+
+### 2. Variáveis no Vercel
+
+Project → Settings → Environment Variables (Production):
 
 ```
 NEXT_PUBLIC_APP_URL=https://SEU-PROJETO.vercel.app
-ASAAS_ENV=sandbox
-ASAAS_API_KEY=
-ASAAS_WEBHOOK_TOKEN=
 NEXT_PUBLIC_SUPABASE_URL=
 NEXT_PUBLIC_SUPABASE_ANON_KEY=
 SUPABASE_SERVICE_ROLE_KEY=
 ```
 
-Stripe só se for cobrar o plano do JiuPro. Asaas pode continuar em sandbox até a conta real.
+Asaas e Stripe podem ficar vazios. Depois de salvar `NEXT_PUBLIC_*`, faça um **Redeploy**.
 
-Depois do primeiro deploy, a URL do webhook Asaas é:
+### 3. Ligar o Supabase (obrigatório)
 
-`https://SEU-PROJETO.vercel.app/api/asaas/webhook`
+1. Crie um projeto no [Supabase](https://supabase.com) (região São Paulo, se aparecer)
+2. Project Settings → API: **Project URL** + **anon public** (nunca a service role no frontend)
+3. Cole as duas no Vercel (acima) **ou** em Configurações no app
+4. SQL Editor → **Copiar SQL** no JiuPro → Run
+5. Authentication → Providers → Email: desligue **Confirm email**
+6. Abra a academia em `/cadastro` (não a demo) → Configurações → **Enviar esta academia**
 
-Cole isso no painel sandbox (v3, sequencial, PAYMENT_RECEIVED + PAYMENT_CONFIRMED). Sem GitHub, o `vercel --prod` publica a pasta; com repositório ligado, cada push em `main` gera produção.
+Sem isso, cadastro e painel ficam só no navegador de quem abriu.
+
+### 4. Operar
+
+- Cadastre alunos, turmas, mensalidades
+- Em Configurações, cole a **chave Pix da academia**
+- Em Cobranças, use WhatsApp + Baixar Pix
+- Demo da Equipe Origem continua em `/demo` e nos atalhos de Entrar
+
+### 5. Pagamentos (depois)
+
+Asaas (Pix dinâmico do aluno) e Stripe (assinatura JiuPro) não bloqueiam o ar. Quando for a hora:
+
+```
+ASAAS_ENV=sandbox
+ASAAS_API_KEY=
+ASAAS_WEBHOOK_TOKEN=
+STRIPE_SECRET_KEY=
+STRIPE_WEBHOOK_SECRET=
+STRIPE_PRICE_ESSENCIAL=
+STRIPE_PRICE_ACADEMIA=
+STRIPE_PRICE_EQUIPE=
+```
+
+Webhook Asaas: `https://SEU-PROJETO.vercel.app/api/asaas/webhook` (v3, sequencial, `PAYMENT_RECEIVED` + `PAYMENT_CONFIRMED`).
 
 ## PWA do aluno
 

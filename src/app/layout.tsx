@@ -3,6 +3,7 @@ import { Geist_Mono, Oswald, Source_Sans_3 } from "next/font/google";
 import { Toaster } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { Providers } from "@/components/providers";
+import { metadataBaseUrl } from "@/lib/app-url";
 import "./globals.css";
 
 const sourceSans = Source_Sans_3({
@@ -23,6 +24,7 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
+  metadataBase: metadataBaseUrl(),
   title: {
     default: "JiuPro — gestão para academias de Jiu-Jitsu",
     template: "%s · JiuPro",
@@ -36,6 +38,13 @@ export const metadata: Metadata = {
     title: "JiuPro",
   },
   formatDetection: { telephone: false },
+  openGraph: {
+    title: "JiuPro — gestão para academias de Jiu-Jitsu",
+    description:
+      "O quadro da casa: alunos, Pix, faixas e presença. Cada academia, uma conta.",
+    locale: "pt_BR",
+    type: "website",
+  },
 };
 
 export const viewport: Viewport = {

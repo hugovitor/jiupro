@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 import { MarketingChrome } from "@/components/marketing-chrome";
@@ -44,7 +45,8 @@ export default function PlanosPage() {
         <h1 className="font-display text-4xl uppercase">Planos mensais</h1>
         <p className="mt-2 max-w-xl text-muted-foreground">
           Uma assinatura por academia. Alunos não pagam o JiuPro — pagam a
-          mensalidade para você.
+          mensalidade para você, pelo Pix da casa. Stripe do JiuPro entra
+          depois: escolha o plano agora e abra a academia.
         </p>
           <div className="mt-10 grid gap-px bg-white/10 lg:grid-cols-3">
             {PLANS.map((plan) => (
@@ -67,13 +69,23 @@ export default function PlanosPage() {
                   <li key={f}>— {f}</li>
                 ))}
               </ul>
-              <Button
-                className="mt-6"
-                variant={plan.popular ? "default" : "outline"}
-                onClick={() => subscribe(plan.id)}
-              >
-                Assinar {plan.name}
-              </Button>
+              {store.session ? (
+                <Button
+                  className="mt-6"
+                  variant={plan.popular ? "default" : "outline"}
+                  onClick={() => subscribe(plan.id)}
+                >
+                  Usar {plan.name}
+                </Button>
+              ) : (
+                <Button
+                  className="mt-6"
+                  variant={plan.popular ? "default" : "outline"}
+                  render={<Link href={`/cadastro?plano=${plan.id}`} />}
+                >
+                  Começar com {plan.name}
+                </Button>
+              )}
             </article>
           ))}
         </div>

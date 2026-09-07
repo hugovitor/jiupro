@@ -164,12 +164,13 @@ export function SupabaseConnect() {
 
   return (
     <section className="border border-border bg-card p-5">
-      <h2 className="font-medium">Nuvem · projeto vazio</h2>
+      <h2 className="font-medium">Nuvem · obrigatório em produção</h2>
       <p className="mt-1 text-sm text-muted-foreground">
-        Um projeto novo no Supabase não tem tabela nenhuma — isso é esperado. O
-        JiuPro cria as tabelas, o Auth e o isolamento por academia. A chave
-        pública é a <strong className="font-medium text-foreground">anon</strong>
-        ; nunca cole a service role neste formulário.
+        Sem o projeto, a academia fica só neste navegador. Um projeto novo no
+        Supabase não tem tabela nenhuma — isso é esperado. O JiuPro cria as
+        tabelas, o Auth e o isolamento por academia. A chave pública é a{" "}
+        <strong className="font-medium text-foreground">anon</strong>; nunca
+        cole a service role neste formulário.
       </p>
 
       <ol className="mt-5 space-y-6">

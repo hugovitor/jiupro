@@ -46,7 +46,7 @@ function CadastroForm() {
           <p className="mt-6 max-w-sm text-sm text-neutral-400">
             {remote
               ? "Isolada da Equipe Origem. Com o projeto ligado, a conta também fica no Supabase."
-              : "Neste navegador, isolada da demo. Ligue o Supabase depois em Configurações."}
+              : "Neste navegador, isolada da demo. Em produção, ligue o Supabase em Configurações para não perder os dados."}
           </p>
         </div>
         <p className="text-xs text-neutral-600">JiuPro · cada academia, uma conta</p>
@@ -63,7 +63,8 @@ function CadastroForm() {
         <div className="mx-auto flex w-full max-w-md flex-1 flex-col justify-center px-4 py-10">
           <h2 className="font-display text-3xl uppercase">Abrir academia</h2>
           <p className="mt-2 text-sm text-muted-foreground">
-            Cadastro cria a sua casa, não entra como Carla.
+            Cadastro cria a sua casa, não entra como Carla. Sem cartão agora —
+            o plano é só o teto de alunos.
           </p>
           <form
           className="mt-8 space-y-4"

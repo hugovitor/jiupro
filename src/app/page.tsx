@@ -84,16 +84,16 @@ export default function HomePage() {
               caminhar.
             </p>
             <div className="mt-8 flex flex-col gap-3 sm:flex-row">
-              <Button size="lg" render={<Link href="/demo" />}>
-                Ver a academia de demonstração
+              <Button size="lg" render={<Link href="/cadastro" />}>
+                Abrir minha academia
               </Button>
-              <Button variant="outline" size="lg" render={<Link href="/planos" />}>
-                Planos mensais
+              <Button variant="outline" size="lg" render={<Link href="/demo" />}>
+                Ver a demo
               </Button>
             </div>
             <p className="mt-4 text-xs text-neutral-500">
-              Demo da Equipe Origem, sem cartão. Cadastro abre a sua casa, não a
-              Origem.
+              Sem cartão agora. Cadastro abre a sua casa. Mensalidade do aluno
+              pelo Pix da academia; Asaas e Stripe entram depois.
             </p>
           </div>
 
@@ -218,8 +218,8 @@ export default function HomePage() {
             Cabe no caixa da academia.
           </h2>
           <p className="mt-2 max-w-xl text-sm text-neutral-400">
-            Stripe no checkout quando as chaves estiverem ligadas. Até lá, a
-            demo troca de plano na hora.
+            Escolhe o plano e abre a academia. A cobrança do JiuPro (Stripe)
+            entra depois — a casa já funciona sem cartão.
           </p>
           <div className="mt-10 grid gap-px bg-white/10 lg:grid-cols-3">
             {PLANS.map((plan) => (
@@ -270,8 +270,8 @@ export default function HomePage() {
               O dono vê o quadro. O aluno vê o PWA. Sem enrolação de plataforma.
             </p>
           </div>
-          <Button size="lg" render={<Link href="/demo" />}>
-            Abrir a demo agora
+          <Button size="lg" render={<Link href="/cadastro" />}>
+            Abrir minha academia
           </Button>
         </div>
       </section>
