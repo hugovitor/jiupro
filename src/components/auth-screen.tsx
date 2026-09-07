@@ -18,8 +18,8 @@ export function AuthScreen({
   children: React.ReactNode;
 }) {
   return (
-    <div className="min-h-full bg-background">
-      <header className="flex h-14 items-center justify-between border-b border-border px-4 sm:px-8">
+    <div className="min-h-full bg-[#f3f2f1]">
+      <header className="flex h-12 items-center justify-between border-b border-border bg-white px-5">
         <Link href="/" aria-label="JiuPro">
           <Logo />
         </Link>
@@ -27,15 +27,13 @@ export function AuthScreen({
           {switchLabel}
         </Button>
       </header>
-      <div className="mx-auto grid max-w-5xl gap-12 px-4 py-12 lg:grid-cols-[1fr_24rem] lg:items-start lg:py-20">
-        <aside className="hidden lg:block lg:pt-6">
-          <p className="text-sm font-medium text-primary">{kicker}</p>
-          <h1 className="font-serif mt-3 text-4xl leading-tight text-balance">{title}</h1>
-          <p className="mt-4 max-w-md text-sm leading-relaxed text-muted-foreground">
-            {subtitle}
-          </p>
-        </aside>
-        <div className="surface mx-auto w-full max-w-md p-6 sm:p-8">{children}</div>
+      <div className="mx-auto max-w-[420px] px-4 py-16">
+        <p className="text-[12px] font-medium tracking-wide text-muted-foreground uppercase">
+          {kicker}
+        </p>
+        <h1 className="mt-2 text-[22px] leading-snug font-medium">{title}</h1>
+        <p className="mt-2 text-[13px] leading-relaxed text-muted-foreground">{subtitle}</p>
+        <div className="surface mt-8 p-6">{children}</div>
       </div>
     </div>
   );

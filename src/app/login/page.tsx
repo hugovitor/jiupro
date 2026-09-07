@@ -37,7 +37,7 @@ export default function LoginPage() {
       switchHref="/cadastro"
       switchLabel="Criar conta"
     >
-      <h2 className="text-xl font-semibold tracking-tight">Entrar</h2>
+      <h2 className="text-[16px] font-medium">Entrar</h2>
       <p className="mt-2 text-sm text-muted-foreground">
         E-mail da sua academia. A demo da Equipe Origem fica nos atalhos abaixo.
       </p>

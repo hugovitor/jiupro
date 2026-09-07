@@ -58,10 +58,10 @@ export default function AcademiaDashboard() {
     <div className="mx-auto max-w-6xl">
       <div className="flex flex-col gap-4 border-b border-border pb-6 sm:flex-row sm:items-end sm:justify-between">
         <div>
-          <p className="text-xs tracking-[0.18em] text-muted-foreground uppercase">
+          <p className="text-[12px] text-muted-foreground">
             {weekdayFull(weekdayToday())} · {monthLabel(month)}
           </p>
-          <h1 className="mt-1 text-2xl font-semibold tracking-tight">Visão do dia</h1>
+          <h1 className="mt-1 text-[22px] font-medium">Início</h1>
           {store.isDemo ? (
             <p className="mt-2 text-sm text-muted-foreground">
               Equipe Origem (demonstração).{" "}
@@ -103,7 +103,7 @@ export default function AcademiaDashboard() {
       <div className="mt-8 grid gap-4 lg:grid-cols-[minmax(0,1.1fr)_minmax(0,0.9fr)]">
         <section className="surface p-5">
           <div className="flex items-end justify-between gap-4">
-            <h2 className="text-base font-semibold tracking-tight">Turmas de hoje</h2>
+            <h2 className="text-[14px] font-medium">Turmas de hoje</h2>
             <Link href="/academia/presenca" className="text-xs text-primary hover:underline">
               Fazer chamada
             </Link>
@@ -158,7 +158,7 @@ export default function AcademiaDashboard() {
 
         <section className="surface p-5">
           <div className="flex items-end justify-between gap-4">
-            <h2 className="text-base font-semibold tracking-tight">Pararam de aparecer</h2>
+            <h2 className="text-[14px] font-medium">Pararam de aparecer</h2>
             <p className="text-xs text-muted-foreground">
               {brl(revenue)} no mês · despesas {brl(expenses)}
             </p>
@@ -329,7 +329,7 @@ function BoardCol({
   return (
     <section className="surface p-5">
       <div className="flex items-end justify-between">
-        <h2 className="text-base font-semibold tracking-tight">{title}</h2>
+        <h2 className="text-[14px] font-medium">{title}</h2>
         <Link href={href} className="text-xs text-muted-foreground hover:text-foreground">
           Ver
         </Link>

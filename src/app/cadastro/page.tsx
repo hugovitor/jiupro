@@ -41,7 +41,7 @@ function CadastroForm() {
       switchHref="/login"
       switchLabel="Já tenho conta"
     >
-      <h2 className="text-xl font-semibold tracking-tight">Abrir academia</h2>
+      <h2 className="text-[16px] font-medium">Abrir academia</h2>
       <p className="mt-2 text-sm text-muted-foreground">
         Cadastro cria a sua casa, não entra como Carla. Sem cartão agora — o
         plano é só o teto de alunos.

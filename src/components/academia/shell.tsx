@@ -26,7 +26,7 @@ type NavGroup = {
 };
 
 const GROUPS: NavGroup[] = [
-  { id: "hoje", label: "Hoje", icon: LayoutGrid, href: "/academia", items: [] },
+  { id: "hoje", label: "Início", icon: LayoutGrid, href: "/academia", items: [] },
   {
     id: "gente",
     label: "Pessoas",
@@ -86,7 +86,7 @@ export function AcademiaShell({ children }: { children: React.ReactNode }) {
   const user = store.users.find((u) => u.id === store.session?.userId);
   const activeGroup = GROUPS.find((g) => groupIsActive(g, pathname)) ?? GROUPS[0];
   const pageTitle =
-    activeGroup.items.find((i) => itemIsActive(i.href, pathname))?.label ?? "Visão do dia";
+    activeGroup.items.find((i) => itemIsActive(i.href, pathname))?.label ?? "Início";
 
   function logout() {
     store.logout();
@@ -101,101 +101,104 @@ export function AcademiaShell({ children }: { children: React.ReactNode }) {
     .toUpperCase();
 
   return (
-    <div className="flex min-h-screen bg-background">
-      <aside className="sticky top-0 hidden h-screen w-60 shrink-0 flex-col border-r border-border bg-sidebar lg:flex">
-        <div className="flex h-14 items-center px-4">
-          <Link href="/academia">
+    <div className="flex min-h-screen flex-col bg-background">
+      <header className="sticky top-0 z-50 flex h-12 items-center justify-between border-b border-border bg-white px-4">
+        <div className="flex min-w-0 items-center gap-6">
+          <Link href="/academia" className="shrink-0">
             <Logo />
           </Link>
+          <div className="hidden min-w-0 sm:block">
+            <p className="truncate text-[13px] font-medium">{store.academy.name}</p>
+            <p className="truncate text-[11px] text-muted-foreground">
+              {store.academy.city}/{store.academy.state}
+            </p>
+          </div>
         </div>
-        <div className="mx-3 mb-3 rounded-lg bg-muted px-3 py-2">
-          <p className="truncate text-sm font-medium">{store.academy.name}</p>
-          <p className="truncate text-xs text-muted-foreground">
-            {store.academy.city}/{store.academy.state}
-          </p>
-        </div>
-        <nav className="flex-1 space-y-5 overflow-y-auto px-3 pb-4">
-          {GROUPS.map((group) => {
-            const active = groupIsActive(group, pathname);
-            const href = group.href ?? group.items[0]?.href ?? "/academia";
-            const Icon = group.icon;
-            return (
-              <div key={group.id}>
-                <Link
-                  href={href}
-                  className={cn(
-                    "flex items-center gap-2.5 rounded-md px-2 py-1.5 text-sm font-medium",
-                    active && group.items.length === 0
-                      ? "bg-primary text-primary-foreground"
-                      : active
-                        ? "text-foreground"
-                        : "text-muted-foreground hover:bg-muted hover:text-foreground",
-                  )}
-                >
-                  <Icon className="size-4 shrink-0" />
-                  {group.label}
-                </Link>
-                {group.items.length > 0 && (
-                  <div className="mt-1 ml-[1.15rem] space-y-0.5 border-l border-border pl-3">
-                    {group.items.map((item) => (
-                      <Link
-                        key={item.href}
-                        href={item.href}
-                        className={cn(
-                          "block rounded-md px-2 py-1 text-sm",
-                          itemIsActive(item.href, pathname)
-                            ? "bg-muted font-medium text-foreground"
-                            : "text-muted-foreground hover:text-foreground",
-                        )}
-                      >
-                        {item.label}
-                      </Link>
-                    ))}
-                  </div>
-                )}
-              </div>
-            );
-          })}
-        </nav>
-        <div className="flex items-center gap-2 border-t border-border p-3">
-          <span className="flex size-8 items-center justify-center rounded-full bg-muted text-xs font-medium">
+        <div className="flex items-center gap-3">
+          <div className="hidden text-right sm:block">
+            <p className="text-[13px] font-medium">{user?.name ?? "Conta"}</p>
+            <p className="text-[11px] text-muted-foreground">{user?.email}</p>
+          </div>
+          <span className="flex size-7 items-center justify-center bg-[#111] text-[10px] font-medium text-white">
             {initials}
           </span>
-          <div className="min-w-0 flex-1">
-            <p className="truncate text-sm font-medium">{user?.name ?? "Conta"}</p>
-            <p className="truncate text-xs text-muted-foreground">{user?.email}</p>
-          </div>
           <Button variant="ghost" size="icon-sm" onClick={logout} aria-label="Sair">
             <LogOut className="size-4" />
           </Button>
         </div>
-      </aside>
+      </header>
 
-      <div className="flex min-w-0 flex-1 flex-col">
-        <header className="sticky top-0 z-40 border-b border-border bg-background/90 backdrop-blur-md lg:hidden">
-          <div className="flex h-14 items-center gap-3 px-4">
-            <Link href="/academia" className="shrink-0">
-              <Logo />
-            </Link>
-            <div className="min-w-0 flex-1">
-              <p className="truncate text-sm font-medium">{store.academy.name}</p>
-              <p className="truncate text-xs text-muted-foreground">{pageTitle}</p>
-            </div>
-            <Button variant="ghost" size="icon-sm" onClick={logout} aria-label="Sair">
-              <LogOut className="size-4" />
-            </Button>
+      <div className="flex min-h-0 flex-1">
+        <aside className="sticky top-12 hidden h-[calc(100vh-3rem)] w-[220px] shrink-0 flex-col border-r border-border bg-white lg:flex">
+          <nav className="flex-1 overflow-y-auto py-2">
+            {GROUPS.map((group) => {
+              const active = groupIsActive(group, pathname);
+              const href = group.href ?? group.items[0]?.href ?? "/academia";
+              const Icon = group.icon;
+              return (
+                <div key={group.id} className="mb-1">
+                  <Link
+                    href={href}
+                    className={cn(
+                      "flex items-center gap-2 border-l-2 px-4 py-2 text-[13px]",
+                      active && group.items.length === 0
+                        ? "border-foreground bg-[#f3f2f1] font-medium"
+                        : active
+                          ? "border-transparent font-medium text-foreground"
+                          : "border-transparent text-muted-foreground hover:bg-[#f3f2f1] hover:text-foreground",
+                    )}
+                  >
+                    <Icon className="size-4 shrink-0" />
+                    {group.label}
+                  </Link>
+                  {group.items.length > 0 && (
+                    <div className="mb-2">
+                      {group.items.map((item) => (
+                        <Link
+                          key={item.href}
+                          href={item.href}
+                          className={cn(
+                            "block border-l-2 py-1.5 pr-4 pl-10 text-[13px]",
+                            itemIsActive(item.href, pathname)
+                              ? "border-foreground bg-[#f3f2f1] font-medium"
+                              : "border-transparent text-muted-foreground hover:bg-[#f3f2f1] hover:text-foreground",
+                          )}
+                        >
+                          {item.label}
+                        </Link>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              );
+            })}
+          </nav>
+        </aside>
+
+        <div className="flex min-w-0 flex-1 flex-col">
+          <div className="flex h-10 items-center border-b border-border bg-white px-4 text-[13px] lg:px-6">
+            {activeGroup.href ? (
+              <span className="font-medium">{pageTitle}</span>
+            ) : (
+              <>
+                <span className="text-muted-foreground">{activeGroup.label}</span>
+                <span className="mx-2 text-muted-foreground">/</span>
+                <span className="font-medium">{pageTitle}</span>
+              </>
+            )}
           </div>
+
           {activeGroup.items.length > 0 && (
-            <div className="flex gap-1 overflow-x-auto px-3 pb-2">
+            <div className="flex gap-0 overflow-x-auto border-b border-border bg-white lg:hidden">
               {activeGroup.items.map((item) => (
                 <Link
                   key={item.href}
                   href={item.href}
                   className={cn(
-                    "shrink-0 rounded-full px-3 py-1 text-xs font-medium",
+                    "shrink-0 border-b-2 px-4 py-2 text-[12px]",
                     itemIsActive(item.href, pathname)
-                      ? "bg-primary text-primary-foreground"
-                      : "bg-muted text-muted-foreground",
+                      ? "border-foreground font-medium"
+                      : "border-transparent text-muted-foreground",
                   )}
                 >
                   {item.label}
@@ -203,41 +206,33 @@ export function AcademiaShell({ children }: { children: React.ReactNode }) {
               ))}
             </div>
           )}
-        </header>
 
-        <header className="sticky top-0 z-30 hidden h-14 items-center justify-between border-b border-border bg-background/90 px-8 backdrop-blur-md lg:flex">
-          <div>
-            <p className="text-xs text-muted-foreground">{activeGroup.label}</p>
-            <p className="text-sm font-semibold tracking-tight">{pageTitle}</p>
-          </div>
-          <p className="text-sm text-muted-foreground">{user?.name}</p>
-        </header>
-
-        <main className="flex-1 p-4 pb-28 lg:p-8">{children}</main>
-
-        <nav className="fixed inset-x-0 bottom-0 z-40 border-t border-border bg-background px-2 pb-[max(0.4rem,env(safe-area-inset-bottom))] pt-1 lg:hidden">
-          <div className="flex">
-            {GROUPS.map((group) => {
-              const active = groupIsActive(group, pathname);
-              const href = group.href ?? group.items[0]?.href ?? "/academia";
-              const Icon = group.icon;
-              return (
-                <Link
-                  key={group.id}
-                  href={href}
-                  className={cn(
-                    "flex flex-1 flex-col items-center gap-0.5 py-2 text-[10px] font-medium",
-                    active ? "text-primary" : "text-muted-foreground",
-                  )}
-                >
-                  <Icon className="size-5" />
-                  {group.label}
-                </Link>
-              );
-            })}
-          </div>
-        </nav>
+          <main className="flex-1 p-4 pb-24 lg:p-6">{children}</main>
+        </div>
       </div>
+
+      <nav className="fixed inset-x-0 bottom-0 z-40 border-t border-border bg-white pb-[max(0.25rem,env(safe-area-inset-bottom))] lg:hidden">
+        <div className="flex">
+          {GROUPS.map((group) => {
+            const active = groupIsActive(group, pathname);
+            const href = group.href ?? group.items[0]?.href ?? "/academia";
+            const Icon = group.icon;
+            return (
+              <Link
+                key={group.id}
+                href={href}
+                className={cn(
+                  "flex flex-1 flex-col items-center gap-0.5 py-2 text-[10px]",
+                  active ? "font-medium text-foreground" : "text-muted-foreground",
+                )}
+              >
+                <Icon className="size-4" />
+                {group.label}
+              </Link>
+            );
+          })}
+        </div>
+      </nav>
     </div>
   );
 }

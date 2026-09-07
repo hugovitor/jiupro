@@ -42,7 +42,7 @@ export default function PlanosPage() {
   return (
     <MarketingChrome>
       <main className="mx-auto w-full max-w-6xl px-4 py-12">
-        <h1 className="text-3xl font-semibold tracking-tight">Planos mensais</h1>
+        <h1 className="text-[22px] font-medium">Planos</h1>
         <p className="mt-2 max-w-xl text-muted-foreground">
           Uma assinatura por academia. Alunos não pagam o JiuPro — pagam a
           mensalidade para você, pelo Pix da casa. Stripe do JiuPro entra

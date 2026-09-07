@@ -1,35 +1,31 @@
 import type { Metadata, Viewport } from "next";
-import { Geist_Mono, Inter, Source_Serif_4 } from "next/font/google";
+import { IBM_Plex_Mono, IBM_Plex_Sans } from "next/font/google";
 import { Toaster } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { Providers } from "@/components/providers";
 import { metadataBaseUrl } from "@/lib/app-url";
 import "./globals.css";
 
-const inter = Inter({
+const plex = IBM_Plex_Sans({
   variable: "--font-body",
   subsets: ["latin"],
+  weight: ["400", "500", "600", "700"],
 });
 
-const sourceSerif = Source_Serif_4({
-  variable: "--font-serif",
+const plexMono = IBM_Plex_Mono({
+  variable: "--font-plex-mono",
   subsets: ["latin"],
-  weight: ["400", "500", "600"],
-});
-
-const geistMono = Geist_Mono({
-  variable: "--font-geist-mono",
-  subsets: ["latin"],
+  weight: ["400", "500"],
 });
 
 export const metadata: Metadata = {
   metadataBase: metadataBaseUrl(),
   title: {
-    default: "JiuPro — gestão para academias de Jiu-Jitsu",
+    default: "JiuPro — sistema de gestão para academias de Jiu-Jitsu",
     template: "%s · JiuPro",
   },
   description:
-    "Alunos, mensalidades, faixas, presença e estoque. O aluno marca presença no celular e acompanha a própria faixa.",
+    "Operação da academia: alunos, mensalidades, presença, faixas e estoque. Cada casa, uma conta isolada.",
   applicationName: "JiuPro",
   appleWebApp: {
     capable: true,
@@ -38,7 +34,7 @@ export const metadata: Metadata = {
   },
   formatDetection: { telephone: false },
   openGraph: {
-    title: "JiuPro — gestão para academias de Jiu-Jitsu",
+    title: "JiuPro — sistema de gestão para academias de Jiu-Jitsu",
     description:
       "Operação da academia: alunos, Pix, faixas e presença. Cada casa, uma conta.",
     locale: "pt_BR",
@@ -47,7 +43,7 @@ export const metadata: Metadata = {
 };
 
 export const viewport: Viewport = {
-  themeColor: "#f6f5f3",
+  themeColor: "#111111",
   width: "device-width",
   initialScale: 1,
   maximumScale: 1,
@@ -58,7 +54,7 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
   return (
     <html
       lang="pt-BR"
-      className={`${inter.variable} ${sourceSerif.variable} ${geistMono.variable} h-full antialiased`}
+      className={`${plex.variable} ${plexMono.variable} h-full`}
     >
       <body className="flex min-h-full flex-col bg-background text-foreground">
         <Providers>
