@@ -3,6 +3,7 @@ import { asaasPaid } from "@/lib/asaas/client";
 import { asaasEnvironment, asaasWebhookToken } from "@/lib/asaas/env";
 
 export const runtime = "nodejs";
+export const dynamic = "force-dynamic";
 
 type AsaasWebhookBody = {
   event?: string;

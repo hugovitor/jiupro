@@ -7,8 +7,8 @@ export default function manifest(): MetadataRoute.Manifest {
     description: "A academia no bolso do aluno e no controle do professor.",
     start_url: "/aluno",
     display: "standalone",
-    background_color: "#0a0a0a",
-    theme_color: "#0a0a0a",
+    background_color: "#f3f2f1",
+    theme_color: "#c41e3a",
     lang: "pt-BR",
     icons: [
       {

@@ -6,7 +6,11 @@
     "dev": "next dev --port 43123 --hostname 0.0.0.0",
     "build": "next build",
     "start": "next start --port 43123 --hostname 0.0.0.0",
-    "lint": "eslint"
+    "lint": "eslint",
+    "check": "tsc --noEmit"
+  },
+  "engines": {
+    "node": "22.x"
   },
   "dependencies": {
     "@base-ui/react": "^1.8.0",

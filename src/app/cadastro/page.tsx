@@ -36,7 +36,7 @@ function CadastroForm() {
       subtitle={
         remote
           ? "Com o projeto ligado, a conta também fica no Supabase."
-          : "Neste navegador, isolada da demo. Em produção, ligue o Supabase em Configurações para não perder os dados."
+          : "Neste navegador, isolada da demo. Na Vercel, ligue o Supabase (Configurações ou variáveis do projeto) para não perder os dados."
       }
       switchHref="/login"
       switchLabel="Já tenho conta"

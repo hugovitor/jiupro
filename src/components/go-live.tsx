@@ -6,6 +6,8 @@ import { isSupabaseConfigured } from "@/lib/supabase/client";
 import { useStore } from "@/lib/store";
 
 type Health = {
+  env?: string;
+  url?: string;
   persistence?: "supabase" | "browser";
   payments?: { asaas?: boolean; stripe?: boolean };
 };
@@ -24,21 +26,39 @@ export function GoLiveCard() {
 
   const envCloud = health?.persistence === "supabase";
   const ready = cloud || envCloud;
+  const publicUrl =
+    health?.url && health.url.startsWith("http")
+      ? health.url
+      : typeof window !== "undefined"
+        ? window.location.origin
+        : "";
+  const stripeReady = Boolean(health?.payments?.stripe);
+  const asaasReady = Boolean(health?.payments?.asaas);
 
   return (
     <section className="surface p-5">
       <p className="text-xs font-medium tracking-wide text-muted-foreground uppercase">
         Produção
       </p>
-      <h2 className="mt-1 text-lg font-semibold tracking-tight">A academia já opera</h2>
+      <h2 className="mt-1 text-lg font-semibold tracking-tight">
+        {ready ? "A academia já opera na nuvem" : "Falta ligar a nuvem"}
+      </h2>
       <p className="mt-2 text-sm text-muted-foreground">
-        Asaas e Stripe entram depois. Agora o que importa: a casa no ar, os
-        alunos no painel e a mensalidade no Pix da casa + WhatsApp.
+        A URL da Vercel já serve. Stripe e Asaas entram depois — agora o
+        aluno paga no Pix da casa + WhatsApp.
       </p>
+      {publicUrl ? (
+        <p className="mt-3 break-all font-mono text-[12px] text-muted-foreground">
+          {publicUrl}
+          {health?.env && health.env !== "development" ? ` · ${health.env}` : ""}
+        </p>
+      ) : null}
       <ol className="mt-4 space-y-2 text-sm">
         <li>
           <span className={ready ? "text-foreground" : "text-muted-foreground"}>
-            {ready ? "1. Nuvem ligada." : "1. Ligue o Supabase abaixo — sem isso os dados ficam só neste navegador."}
+            {ready
+              ? "1. Nuvem ligada. Cadastro e painel não dependem deste navegador."
+              : "1. Ligue o Supabase abaixo. Sem isso a academia some se limpar o browser."}
           </span>
         </li>
         <li>
@@ -48,12 +68,20 @@ export function GoLiveCard() {
         </li>
         <li>
           <span className="text-muted-foreground">
-            3. Asaas (Pix dinâmico) e Stripe (plano JiuPro) — depois.
-            {health?.payments?.asaas ? " Asaas já está no servidor." : ""}
-            {health?.payments?.stripe ? " Stripe já está no servidor." : ""}
+            3. Stripe (assinatura JiuPro)
+            {stripeReady ? " — já está no servidor." : " — depois, nas variáveis da Vercel."}
+            {" "}
+            Asaas (Pix do aluno)
+            {asaasReady ? " já está no servidor." : " — depois."}
           </span>
         </li>
       </ol>
+      {publicUrl ? (
+        <div className="mt-4 space-y-1 text-[12px] text-muted-foreground">
+          <p>Webhook Stripe: {publicUrl}/api/stripe/webhook</p>
+          <p>Webhook Asaas: {publicUrl}/api/asaas/webhook</p>
+        </div>
+      ) : null}
       {store.isDemo && (
         <p className="mt-4 text-sm text-muted-foreground">
           Você está na Equipe Origem (demo).{" "}

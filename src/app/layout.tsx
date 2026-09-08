@@ -3,7 +3,7 @@ import { IBM_Plex_Mono, IBM_Plex_Sans } from "next/font/google";
 import { Toaster } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { Providers } from "@/components/providers";
-import { metadataBaseUrl } from "@/lib/app-url";
+import { metadataBaseUrl, shouldIndexSite } from "@/lib/app-url";
 import "./globals.css";
 
 const plex = IBM_Plex_Sans({
@@ -40,6 +40,9 @@ export const metadata: Metadata = {
     locale: "pt_BR",
     type: "website",
   },
+  robots: shouldIndexSite()
+    ? { index: true, follow: true }
+    : { index: false, follow: false },
 };
 
 export const viewport: Viewport = {

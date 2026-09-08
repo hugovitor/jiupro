@@ -101,48 +101,54 @@ STRIPE_PRICE_EQUIPE=
 
 Webhook: `POST /api/stripe/webhook`. Sem chaves, o checkout só troca o plano na demo.
 
-## Produção (o mais rápido possível)
+## Publicar na Vercel (URL `*.vercel.app`)
 
-O app sobe **sem Asaas e sem Stripe**. Mensalidade do aluno: Pix da casa + WhatsApp. Plano do JiuPro: escolhe no cadastro; cobrança depois.
+Não precisa de domínio próprio no começo. O primeiro deploy gera algo como `https://jiupro-xxxx.vercel.app`.
 
-O único passo obrigatório para não perder dados é o **Supabase**.
+O app **sobe sem Asaas e sem Stripe**. Mensalidade do aluno: Pix da casa + WhatsApp. Assinatura do JiuPro: você cobra no Pix e libera o plano; o checkout Stripe entra depois.
 
-### 1. Publicar
+O único passo obrigatório para **não perder dados** é o **Supabase**. Sem ele o cadastro fica só no navegador de quem abriu.
 
-Região: `gru1` (São Paulo), em `vercel.json`. Node 22 (`.nvmrc`).
+### 1. Primeiro deploy (só o site)
 
-```bash
-npx vercel login
-npx vercel --prod
+1. Importe o repositório no [Vercel](https://vercel.com/new)
+2. Framework: Next.js · região **São Paulo (`gru1`)** — já está em `vercel.json`
+3. Node 22 (`.nvmrc`)
+4. **Deploy sem variáveis** — a landing, o login e a demo já abrem
+
+Health check: `GET https://SEU-PROJETO.vercel.app/api/health`  
+Deve responder `ok: true` e `url` com o endereço `*.vercel.app`.
+
+### 2. Variáveis (Production)
+
+Project → Settings → Environment Variables. Depois de salvar `NEXT_PUBLIC_*`, faça **Redeploy**.
+
+Mínimo para academia real:
+
 ```
-
-Ou importe o repositório `hugo-vitor/jiupro` no [Vercel](https://vercel.com/new). Cada push em `main` gera produção.
-
-Health check: `GET /api/health` (não revela chaves).
-
-### 2. Variáveis no Vercel
-
-Project → Settings → Environment Variables (Production):
-
-```
-NEXT_PUBLIC_APP_URL=https://SEU-PROJETO.vercel.app
 NEXT_PUBLIC_SUPABASE_URL=
 NEXT_PUBLIC_SUPABASE_ANON_KEY=
 SUPABASE_SERVICE_ROLE_KEY=
 ```
 
-Asaas e Stripe podem ficar vazios. Depois de salvar `NEXT_PUBLIC_*`, faça um **Redeploy**.
+Opcional — só se quiser fixar a URL (senão o app usa a da Vercel sozinho):
 
-### 3. Ligar o Supabase (obrigatório)
+```
+NEXT_PUBLIC_APP_URL=https://SEU-PROJETO.vercel.app
+```
+
+Asaas e Stripe podem ficar vazios.
+
+### 3. Ligar o Supabase
 
 1. Crie um projeto no [Supabase](https://supabase.com) (região São Paulo, se aparecer)
 2. Project Settings → API: **Project URL** + **anon public** (nunca a service role no frontend)
-3. Cole as duas no Vercel (acima) **ou** em Configurações no app
-4. SQL Editor → **Copiar SQL** no JiuPro → Run
+3. Cole as duas na Vercel (acima) **ou** em Configurações no app
+4. SQL Editor → no JiuPro, **Copiar SQL** → Run
 5. Authentication → Providers → Email: desligue **Confirm email**
 6. Abra a academia em `/cadastro` (não a demo) → Configurações → **Enviar esta academia**
 
-Sem isso, cadastro e painel ficam só no navegador de quem abriu.
+Sem isso, cadastro e painel ficam só no `localStorage`.
 
 ### 4. Operar
 
@@ -150,10 +156,11 @@ Sem isso, cadastro e painel ficam só no navegador de quem abriu.
 - Em Configurações, cole a **chave Pix da academia**
 - Em Cobranças, use WhatsApp + Baixar Pix
 - Demo da Equipe Origem continua em `/demo` e nos atalhos de Entrar
+- Webhooks (quando ligar pagamentos): Configurações mostra as URLs `…/api/stripe/webhook` e `…/api/asaas/webhook`
 
 ### 5. Pagamentos (depois)
 
-Asaas (Pix dinâmico do aluno) e Stripe (assinatura JiuPro) não bloqueiam o ar. Quando for a hora:
+Asaas (Pix dinâmico do aluno) e Stripe (assinatura JiuPro) não bloqueiam o ar.
 
 ```
 ASAAS_ENV=sandbox
@@ -166,7 +173,8 @@ STRIPE_PRICE_ACADEMIA=
 STRIPE_PRICE_EQUIPE=
 ```
 
-Webhook Asaas: `https://SEU-PROJETO.vercel.app/api/asaas/webhook` (v3, sequencial, `PAYMENT_RECEIVED` + `PAYMENT_CONFIRMED`).
+Webhook Asaas: `https://SEU-PROJETO.vercel.app/api/asaas/webhook` (v3, header `asaas-access-token`, eventos `PAYMENT_RECEIVED` + `PAYMENT_CONFIRMED`).
+Webhook Stripe: `https://SEU-PROJETO.vercel.app/api/stripe/webhook`.
 
 ## PWA do aluno
 
