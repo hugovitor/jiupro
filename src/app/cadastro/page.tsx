@@ -8,7 +8,8 @@ import { AuthScreen } from "@/components/auth-screen";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { PLANS } from "@/lib/plans";
+import { startPlanCheckout } from "@/lib/billing";
+import { PLANS, planById } from "@/lib/plans";
 import { isSupabaseConfigured } from "@/lib/supabase/client";
 import { useStore } from "@/lib/store";
 import type { PlanId } from "@/lib/types";
@@ -43,8 +44,9 @@ function CadastroForm() {
     >
       <h2 className="text-[16px] font-medium">Abrir academia</h2>
       <p className="mt-2 text-sm text-muted-foreground">
-        Cadastro cria a sua casa, não entra como Carla. Sem cartão agora — o
-        plano é só o teto de alunos.
+        Cadastro cria a sua casa, não entra como Carla. Em seguida você paga
+        a assinatura do JiuPro no cartão. Alunos continuam pagando a
+        mensalidade no Pix da academia.
       </p>
       <form
         className="mt-8 space-y-4"
@@ -63,13 +65,33 @@ function CadastroForm() {
             password,
             plan,
           });
-          setBusy(false);
           if (!result.ok) {
+            setBusy(false);
             toast.error(result.error);
             return;
           }
-          toast.success(`${academy.trim()} aberta. Cadastre o primeiro aluno.`);
-          router.push("/academia");
+          try {
+            const pay = await startPlanCheckout(plan, {
+              email,
+              academyName: academy,
+              academyId: store.academy.id,
+            });
+            if (pay === "demo") {
+              toast.success(
+                `${academy.trim()} aberta. Pagamento online liga quando o Stripe estiver na Vercel.`,
+              );
+              router.push("/academia");
+            }
+          } catch (error) {
+            toast.error(
+              error instanceof Error
+                ? error.message
+                : "Casa criada. Não deu para abrir o pagamento.",
+            );
+            router.push("/academia");
+          } finally {
+            setBusy(false);
+          }
         }}
       >
         <div className="space-y-1.5">
@@ -147,7 +169,9 @@ function CadastroForm() {
           </div>
         </div>
         <Button type="submit" className="w-full" size="lg" disabled={busy}>
-          {busy ? "Criando a casa…" : "Criar e entrar"}
+          {busy
+            ? "Abrindo o pagamento…"
+            : `Pagar ${planById(plan).name} e abrir`}
         </Button>
       </form>
       <p className="mt-6 text-center text-sm text-muted-foreground">

@@ -137,6 +137,25 @@ Opcional — só se quiser fixar a URL (senão o app usa a da Vercel sozinho):
 NEXT_PUBLIC_APP_URL=https://SEU-PROJETO.vercel.app
 ```
 
+### Stripe (assinatura do JiuPro)
+
+Sem a chave, o cadastro abre a academia **sem cobrar**. Com a chave, o cadastro manda o dono para o Checkout da Stripe (cartão, BRL, mensal).
+
+1. Crie a conta em [stripe.com](https://stripe.com) (Brasil, cobranca em reais)
+2. Developers → API keys: **Secret key** (`sk_live_…` em produção)
+3. Developers → Webhooks → Add endpoint: `https://jiupro.vercel.app/api/stripe/webhook`
+   Eventos: `checkout.session.completed`, `customer.subscription.updated`, `customer.subscription.deleted`
+4. Na Vercel, em jiupro → Environment Variables (Production):
+
+```
+STRIPE_SECRET_KEY=sk_live_…
+STRIPE_WEBHOOK_SECRET=whsec_…
+```
+
+5. Redeploy. Os três planos (R$ 97 / R$ 197 / R$ 347) são criados sozinhos na Stripe na primeira cobrança.
+
+`STRIPE_PRICE_*` é opcional. Asaas continua só para mensalidade do aluno.
+
 Asaas e Stripe podem ficar vazios.
 
 ### 3. Ligar o Supabase

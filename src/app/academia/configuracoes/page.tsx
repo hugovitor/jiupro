@@ -6,6 +6,7 @@ import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { startPlanCheckout } from "@/lib/billing";
 import { brl } from "@/lib/format";
 import { PLANS, planById } from "@/lib/plans";
 import { useStore } from "@/lib/store";
@@ -29,18 +30,21 @@ function ConfigInner() {
   }, [params, changePlan]);
 
   async function subscribe(planId: PlanId) {
-    const res = await fetch("/api/stripe/checkout", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ planId }),
-    });
-    const data = (await res.json()) as { url?: string; demo?: boolean };
-    if (data.demo) {
-      store.changePlan(planId);
-      toast.success("Plano da demo alterado. Stripe entra quando as chaves existirem.");
-      return;
+    try {
+      const pay = await startPlanCheckout(planId, {
+        email: store.users.find((u) => u.id === store.session?.userId)?.email,
+        academyName: store.academy.name,
+        academyId: store.academy.id,
+      });
+      if (pay === "demo") {
+        store.changePlan(planId);
+        toast.success("Plano da demo alterado. Em produção o Stripe cobra no cartão.");
+      }
+    } catch (error) {
+      toast.error(
+        error instanceof Error ? error.message : "Não foi possível abrir o pagamento.",
+      );
     }
-    if (data.url) window.location.assign(data.url);
   }
 
   return (
@@ -48,8 +52,7 @@ function ConfigInner() {
       <div>
         <h1 className="font-display text-3xl">Configurações</h1>
         <p className="mt-1 text-sm text-muted-foreground">
-          Produção agora: nuvem + Pix da casa. Asaas e Stripe ficam para o
-          próximo passo.
+          Nuvem, Pix da casa e assinatura do JiuPro no cartão.
         </p>
       </div>
 
@@ -106,16 +109,12 @@ function ConfigInner() {
       <DropInFeeForm />
 
       <section className="border border-border bg-card p-5 text-sm">
-        <h2 className="font-medium">Stripe · depois</h2>
+        <h2 className="font-medium">Assinatura JiuPro</h2>
         <p className="mt-2 text-muted-foreground">
-          Conta:{" "}
-          {store.isDemo
-            ? "Equipe Origem (demonstração)"
-            : "sua academia neste navegador"}
+          Cartão via Stripe. Webhook: /api/stripe/webhook
         </p>
         <p className="mt-1 text-muted-foreground">
-          Sem chaves, o plano muda só neste navegador. Cobrança do JiuPro fica
-          para depois.
+          Sem STRIPE_SECRET_KEY na Vercel, o plano só muda neste navegador.
         </p>
       </section>
 

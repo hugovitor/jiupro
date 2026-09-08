@@ -68,8 +68,10 @@ export function GoLiveCard() {
         </li>
         <li>
           <span className="text-muted-foreground">
-            3. Stripe (assinatura JiuPro)
-            {stripeReady ? " — já está no servidor." : " — depois, nas variáveis da Vercel."}
+            3. Stripe (assinatura JiuPro no cartão)
+            {stripeReady
+              ? " — cobrança online ligada."
+              : " — cole STRIPE_SECRET_KEY na Vercel para cobrar no cadastro."}
             {" "}
             Asaas (Pix do aluno)
             {asaasReady ? " já está no servidor." : " — depois."}

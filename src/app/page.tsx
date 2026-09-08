@@ -127,8 +127,8 @@ export default function HomePage() {
             Uma assinatura por academia.
           </h2>
           <p className="mt-3 max-w-lg text-[14px] text-muted-foreground">
-            Alunos pagam a mensalidade para você, pelo Pix da casa. A cobrança
-            do JiuPro entra depois — a operação já funciona.
+            Alunos pagam a mensalidade para você, pelo Pix da casa. O JiuPro
+            cobra a academia todo mês no cartão, no cadastro.
           </p>
           <div className="mt-10 overflow-x-auto border border-border">
             <table className="w-full min-w-[640px] text-left text-[13px]">
@@ -157,7 +157,7 @@ export default function HomePage() {
                     <td className="px-4 py-4 font-medium tabular-nums">{brl(plan.price)}</td>
                     <td className="px-4 py-4 text-right">
                       <Button size="sm" render={<Link href={`/cadastro?plano=${plan.id}`} />}>
-                        Selecionar
+                        Assinar
                       </Button>
                     </td>
                   </tr>

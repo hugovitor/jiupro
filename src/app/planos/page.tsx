@@ -6,6 +6,7 @@ import { toast } from "sonner";
 import { MarketingChrome } from "@/components/marketing-chrome";
 import { Button } from "@/components/ui/button";
 import { brl } from "@/lib/format";
+import { startPlanCheckout } from "@/lib/billing";
 import { PLANS } from "@/lib/plans";
 import { useStore } from "@/lib/store";
 import type { PlanId } from "@/lib/types";
@@ -16,26 +17,23 @@ export default function PlanosPage() {
 
   async function subscribe(planId: PlanId) {
     try {
-      const res = await fetch("/api/stripe/checkout", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ planId }),
+      const pay = await startPlanCheckout(planId, {
+        email: store.users.find((u) => u.id === store.session?.userId)?.email,
+        academyName: store.academy.name,
+        academyId: store.academy.id,
       });
-      const data = (await res.json()) as { url?: string; demo?: boolean };
-      if (data.demo) {
+      if (pay === "demo") {
         store.changePlan(planId);
-        toast.success("Plano atualizado na demo (Stripe ainda não configurado).");
+        toast.success(
+          "Plano atualizado na demo. Em produção o cartão cobra na Stripe.",
+        );
         if (store.session?.role === "student") router.push("/aluno");
         else if (store.session) router.push("/academia/configuracoes");
-        return;
       }
-      if (data.url) {
-        window.location.assign(data.url);
-        return;
-      }
-      toast.error("Não foi possível iniciar o pagamento.");
-    } catch {
-      toast.error("Falha ao falar com o Stripe.");
+    } catch (error) {
+      toast.error(
+        error instanceof Error ? error.message : "Falha ao iniciar o pagamento.",
+      );
     }
   }
 
@@ -44,9 +42,8 @@ export default function PlanosPage() {
       <main className="mx-auto w-full max-w-6xl px-4 py-12">
         <h1 className="text-[22px] font-medium">Planos</h1>
         <p className="mt-2 max-w-xl text-muted-foreground">
-          Uma assinatura por academia. Alunos não pagam o JiuPro — pagam a
-          mensalidade para você, pelo Pix da casa. Stripe do JiuPro entra
-          depois: escolha o plano agora e abra a academia.
+          Uma assinatura por academia, cobrada todo mês no cartão. Alunos não
+          pagam o JiuPro — pagam a mensalidade para você, pelo Pix da casa.
         </p>
           <div className="mt-12 grid gap-4 lg:grid-cols-3">
             {PLANS.map((plan) => (
@@ -83,7 +80,7 @@ export default function PlanosPage() {
                   variant={plan.popular ? "default" : "outline"}
                   render={<Link href={`/cadastro?plano=${plan.id}`} />}
                 >
-                  Começar com {plan.name}
+                  Assinar {plan.name}
                 </Button>
               )}
             </article>
