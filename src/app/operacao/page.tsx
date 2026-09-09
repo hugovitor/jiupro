@@ -253,7 +253,7 @@ export default function OperacaoPage() {
               <select
                 value={kind}
                 onChange={(e) => setKind(e.target.value as Kind)}
-                className="h-9 w-full rounded-xl border border-white/10 bg-white/[0.04] px-3 text-sm"
+                className="h-9 w-full rounded-xl border border-white/10 bg-[#111] px-3 text-sm text-white"
               >
                 <option value="month_free">Primeiro mês grátis</option>
                 <option value="percent_once">% só no primeiro mês</option>
