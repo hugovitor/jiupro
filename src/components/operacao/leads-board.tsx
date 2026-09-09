@@ -9,6 +9,7 @@ import { Label } from "@/components/ui/label";
 import {
   gymWhatsAppHref,
   LEAD_STATUSES,
+  OPERATOR_LEADS_SQL,
   type LeadStatus,
   type OperatorLead,
 } from "@/lib/operator-leads";
@@ -218,15 +219,20 @@ export function OperatorLeadsBoard({ email }: { email?: string | null }) {
         <>
       {needsSetup ? (
         <div className="surface p-5">
-          <p className="text-sm text-white/70">
-            Rode este SQL uma vez no SQL Editor do Supabase para gravar a planilha.
+          <p className="text-sm font-black text-white">Falta criar a tabela no projeto</p>
+          <p className="mt-2 text-sm text-white/70">
+            Dashboard do projeto → SQL Editor → New query → cola o texto abaixo → Run.
+            Depois recarrega esta página e cadastra de novo.
           </p>
+          <pre className="mt-4 max-h-64 overflow-auto rounded-xl border border-white/10 bg-black/50 p-4 font-mono text-[11px] leading-5 text-white/80 whitespace-pre-wrap">
+            {sql || OPERATOR_LEADS_SQL}
+          </pre>
           <Button
             className="mt-3"
             variant="outline"
             size="sm"
             onClick={async () => {
-              await navigator.clipboard.writeText(sql);
+              await navigator.clipboard.writeText(sql || OPERATOR_LEADS_SQL);
               toast.success("SQL copiado. Cole no SQL Editor e clique Run.");
             }}
           >
