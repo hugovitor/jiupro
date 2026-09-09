@@ -13,14 +13,13 @@ import {
   CreditCard,
   LoaderCircle,
   LockKeyhole,
-  ShieldCheck,
-  Sparkles,
   Users,
   Zap,
 } from "lucide-react";
+import { DarkCanvas, Eyebrow, SiteFooter, SiteHeader } from "@/components/brand";
 import { brl } from "@/lib/format";
 import { startPlanCheckout } from "@/lib/billing";
-import { PLANS } from "@/lib/plans";
+import { PLANS, planCapacityLabel } from "@/lib/plans";
 import { useStore } from "@/lib/store";
 import type { PlanId } from "@/lib/types";
 
@@ -65,17 +64,34 @@ export default function PlanosPage() {
   }
 
   return (
-    <main className="relative min-h-screen overflow-hidden bg-[#080808] text-white selection:bg-red-600 selection:text-white">
-      <div className="pointer-events-none absolute inset-x-0 top-0 h-[720px] bg-[radial-gradient(circle_at_50%_0%,rgba(220,38,38,0.2),transparent_42%)]" />
-      <div className="pointer-events-none absolute inset-0 opacity-[0.03] [background-image:linear-gradient(rgba(255,255,255,.8)_1px,transparent_1px),linear-gradient(90deg,rgba(255,255,255,.8)_1px,transparent_1px)] [background-size:72px_72px]" />
-
-      <Header sessionActive={Boolean(store.session)} />
+    <DarkCanvas>
+      <SiteHeader
+        variant="page"
+        actions={
+          <>
+            <Link
+              href={store.session ? "/academia" : "/"}
+              className="inline-flex items-center gap-2 rounded-xl px-3 py-2 text-xs font-bold text-white/45 transition hover:bg-white/5 hover:text-white"
+            >
+              <ArrowLeft className="h-4 w-4" />
+              <span className="hidden sm:inline">
+                {store.session ? "Voltar ao painel" : "Voltar ao início"}
+              </span>
+            </Link>
+            {!store.session ? (
+              <Link
+                href="/login"
+                className="rounded-xl border border-white/12 bg-white/[0.04] px-4 py-2.5 text-xs font-black transition hover:border-red-500 hover:bg-red-600"
+              >
+                Entrar
+              </Link>
+            ) : null}
+          </>
+        }
+      />
 
       <section className="relative mx-auto max-w-7xl px-5 pb-16 pt-20 text-center lg:px-8 lg:pb-24 lg:pt-28">
-        <div className="mx-auto inline-flex items-center gap-2 rounded-full border border-red-500/25 bg-red-500/10 px-3.5 py-2 text-[11px] font-black uppercase tracking-[0.2em] text-red-400">
-          <Sparkles className="h-3.5 w-3.5" />
-          Planos JiuPro
-        </div>
+        <Eyebrow>Planos JiuPro</Eyebrow>
 
         <h1 className="mx-auto mt-7 max-w-4xl text-4xl font-black leading-[1.02] tracking-[-0.055em] sm:text-5xl lg:text-6xl">
           A gestão certa para cada fase
@@ -158,7 +174,7 @@ export default function PlanosPage() {
                 {"students" in plan && plan.students ? (
                   <div className="mt-5 inline-flex w-fit items-center gap-2 rounded-lg border border-white/8 bg-white/[0.025] px-3 py-2 text-[11px] font-bold text-white/50">
                     <Users className="h-3.5 w-3.5 text-red-500" />
-                    {String(plan.students)}
+                    {planCapacityLabel(plan)}
                   </div>
                 ) : null}
 
@@ -274,77 +290,13 @@ export default function PlanosPage() {
         </div>
       </section>
 
-      <Footer />
-    </main>
-  );
-}
-
-function Header({ sessionActive }: { sessionActive: boolean }) {
-  return (
-    <header className="relative z-20 border-b border-white/10 bg-[#080808]/75 backdrop-blur-xl">
-      <div className="mx-auto flex h-18 max-w-7xl items-center justify-between px-5 lg:px-8">
-        <Link href="/" className="group flex items-center gap-3">
-          <BeltMark />
-          <div>
-            <span className="block text-lg font-black tracking-[-0.04em]">JIUPRO</span>
-            <span className="block text-[8px] font-semibold uppercase tracking-[0.32em] text-white/35">
-              Gestão no tatame
-            </span>
-          </div>
-        </Link>
-
-        <div className="flex items-center gap-2">
-          <Link
-            href={sessionActive ? "/academia" : "/"}
-            className="inline-flex items-center gap-2 rounded-xl px-3 py-2 text-xs font-bold text-white/45 transition hover:bg-white/5 hover:text-white"
-          >
-            <ArrowLeft className="h-4 w-4" />
-            <span className="hidden sm:inline">{sessionActive ? "Voltar ao painel" : "Voltar ao início"}</span>
-          </Link>
-          {!sessionActive ? (
-            <Link
-              href="/login"
-              className="rounded-xl border border-white/12 bg-white/[0.04] px-4 py-2.5 text-xs font-black transition hover:border-red-500 hover:bg-red-600"
-            >
-              Entrar
-            </Link>
-          ) : null}
-        </div>
-      </div>
-    </header>
-  );
-}
-
-function Footer() {
-  return (
-    <footer className="relative bg-[#070707]">
-      <div className="mx-auto flex max-w-7xl flex-col gap-7 px-5 py-10 lg:px-8">
-        <div className="flex flex-col justify-between gap-5 sm:flex-row sm:items-center">
-          <div className="flex items-center gap-3">
-            <BeltMark />
-            <span className="text-lg font-black">JIUPRO</span>
-          </div>
-          <div className="flex flex-wrap gap-5 text-xs text-white/35">
-            <Link href="/" className="transition hover:text-white">Início</Link>
-            <Link href="/demo" className="transition hover:text-white">Demonstração</Link>
-            <Link href="/login" className="transition hover:text-white">Entrar</Link>
-          </div>
-        </div>
-        <div className="h-px bg-white/8" />
-        <div className="flex flex-col gap-2 text-[10px] text-white/20 sm:flex-row sm:justify-between">
-          <span>© 2026 JiuPro. Gestão para academias de Jiu-Jitsu.</span>
-          <span>Cada academia, uma conta. Cada treino, uma evolução.</span>
-        </div>
-      </div>
-    </footer>
-  );
-}
-
-function BeltMark() {
-  return (
-    <span className="relative block h-7 w-11 overflow-hidden rounded-sm bg-[#191919] shadow-inner shadow-black">
-      <span className="absolute inset-y-0 right-0 w-3.5 bg-red-600" />
-      <span className="absolute right-1 top-1 h-5 w-[2px] bg-white" />
-    </span>
+      <SiteFooter
+        links={[
+          { href: "/", label: "Início" },
+          { href: "/demo", label: "Demonstração" },
+          { href: "/login", label: "Entrar" },
+        ]}
+      />
+    </DarkCanvas>
   );
 }

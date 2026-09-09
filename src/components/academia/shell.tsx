@@ -10,7 +10,7 @@ import {
   PersonStanding,
   Users,
 } from "lucide-react";
-import { Logo } from "@/components/logo";
+import { Wordmark } from "@/components/brand";
 import { Button } from "@/components/ui/button";
 import { useStore } from "@/lib/store";
 import { cn } from "@/lib/utils";
@@ -102,34 +102,40 @@ export function AcademiaShell({ children }: { children: React.ReactNode }) {
 
   return (
     <div className="flex min-h-screen flex-col bg-background">
-      <header className="sticky top-0 z-50 flex h-12 items-center justify-between border-b border-border bg-white px-4">
+      <header className="sticky top-0 z-50 flex h-16 items-center justify-between border-b border-white/10 bg-[#080808] px-4 text-white">
         <div className="flex min-w-0 items-center gap-6">
           <Link href="/academia" className="shrink-0">
-            <Logo />
+            <Wordmark href={null} kicker={false} />
           </Link>
           <div className="hidden min-w-0 sm:block">
-            <p className="truncate text-[13px] font-medium">{store.academy.name}</p>
-            <p className="truncate text-[11px] text-muted-foreground">
+            <p className="truncate text-[13px] font-bold">{store.academy.name}</p>
+            <p className="truncate text-[11px] text-white/40">
               {store.academy.city}/{store.academy.state}
             </p>
           </div>
         </div>
         <div className="flex items-center gap-3">
           <div className="hidden text-right sm:block">
-            <p className="text-[13px] font-medium">{user?.name ?? "Conta"}</p>
-            <p className="text-[11px] text-muted-foreground">{user?.email}</p>
+            <p className="text-[13px] font-bold">{user?.name ?? "Conta"}</p>
+            <p className="text-[11px] text-white/40">{user?.email}</p>
           </div>
-          <span className="flex size-7 items-center justify-center bg-[#111] text-[10px] font-medium text-white">
+          <span className="flex size-8 items-center justify-center rounded-xl bg-red-600 text-[10px] font-black text-white">
             {initials}
           </span>
-          <Button variant="ghost" size="icon-sm" onClick={logout} aria-label="Sair">
+          <Button
+            variant="ghost"
+            size="icon-sm"
+            className="text-white/60 hover:bg-white/10 hover:text-white"
+            onClick={logout}
+            aria-label="Sair"
+          >
             <LogOut className="size-4" />
           </Button>
         </div>
       </header>
 
       <div className="flex min-h-0 flex-1">
-        <aside className="sticky top-12 hidden h-[calc(100vh-3rem)] w-[220px] shrink-0 flex-col border-r border-border bg-white lg:flex">
+        <aside className="sticky top-16 hidden h-[calc(100vh-4rem)] w-[220px] shrink-0 flex-col border-r border-border bg-white lg:flex">
           <nav className="flex-1 overflow-y-auto py-2">
             {GROUPS.map((group) => {
               const active = groupIsActive(group, pathname);
@@ -140,12 +146,12 @@ export function AcademiaShell({ children }: { children: React.ReactNode }) {
                   <Link
                     href={href}
                     className={cn(
-                      "flex items-center gap-2 border-l-2 px-4 py-2 text-[13px]",
+                      "flex items-center gap-2 rounded-xl mx-2 border-l-0 px-3 py-2 text-[13px]",
                       active && group.items.length === 0
-                        ? "border-primary bg-[#f3f2f1] font-medium text-primary"
+                        ? "bg-red-600 font-bold text-white"
                         : active
-                          ? "border-transparent font-medium text-foreground"
-                          : "border-transparent text-muted-foreground hover:bg-[#f3f2f1] hover:text-foreground",
+                          ? "font-bold text-foreground"
+                          : "text-muted-foreground hover:bg-[#f3f2f1] hover:text-foreground",
                     )}
                   >
                     <Icon className="size-4 shrink-0" />
@@ -158,10 +164,10 @@ export function AcademiaShell({ children }: { children: React.ReactNode }) {
                           key={item.href}
                           href={item.href}
                           className={cn(
-                            "block border-l-2 py-1.5 pr-4 pl-10 text-[13px]",
+                            "block rounded-xl mx-2 py-1.5 pr-4 pl-10 text-[13px]",
                             itemIsActive(item.href, pathname)
-                              ? "border-primary bg-[#f3f2f1] font-medium text-primary"
-                              : "border-transparent text-muted-foreground hover:bg-[#f3f2f1] hover:text-foreground",
+                              ? "bg-[#f3f2f1] font-bold text-red-600"
+                              : "text-muted-foreground hover:bg-[#f3f2f1] hover:text-foreground",
                           )}
                         >
                           {item.label}
@@ -197,7 +203,7 @@ export function AcademiaShell({ children }: { children: React.ReactNode }) {
                   className={cn(
                     "shrink-0 border-b-2 px-4 py-2 text-[12px]",
                     itemIsActive(item.href, pathname)
-                      ? "border-primary font-medium text-primary"
+                      ? "border-red-600 font-bold text-red-600"
                       : "border-transparent text-muted-foreground",
                   )}
                 >
@@ -223,7 +229,7 @@ export function AcademiaShell({ children }: { children: React.ReactNode }) {
                 href={href}
                 className={cn(
                   "flex flex-1 flex-col items-center gap-0.5 py-2 text-[10px]",
-                  active ? "font-medium text-primary" : "text-muted-foreground",
+                  active ? "font-bold text-red-600" : "text-muted-foreground",
                 )}
               >
                 <Icon className="size-4" />

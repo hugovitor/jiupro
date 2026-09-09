@@ -2,6 +2,8 @@
 
 import { useRouter, useSearchParams } from "next/navigation";
 import { Suspense, useEffect } from "react";
+import { LoaderCircle } from "lucide-react";
+import { DarkCanvas, Wordmark } from "@/components/brand";
 import { useStore } from "@/lib/store";
 
 function DemoGate() {
@@ -21,17 +23,27 @@ function DemoGate() {
   }, [asStudent, router, login]);
 
   return (
-    <div className="flex min-h-full items-center justify-center px-4">
-      <p className="text-sm text-muted-foreground">
-        {asStudent ? "Entrando como João, faixa azul." : "Entrando na Equipe Origem."}
-      </p>
-    </div>
+    <DarkCanvas className="flex min-h-screen flex-col items-center justify-center px-5">
+      <Wordmark href="/" />
+      <div className="mt-10 flex items-center gap-3 text-sm text-white/50">
+        <LoaderCircle className="h-4 w-4 animate-spin text-red-500" />
+        {asStudent
+          ? "Entrando como João, faixa azul."
+          : "Entrando na Equipe Origem."}
+      </div>
+    </DarkCanvas>
   );
 }
 
 export default function DemoPage() {
   return (
-    <Suspense>
+    <Suspense
+      fallback={
+        <div className="flex min-h-screen items-center justify-center bg-[#080808] text-sm text-white/40">
+          Abrindo demonstração…
+        </div>
+      }
+    >
       <DemoGate />
     </Suspense>
   );

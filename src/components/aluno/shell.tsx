@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { CalendarDays, Home, LineChart, LogOut, MessageSquare, User } from "lucide-react";
-import { Logo } from "@/components/logo";
+import { Wordmark } from "@/components/brand";
 import { currentStudent, useStore } from "@/lib/store";
 import { cn } from "@/lib/utils";
 
@@ -22,19 +22,19 @@ export function AlunoShell({ children }: { children: React.ReactNode }) {
   const student = currentStudent(store);
 
   return (
-    <div className="flex min-h-screen justify-center bg-[#f3f2f1]">
-      <div className="flex min-h-screen w-full max-w-md flex-col border-x border-border bg-white">
-        <header className="sticky top-0 z-30 flex h-12 items-center gap-3 border-b border-border bg-white px-4">
-          <Logo />
+    <div className="flex min-h-screen justify-center bg-[#080808]">
+      <div className="flex min-h-screen w-full max-w-md flex-col border-x border-white/10 bg-white">
+        <header className="sticky top-0 z-30 flex h-16 items-center gap-3 border-b border-white/10 bg-[#080808] px-4 text-white">
+          <Wordmark href={null} kicker={false} />
           <div className="min-w-0 flex-1 text-right">
-            <p className="truncate text-[11px] text-muted-foreground">{store.academy.name}</p>
-            <p className="truncate text-[13px] font-medium">
+            <p className="truncate text-[11px] text-white/40">{store.academy.name}</p>
+            <p className="truncate text-[13px] font-bold">
               {student?.name.split(" ")[0] ?? "Aluno"}
             </p>
           </div>
           <button
             type="button"
-            className="p-2 text-muted-foreground hover:text-foreground"
+            className="rounded-xl p-2 text-white/50 hover:bg-white/10 hover:text-white"
             onClick={() => {
               store.logout();
               router.push("/");
@@ -58,7 +58,7 @@ export function AlunoShell({ children }: { children: React.ReactNode }) {
                   href={item.href}
                   className={cn(
                     "flex flex-1 flex-col items-center gap-1 py-2 text-[10px]",
-                    active ? "font-medium text-primary" : "text-muted-foreground",
+                    active ? "font-bold text-red-600" : "text-muted-foreground",
                   )}
                 >
                   <item.icon className="size-4" />

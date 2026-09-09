@@ -4,15 +4,17 @@ import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { Suspense, useState } from "react";
 import { toast } from "sonner";
+import { ArrowRight, LoaderCircle } from "lucide-react";
 import { AuthScreen } from "@/components/auth-screen";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
 import { startPlanCheckout } from "@/lib/billing";
-import { PLANS, planById } from "@/lib/plans";
+import { brl } from "@/lib/format";
+import { PLANS, planById, planCapacityLabel } from "@/lib/plans";
 import { isSupabaseConfigured } from "@/lib/supabase/client";
 import { useStore } from "@/lib/store";
 import type { PlanId } from "@/lib/types";
+
+const fieldClass =
+  "h-12 w-full rounded-xl border border-white/10 bg-white/[0.035] px-4 text-sm text-white outline-none transition placeholder:text-white/20 hover:border-white/20 focus:border-red-500 focus:bg-white/[0.05] focus:ring-4 focus:ring-red-600/10 disabled:cursor-not-allowed disabled:opacity-60";
 
 function CadastroForm() {
   const store = useStore();
@@ -42,11 +44,13 @@ function CadastroForm() {
       switchHref="/login"
       switchLabel="Já tenho conta"
     >
-      <h2 className="text-[16px] font-medium">Abrir academia</h2>
-      <p className="mt-2 text-sm text-muted-foreground">
-        Cadastro cria a sua casa, não entra como Carla. Em seguida você paga
-        a assinatura do JiuPro no cartão. Alunos continuam pagando a
-        mensalidade no Pix da academia.
+      <p className="text-[11px] font-black tracking-[0.2em] text-red-500 uppercase">
+        Abrir academia
+      </p>
+      <p className="mt-3 text-sm leading-6 text-white/45">
+        Cadastro cria a sua casa, não entra como Carla. Em seguida você paga a
+        assinatura do JiuPro no cartão. Alunos continuam pagando a mensalidade
+        no Pix da academia.
       </p>
       <form
         className="mt-8 space-y-4"
@@ -94,93 +98,128 @@ function CadastroForm() {
           }
         }}
       >
-        <div className="space-y-1.5">
-          <Label htmlFor="name">Seu nome</Label>
-          <Input
+        <div className="space-y-2">
+          <label htmlFor="name" className="text-xs font-bold text-white/70">
+            Seu nome
+          </label>
+          <input
             id="name"
-            className="h-11"
+            className={fieldClass}
             value={name}
             onChange={(e) => setName(e.target.value)}
             placeholder="Carla Mendes"
             autoComplete="name"
+            disabled={busy}
           />
         </div>
-        <div className="space-y-1.5">
-          <Label htmlFor="academy">Nome da academia</Label>
-          <Input
+        <div className="space-y-2">
+          <label htmlFor="academy" className="text-xs font-bold text-white/70">
+            Nome da academia
+          </label>
+          <input
             id="academy"
-            className="h-11"
+            className={fieldClass}
             value={academy}
             onChange={(e) => setAcademy(e.target.value)}
             placeholder="Equipe Origem Jiu-Jitsu"
+            disabled={busy}
           />
         </div>
-        <div className="space-y-1.5">
-          <Label htmlFor="city">Cidade</Label>
-          <Input
+        <div className="space-y-2">
+          <label htmlFor="city" className="text-xs font-bold text-white/70">
+            Cidade
+          </label>
+          <input
             id="city"
-            className="h-11"
+            className={fieldClass}
             value={city}
             onChange={(e) => setCity(e.target.value)}
             placeholder="Campinas, SP"
+            disabled={busy}
           />
         </div>
-        <div className="space-y-1.5">
-          <Label htmlFor="email">E-mail</Label>
-          <Input
+        <div className="space-y-2">
+          <label htmlFor="email" className="text-xs font-bold text-white/70">
+            E-mail
+          </label>
+          <input
             id="email"
             type="email"
-            className="h-11"
+            className={fieldClass}
             value={email}
             onChange={(e) => setEmail(e.target.value)}
             placeholder="voce@academia.com"
             autoComplete="username"
+            disabled={busy}
           />
         </div>
-        <div className="space-y-1.5">
-          <Label htmlFor="password">Senha</Label>
-          <Input
+        <div className="space-y-2">
+          <label htmlFor="password" className="text-xs font-bold text-white/70">
+            Senha
+          </label>
+          <input
             id="password"
             type="password"
-            className="h-11"
+            className={fieldClass}
             value={password}
             onChange={(e) => setPassword(e.target.value)}
             autoComplete="new-password"
+            disabled={busy}
           />
         </div>
-        <div className="space-y-1.5">
-          <Label>Plano</Label>
+        <div className="space-y-2">
+          <p className="text-xs font-bold text-white/70">Plano</p>
           <div className="grid gap-2">
             {PLANS.map((p) => (
               <button
                 key={p.id}
                 type="button"
                 onClick={() => setPlan(p.id)}
-                className={`border px-3 py-2.5 text-left text-sm ${
+                className={`rounded-xl border px-3 py-3 text-left text-sm transition ${
                   plan === p.id
-                    ? "border-primary bg-muted"
-                    : "border-border"
+                    ? "border-red-500 bg-red-500/10"
+                    : "border-white/10 bg-white/[0.025] hover:border-white/20"
                 }`}
               >
-                <span className="font-medium">{p.name}</span>
-                <span className="text-muted-foreground"> · R$ {p.price}/mês</span>
+                <span className="flex items-center justify-between gap-3">
+                  <span className="font-extrabold">{p.name}</span>
+                  <span className="text-xs text-white/45">{brl(p.price)}/mês</span>
+                </span>
+                <span className="mt-1 block text-[11px] text-white/35">
+                  {planCapacityLabel(p)}
+                </span>
               </button>
             ))}
           </div>
         </div>
-        <Button type="submit" className="w-full" size="lg" disabled={busy}>
-          {busy
-            ? "Abrindo o pagamento…"
-            : `Pagar ${planById(plan).name} e abrir`}
-        </Button>
+        <button
+          type="submit"
+          className="group mt-2 flex h-12 w-full items-center justify-center gap-2 rounded-xl bg-red-600 text-sm font-black text-white shadow-lg shadow-red-950/30 transition hover:bg-red-500 disabled:cursor-not-allowed disabled:opacity-65"
+          disabled={busy}
+        >
+          {busy ? (
+            <>
+              <LoaderCircle className="h-4 w-4 animate-spin" />
+              Abrindo o pagamento…
+            </>
+          ) : (
+            <>
+              Pagar {planById(plan).name} e abrir
+              <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-1" />
+            </>
+          )}
+        </button>
       </form>
-      <p className="mt-6 text-center text-sm text-muted-foreground">
+      <p className="mt-6 text-center text-sm text-white/35">
         Já tem conta?{" "}
-        <Link href="/login" className="text-foreground underline">
+        <Link
+          href="/login"
+          className="font-extrabold text-white underline decoration-red-600 decoration-2 underline-offset-4 hover:text-red-400"
+        >
           Entrar
         </Link>
       </p>
-      <p className="mt-3 text-center text-xs text-muted-foreground">
+      <p className="mt-3 text-center text-xs text-white/30">
         Quer ver o produto cheio?{" "}
         <Link href="/login" className="underline">
           Entre na demo
@@ -193,7 +232,13 @@ function CadastroForm() {
 
 export default function CadastroPage() {
   return (
-    <Suspense>
+    <Suspense
+      fallback={
+        <div className="flex min-h-screen items-center justify-center bg-[#080808] text-sm text-white/40">
+          Carregando cadastro…
+        </div>
+      }
+    >
       <CadastroForm />
     </Suspense>
   );

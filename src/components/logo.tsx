@@ -1,23 +1,21 @@
+import { Wordmark } from "@/components/brand";
 import { cn } from "@/lib/utils";
 
 export function Logo({
   className,
-  inverted,
+  inverted = false,
+  kicker = false,
 }: {
   className?: string;
   inverted?: boolean;
+  kicker?: boolean;
 }) {
   return (
-    <span className={cn("inline-flex items-center gap-2.5", className)}>
-      <span className="block h-3.5 w-3.5 bg-primary" aria-hidden />
-      <span
-        className={cn(
-          "text-[13px] font-semibold tracking-[0.28em] uppercase",
-          inverted ? "text-white" : "text-foreground",
-        )}
-      >
-        JiuPro
-      </span>
-    </span>
+    <Wordmark
+      href={null}
+      inverted={inverted}
+      kicker={kicker}
+      className={cn(className)}
+    />
   );
 }

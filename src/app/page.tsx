@@ -1,9 +1,6 @@
-
-
 "use client";
 
-
-import React from "react";
+import Link from "next/link";
 import { motion } from "framer-motion";
 import {
   ArrowRight,
@@ -16,9 +13,17 @@ import {
   Package,
   ShieldCheck,
   Smartphone,
-  Sparkles,
   Users,
 } from "lucide-react";
+import {
+  BeltMark,
+  Eyebrow,
+  SectionHeading,
+  SiteFooter,
+  SiteHeader,
+} from "@/components/brand";
+import { brl } from "@/lib/format";
+import { PLANS, planCapacityLabel } from "@/lib/plans";
 
 const modules = [
   {
@@ -53,93 +58,33 @@ const modules = [
   },
 ];
 
-const plans = [
-  {
-    id: "base",
-    name: "Base",
-    students: "Até 50 alunos",
-    blurb: "Para academias que estão organizando a operação.",
-    price: 99.9,
-    features: ["Gestão de alunos", "Presença", "Turmas e horários"],
-  },
-  {
-    id: "black-belt",
-    name: "Faixa Preta",
-    students: "Até 150 alunos",
-    blurb: "Gestão completa para academias em crescimento.",
-    price: 179.9,
-    popular: true,
-    features: ["Todos os módulos", "Financeiro completo", "Aplicativo do aluno"],
-  },
-  {
-    id: "equipe",
-    name: "Equipe",
-    students: "Alunos ilimitados",
-    blurb: "Para grandes academias e múltiplas unidades.",
-    price: 299.9,
-    features: ["Alunos ilimitados", "Múltiplas unidades", "Suporte prioritário"],
-  },
-];
-
-function brl(value) {
-  return new Intl.NumberFormat("pt-BR", {
-    style: "currency",
-    currency: "BRL",
-  }).format(value);
-}
-
-export default function JiuProLandingPage() {
+export default function HomePage() {
   return (
     <main className="min-h-screen overflow-x-hidden bg-[#080808] text-white selection:bg-red-600 selection:text-white">
-      <Header />
+      <SiteHeader
+        variant="landing"
+        nav={
+          <>
+            <a href="#produto" className="transition hover:text-white">
+              Produto
+            </a>
+            <a href="#app" className="transition hover:text-white">
+              Aplicativo
+            </a>
+            <a href="#planos" className="transition hover:text-white">
+              Planos
+            </a>
+          </>
+        }
+      />
       <Hero />
       <TrustBar />
       <ProductSection />
       <AppSection />
       <PlansSection />
       <FinalCTA />
-      <Footer />
+      <SiteFooter />
     </main>
-  );
-}
-
-function Header() {
-  return (
-    <header className="fixed inset-x-0 top-0 z-50 border-b border-white/10 bg-[#080808]/85 backdrop-blur-xl">
-      <div className="mx-auto flex h-16 max-w-7xl items-center justify-between px-5 lg:px-8">
-        <a href="#inicio" className="group flex items-center gap-3">
-          <BeltMark />
-          <div>
-            <span className="block text-lg font-black tracking-[-0.04em]">JIUPRO</span>
-            <span className="block text-[8px] font-semibold uppercase tracking-[0.32em] text-white/40">
-              Gestão no tatame
-            </span>
-          </div>
-        </a>
-
-        <nav className="hidden items-center gap-8 text-sm text-white/60 md:flex">
-          <a href="#produto" className="transition hover:text-white">Produto</a>
-          <a href="#app" className="transition hover:text-white">Aplicativo</a>
-          <a href="#planos" className="transition hover:text-white">Planos</a>
-        </nav>
-
-        <div className="flex items-center gap-2">
-          <a
-            href="/login"
-            className="hidden rounded-xl px-4 py-2 text-sm font-medium text-white/70 transition hover:bg-white/5 hover:text-white sm:inline-flex"
-          >
-            Entrar
-          </a>
-          <a
-            href="/cadastro"
-            className="inline-flex items-center gap-2 rounded-xl bg-red-600 px-4 py-2.5 text-sm font-bold text-white shadow-lg shadow-red-950/30 transition hover:bg-red-500"
-          >
-            Começar
-            <ArrowRight className="h-4 w-4" />
-          </a>
-        </div>
-      </div>
-    </header>
   );
 }
 
@@ -149,7 +94,7 @@ function Hero() {
       <div className="absolute inset-0 -z-20 bg-[radial-gradient(circle_at_75%_25%,rgba(220,38,38,0.16),transparent_32%),radial-gradient(circle_at_20%_70%,rgba(255,255,255,0.06),transparent_28%)]" />
       <div className="absolute inset-0 -z-10 opacity-[0.035] [background-image:linear-gradient(rgba(255,255,255,.8)_1px,transparent_1px),linear-gradient(90deg,rgba(255,255,255,.8)_1px,transparent_1px)] [background-size:72px_72px]" />
       <div className="absolute -right-40 top-32 -z-10 h-[600px] w-[600px] rounded-full border border-red-600/15" />
-      <div className="absolute -right-16 top-56 -z-10 h-[360px] w-[360px] rounded-full border border-white/10" />
+      <div className="absolute top-56 -right-16 -z-10 h-[360px] w-[360px] rounded-full border border-white/10" />
 
       <div className="mx-auto grid min-h-[790px] max-w-7xl items-center gap-16 px-5 py-20 lg:grid-cols-[1.05fr_.95fr] lg:px-8">
         <motion.div
@@ -158,12 +103,9 @@ function Hero() {
           transition={{ duration: 0.7 }}
           className="max-w-3xl"
         >
-          <div className="mb-7 inline-flex items-center gap-2 rounded-full border border-red-500/25 bg-red-500/10 px-3.5 py-2 text-xs font-bold uppercase tracking-[0.18em] text-red-400">
-            <Sparkles className="h-3.5 w-3.5" />
-            Gestão completa para sua academia
-          </div>
+          <Eyebrow className="mb-7 text-xs">Gestão completa para sua academia</Eyebrow>
 
-          <h1 className="text-5xl font-black leading-[0.98] tracking-[-0.055em] sm:text-6xl lg:text-[78px]">
+          <h1 className="text-5xl leading-[0.98] font-black tracking-[-0.055em] sm:text-6xl lg:text-[78px]">
             Sua academia.
             <span className="mt-2 block text-white/45">No próximo nível.</span>
           </h1>
@@ -171,33 +113,37 @@ function Hero() {
           <div className="mt-8 flex max-w-2xl gap-5">
             <div className="hidden w-1 shrink-0 bg-gradient-to-b from-red-600 via-red-600 to-transparent sm:block" />
             <p className="text-base leading-8 text-white/58 sm:text-lg">
-              Alunos, mensalidades, presença, graduações e estoque em uma plataforma criada para quem vive o Jiu-Jitsu dentro e fora do tatame.
+              Alunos, mensalidades, presença, graduações e estoque em uma
+              plataforma criada para quem vive o Jiu-Jitsu dentro e fora do
+              tatame.
             </p>
           </div>
 
           <div className="mt-10 flex flex-col gap-3 sm:flex-row">
-            <a
+            <Link
               href="/cadastro"
-              className="group inline-flex h-13 items-center justify-center gap-3 rounded-xl bg-red-600 px-7 text-sm font-extrabold transition hover:bg-red-500"
+              className="group inline-flex h-12 items-center justify-center gap-3 rounded-xl bg-red-600 px-7 text-sm font-extrabold transition hover:bg-red-500"
             >
               Criar minha academia
               <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-1" />
-            </a>
-            <a
+            </Link>
+            <Link
               href="/demo"
-              className="inline-flex h-13 items-center justify-center rounded-xl border border-white/15 bg-white/[0.04] px-7 text-sm font-bold text-white transition hover:border-white/30 hover:bg-white/[0.08]"
+              className="inline-flex h-12 items-center justify-center rounded-xl border border-white/15 bg-white/[0.04] px-7 text-sm font-bold text-white transition hover:border-white/30 hover:bg-white/[0.08]"
             >
               Explorar demonstração
-            </a>
+            </Link>
           </div>
 
           <div className="mt-10 flex flex-wrap gap-x-7 gap-y-3 text-xs font-medium text-white/45">
-            {["Configuração rápida", "Sem taxa de implantação", "Suporte especializado"].map((item) => (
-              <span key={item} className="flex items-center gap-2">
-                <CheckCircle2 className="h-4 w-4 text-red-500" />
-                {item}
-              </span>
-            ))}
+            {["Configuração rápida", "Sem taxa de implantação", "Suporte especializado"].map(
+              (item) => (
+                <span key={item} className="flex items-center gap-2">
+                  <CheckCircle2 className="h-4 w-4 text-red-500" />
+                  {item}
+                </span>
+              ),
+            )}
           </div>
         </motion.div>
 
@@ -236,7 +182,9 @@ function TrustBar() {
           ["24 horas", "de acesso à gestão"],
         ].map(([value, label]) => (
           <div key={value} className="flex items-center justify-center gap-4 py-7">
-            <strong className="text-2xl font-black tracking-tight text-red-500">{value}</strong>
+            <strong className="text-2xl font-black tracking-tight text-red-500">
+              {value}
+            </strong>
             <span className="max-w-[120px] text-xs leading-5 text-white/40">{label}</span>
           </div>
         ))}
@@ -289,7 +237,7 @@ function ProductSection() {
 function AppSection() {
   return (
     <section id="app" className="relative overflow-hidden bg-[#0b0b0b] py-24 lg:py-32">
-      <div className="absolute left-0 top-0 h-full w-1 bg-gradient-to-b from-transparent via-red-600 to-transparent" />
+      <div className="absolute top-0 left-0 h-full w-1 bg-gradient-to-b from-transparent via-red-600 to-transparent" />
       <div className="mx-auto grid max-w-7xl items-center gap-16 px-5 lg:grid-cols-2 lg:px-8">
         <div>
           <SectionHeading
@@ -301,9 +249,18 @@ function AppSection() {
 
           <div className="mt-10 space-y-5">
             {[
-              ["Confirmação em um toque", "O aluno confirma a aula sem códigos ou filas na recepção."],
-              ["Equipe conectada", "Todos visualizam quem estará no treino antes da aula começar."],
-              ["Evolução visível", "Frequência, faixa e graus sempre disponíveis no aplicativo."],
+              [
+                "Confirmação em um toque",
+                "O aluno confirma a aula sem códigos ou filas na recepção.",
+              ],
+              [
+                "Equipe conectada",
+                "Todos visualizam quem estará no treino antes da aula começar.",
+              ],
+              [
+                "Evolução visível",
+                "Frequência, faixa e graus sempre disponíveis no aplicativo.",
+              ],
             ].map(([title, body], index) => (
               <div key={title} className="flex gap-4">
                 <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full border border-red-500/40 bg-red-500/10 text-[11px] font-black text-red-400">
@@ -317,9 +274,12 @@ function AppSection() {
             ))}
           </div>
 
-          <a href="/demo?as=aluno" className="mt-10 inline-flex items-center gap-2 text-sm font-extrabold text-red-500 transition hover:text-red-400">
+          <Link
+            href="/demo?as=aluno"
+            className="mt-10 inline-flex items-center gap-2 text-sm font-extrabold text-red-500 transition hover:text-red-400"
+          >
             Abrir aplicativo do aluno <ArrowRight className="h-4 w-4" />
-          </a>
+          </Link>
         </div>
 
         <PhonePreview />
@@ -341,7 +301,7 @@ function PlansSection() {
         />
 
         <div className="mt-16 grid items-stretch gap-5 lg:grid-cols-3">
-          {plans.map((plan) => (
+          {PLANS.map((plan) => (
             <article
               key={plan.id}
               className={`relative flex flex-col overflow-hidden rounded-2xl border p-7 ${
@@ -350,31 +310,44 @@ function PlansSection() {
                   : "border-black/10 bg-[#fafafa]"
               }`}
             >
-              {plan.popular && (
-                <div className="absolute right-0 top-0 bg-red-600 px-4 py-2 text-[10px] font-black uppercase tracking-[0.18em] text-white">
+              {plan.popular ? (
+                <div className="absolute top-0 right-0 bg-red-600 px-4 py-2 text-[10px] font-black tracking-[0.18em] text-white uppercase">
                   Recomendado
                 </div>
-              )}
+              ) : null}
               <div className="flex items-center gap-3">
-                <div className={`h-2.5 w-2.5 rounded-full ${plan.popular ? "bg-red-500" : "bg-black"}`} />
+                <div
+                  className={`h-2.5 w-2.5 rounded-full ${plan.popular ? "bg-red-500" : "bg-black"}`}
+                />
                 <h3 className="text-xl font-black tracking-tight">{plan.name}</h3>
               </div>
-              <p className={`mt-4 text-sm ${plan.popular ? "text-white/45" : "text-black/50"}`}>{plan.students}</p>
+              <p className={`mt-4 text-sm ${plan.popular ? "text-white/45" : "text-black/50"}`}>
+                {planCapacityLabel(plan)}
+              </p>
               <div className="mt-6 flex items-end gap-1">
                 <strong className="text-4xl font-black tracking-[-0.05em]">{brl(plan.price)}</strong>
-                <span className={`pb-1 text-xs ${plan.popular ? "text-white/40" : "text-black/40"}`}>/mês</span>
+                <span className={`pb-1 text-xs ${plan.popular ? "text-white/40" : "text-black/40"}`}>
+                  /mês
+                </span>
               </div>
-              <p className={`mt-5 min-h-12 text-sm leading-6 ${plan.popular ? "text-white/50" : "text-black/50"}`}>{plan.blurb}</p>
+              <p
+                className={`mt-5 min-h-12 text-sm leading-6 ${plan.popular ? "text-white/50" : "text-black/50"}`}
+              >
+                {plan.blurb}
+              </p>
               <div className={`my-7 h-px ${plan.popular ? "bg-white/10" : "bg-black/10"}`} />
               <ul className="flex-1 space-y-3">
                 {plan.features.map((feature) => (
-                  <li key={feature} className={`flex items-center gap-3 text-sm ${plan.popular ? "text-white/75" : "text-black/65"}`}>
+                  <li
+                    key={feature}
+                    className={`flex items-center gap-3 text-sm ${plan.popular ? "text-white/75" : "text-black/65"}`}
+                  >
                     <Check className="h-4 w-4 text-red-500" />
                     {feature}
                   </li>
                 ))}
               </ul>
-              <a
+              <Link
                 href={`/cadastro?plano=${plan.id}`}
                 className={`mt-8 inline-flex h-12 items-center justify-center rounded-xl text-sm font-extrabold transition ${
                   plan.popular
@@ -383,7 +356,7 @@ function PlansSection() {
                 }`}
               >
                 Escolher {plan.name}
-              </a>
+              </Link>
             </article>
           ))}
         </div>
@@ -398,73 +371,26 @@ function FinalCTA() {
       <div className="absolute inset-0 opacity-15 [background-image:linear-gradient(135deg,transparent_25%,#000_25%,#000_50%,transparent_50%,transparent_75%,#000_75%)] [background-size:80px_80px]" />
       <div className="relative mx-auto flex max-w-7xl flex-col items-start justify-between gap-8 px-5 py-16 lg:flex-row lg:items-center lg:px-8">
         <div>
-          <p className="text-xs font-black uppercase tracking-[0.24em] text-white/60">Suba de nível</p>
+          <p className="text-xs font-black tracking-[0.24em] text-white/60 uppercase">
+            Suba de nível
+          </p>
           <h2 className="mt-3 max-w-2xl text-3xl font-black tracking-[-0.04em] sm:text-4xl">
             Sua academia merece uma gestão faixa preta.
           </h2>
         </div>
-        <a href="/cadastro" className="inline-flex h-13 shrink-0 items-center gap-3 rounded-xl bg-white px-7 text-sm font-black text-red-700 transition hover:bg-black hover:text-white">
+        <Link
+          href="/cadastro"
+          className="inline-flex h-12 shrink-0 items-center gap-3 rounded-xl bg-white px-7 text-sm font-black text-red-700 transition hover:bg-black hover:text-white"
+        >
           Começar agora <ArrowRight className="h-4 w-4" />
-        </a>
+        </Link>
       </div>
     </section>
   );
 }
 
-function Footer() {
-  return (
-    <footer className="bg-[#070707]">
-      <div className="mx-auto flex max-w-7xl flex-col gap-8 px-5 py-10 lg:px-8">
-        <div className="flex flex-col justify-between gap-6 sm:flex-row sm:items-center">
-          <div className="flex items-center gap-3">
-            <BeltMark />
-            <span className="text-lg font-black">JIUPRO</span>
-          </div>
-          <div className="flex flex-wrap gap-6 text-xs text-white/40">
-            <a href="#produto" className="hover:text-white">Produto</a>
-            <a href="#app" className="hover:text-white">Aplicativo</a>
-            <a href="#planos" className="hover:text-white">Planos</a>
-            <a href="/login" className="hover:text-white">Entrar</a>
-          </div>
-        </div>
-        <div className="h-px bg-white/10" />
-        <div className="flex flex-col gap-2 text-[11px] text-white/30 sm:flex-row sm:justify-between">
-          <span>© 2026 JiuPro. Gestão para academias de Jiu-Jitsu.</span>
-          <span>Cada academia, uma conta. Cada treino, uma evolução.</span>
-        </div>
-      </div>
-    </footer>
-  );
-}
-
-function SectionHeading({ eyebrow, title, description, dark, centered = false }) {
-  return (
-    <div className={centered ? "mx-auto max-w-2xl text-center" : "max-w-2xl"}>
-      <p className="flex items-center gap-3 text-[11px] font-black uppercase tracking-[0.24em] text-red-600">
-        {!centered && <span className="h-px w-8 bg-red-600" />}
-        {eyebrow}
-      </p>
-      <h2 className={`mt-5 text-3xl font-black leading-tight tracking-[-0.045em] sm:text-4xl ${dark ? "text-white" : "text-[#111]"}`}>
-        {title}
-      </h2>
-      <p className={`mt-5 text-sm leading-7 sm:text-base ${dark ? "text-white/45" : "text-black/50"}`}>
-        {description}
-      </p>
-    </div>
-  );
-}
-
-function BeltMark() {
-  return (
-    <span className="relative block h-7 w-11 overflow-hidden rounded-sm bg-[#191919] shadow-inner shadow-black">
-      <span className="absolute inset-y-0 right-0 w-3.5 bg-red-600" />
-      <span className="absolute right-1 top-1 h-5 w-[2px] bg-white" />
-    </span>
-  );
-}
-
 function DashboardPreview() {
-  const rows = [
+  const rows: [string, string, string, number][] = [
     ["19:30", "Adultos Gi", "14 confirmados", 72],
     ["20:30", "No-Gi", "8 confirmados", 45],
     ["21:30", "Competição", "11 confirmados", 60],
@@ -478,28 +404,39 @@ function DashboardPreview() {
           <span className="h-2.5 w-2.5 rounded-full bg-white/15" />
           <span className="h-2.5 w-2.5 rounded-full bg-white/15" />
         </div>
-        <span className="ml-4 text-[10px] font-bold uppercase tracking-[0.2em] text-white/35">Painel da academia</span>
+        <span className="ml-4 text-[10px] font-bold tracking-[0.2em] text-white/35 uppercase">
+          Painel da academia
+        </span>
         <ShieldCheck className="ml-auto h-4 w-4 text-red-500" />
       </div>
       <div className="grid min-h-[480px] sm:grid-cols-[145px_1fr]">
         <aside className="hidden border-r border-white/10 p-3 sm:block">
           <div className="mb-5 flex items-center gap-2 px-2 pt-2">
-            <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-red-600 text-xs font-black">EO</div>
+            <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-red-600 text-xs font-black">
+              EO
+            </div>
             <div>
               <p className="text-[10px] font-bold">Equipe Origem</p>
               <p className="text-[8px] text-white/30">Campinas, SP</p>
             </div>
           </div>
-          {["Visão geral", "Alunos", "Presença", "Financeiro", "Graduações"].map((item, i) => (
-            <div key={item} className={`mb-1 rounded-lg px-3 py-2.5 text-[10px] ${i === 0 ? "bg-red-600 font-bold text-white" : "text-white/35"}`}>
-              {item}
-            </div>
-          ))}
+          {["Visão geral", "Alunos", "Presença", "Financeiro", "Graduações"].map(
+            (item, i) => (
+              <div
+                key={item}
+                className={`mb-1 rounded-lg px-3 py-2.5 text-[10px] ${i === 0 ? "bg-red-600 font-bold text-white" : "text-white/35"}`}
+              >
+                {item}
+              </div>
+            ),
+          )}
         </aside>
         <div className="p-5 sm:p-6">
           <div className="flex items-start justify-between">
             <div>
-              <p className="text-[9px] font-bold uppercase tracking-[0.18em] text-red-500">Hoje no tatame</p>
+              <p className="text-[9px] font-bold tracking-[0.18em] text-red-500 uppercase">
+                Hoje no tatame
+              </p>
               <h3 className="mt-2 text-xl font-black">Boa noite, Professor.</h3>
               <p className="mt-1 text-[10px] text-white/35">Terça-feira, 8 de setembro</p>
             </div>
@@ -510,8 +447,15 @@ function DashboardPreview() {
           </div>
 
           <div className="mt-7 grid grid-cols-3 gap-2">
-            {[["33", "Confirmados"], ["06", "Aulas hoje"], ["04", "Pendências"]].map(([value, label], i) => (
-              <div key={label} className={`rounded-xl border p-3 ${i === 0 ? "border-red-500/30 bg-red-500/10" : "border-white/10 bg-white/[0.025]"}`}>
+            {[
+              ["33", "Confirmados"],
+              ["06", "Aulas hoje"],
+              ["04", "Pendências"],
+            ].map(([value, label], i) => (
+              <div
+                key={label}
+                className={`rounded-xl border p-3 ${i === 0 ? "border-red-500/30 bg-red-500/10" : "border-white/10 bg-white/[0.025]"}`}
+              >
                 <strong className="text-lg font-black">{value}</strong>
                 <p className="mt-1 text-[8px] text-white/35">{label}</p>
               </div>
@@ -557,12 +501,14 @@ function PhonePreview() {
         viewport={{ once: true }}
         className="relative rounded-[42px] border-[7px] border-[#282828] bg-[#f6f6f4] p-3 text-[#111] shadow-[0_40px_100px_rgba(0,0,0,.65)]"
       >
-        <div className="absolute left-1/2 top-3 h-5 w-24 -translate-x-1/2 rounded-full bg-[#181818]" />
+        <div className="absolute top-3 left-1/2 h-5 w-24 -translate-x-1/2 rounded-full bg-[#181818]" />
         <div className="overflow-hidden rounded-[31px] bg-white">
-          <div className="bg-[#0c0c0c] px-6 pb-7 pt-12 text-white">
+          <div className="bg-[#0c0c0c] px-6 pt-12 pb-7 text-white">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-[9px] uppercase tracking-[0.18em] text-red-500">Próximo treino</p>
+                <p className="text-[9px] tracking-[0.18em] text-red-500 uppercase">
+                  Próximo treino
+                </p>
                 <p className="mt-2 text-lg font-black">Adultos Gi</p>
               </div>
               <BeltMark />
@@ -573,22 +519,29 @@ function PhonePreview() {
             </div>
           </div>
           <div className="p-6">
-            <p className="text-[10px] font-bold uppercase tracking-[0.16em] text-black/35">Terça-feira, hoje</p>
-            <button className="mt-5 flex h-13 w-full items-center justify-center gap-2 rounded-xl bg-red-600 text-sm font-black text-white shadow-lg shadow-red-200 transition hover:bg-red-500">
+            <p className="text-[10px] font-bold tracking-[0.16em] text-black/35 uppercase">
+              Terça-feira, hoje
+            </p>
+            <div className="mt-5 flex h-12 w-full items-center justify-center gap-2 rounded-xl bg-red-600 text-sm font-black text-white shadow-lg shadow-red-200">
               <CheckCircle2 className="h-4 w-4" />
               Confirmar que vou
-            </button>
+            </div>
             <div className="mt-7 flex items-center justify-between">
               <span className="text-xs font-bold">Quem vai treinar</span>
               <span className="text-[10px] text-red-600">3 confirmados</span>
             </div>
             <div className="mt-4 flex -space-x-2">
               {students.map((name, i) => (
-                <div key={name} className={`flex h-10 w-10 items-center justify-center rounded-full border-2 border-white text-[10px] font-black text-white ${i === 0 ? "bg-red-600" : i === 1 ? "bg-[#222]" : "bg-[#777]"}`}>
+                <div
+                  key={name}
+                  className={`flex h-10 w-10 items-center justify-center rounded-full border-2 border-white text-[10px] font-black text-white ${i === 0 ? "bg-red-600" : i === 1 ? "bg-[#222]" : "bg-[#777]"}`}
+                >
                   {name[0]}
                 </div>
               ))}
-              <div className="ml-3 flex items-center text-[10px] text-black/40">Ana, Marina e Thiago</div>
+              <div className="ml-3 flex items-center text-[10px] text-black/40">
+                Ana, Marina e Thiago
+              </div>
             </div>
             <div className="mt-7 rounded-xl bg-[#f1f1ef] p-4">
               <div className="flex items-center justify-between text-[10px]">

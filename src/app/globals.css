@@ -11,6 +11,14 @@
   --font-display: var(--font-body);
   --font-heading: var(--font-body);
   --font-mono: var(--font-plex-mono);
+  --spacing-13: 3.25rem;
+  --radius-sm: 8px;
+  --radius-md: 10px;
+  --radius-lg: 12px;
+  --radius-xl: 16px;
+  --radius-2xl: 16px;
+  --radius-3xl: 24px;
+  --radius-4xl: 32px;
   --color-sidebar-ring: var(--sidebar-ring);
   --color-sidebar-border: var(--sidebar-border);
   --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
@@ -40,13 +48,6 @@
   --color-popover: var(--popover);
   --color-card-foreground: var(--card-foreground);
   --color-card: var(--card);
-  --radius-sm: 2px;
-  --radius-md: 2px;
-  --radius-lg: 4px;
-  --radius-xl: 4px;
-  --radius-2xl: 4px;
-  --radius-3xl: 4px;
-  --radius-4xl: 4px;
 }
 
 :root {
@@ -73,7 +74,7 @@
   --chart-3: #8a8886;
   --chart-4: #5c2e2e;
   --chart-5: #a4262c;
-  --radius: 2px;
+  --radius: 12px;
   --sidebar: #ffffff;
   --sidebar-foreground: #201f1e;
   --sidebar-primary: #c41e3a;
@@ -93,7 +94,11 @@
   }
   html {
     @apply font-sans;
-    background: #f3f2f1;
+    background: #080808;
+  }
+  ::selection {
+    background: #dc2626;
+    color: #fff;
   }
 }
 
@@ -107,7 +112,7 @@
 .surface {
   border: 1px solid var(--border);
   background: #fff;
-  border-radius: 2px;
+  border-radius: 16px;
 }
 
 .ponteira {

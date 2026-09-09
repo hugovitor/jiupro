@@ -60,3 +60,9 @@ export const PLANS: Plan[] = [
 export function planById(id: PlanId) {
   return PLANS.find((p) => p.id === id) ?? PLANS[1];
 }
+
+export function planCapacityLabel(plan: Plan) {
+  return plan.students === "Ilimitado"
+    ? "Alunos ilimitados"
+    : `Até ${plan.students} alunos`;
+}

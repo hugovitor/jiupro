@@ -16,9 +16,9 @@ import {
   LockKeyhole,
   Mail,
   ShieldCheck,
-  Sparkles,
   Users,
 } from "lucide-react";
+import { DarkCanvas, Eyebrow, Wordmark } from "@/components/brand";
 import { DEMO_ACCOUNTS } from "@/lib/seed";
 import { useStore } from "@/lib/store";
 
@@ -73,20 +73,9 @@ export default function LoginPage() {
   }
 
   return (
-    <main className="relative min-h-screen overflow-hidden bg-[#070707] text-white selection:bg-red-600 selection:text-white">
-      <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_16%_18%,rgba(220,38,38,0.18),transparent_28%),radial-gradient(circle_at_82%_72%,rgba(255,255,255,0.06),transparent_26%)]" />
-      <div className="pointer-events-none absolute inset-0 opacity-[0.035] [background-image:linear-gradient(rgba(255,255,255,.8)_1px,transparent_1px),linear-gradient(90deg,rgba(255,255,255,.8)_1px,transparent_1px)] [background-size:74px_74px]" />
-
+    <DarkCanvas className="bg-[#070707]">
       <header className="relative z-20 mx-auto flex h-20 max-w-7xl items-center justify-between px-5 lg:px-8">
-        <Link href="/" className="group flex items-center gap-3">
-          <BeltMark />
-          <div>
-            <span className="block text-lg font-black tracking-[-0.04em]">JIUPRO</span>
-            <span className="block text-[8px] font-semibold uppercase tracking-[0.32em] text-white/35">
-              Gestão no tatame
-            </span>
-          </div>
-        </Link>
+        <Wordmark href="/" />
 
         <Link
           href="/"
@@ -99,10 +88,7 @@ export default function LoginPage() {
 
       <section className="relative z-10 mx-auto grid min-h-[calc(100vh-5rem)] max-w-7xl items-center gap-14 px-5 py-10 lg:grid-cols-[1fr_500px] lg:px-8 lg:py-16">
         <div className="hidden max-w-xl lg:block">
-          <div className="inline-flex items-center gap-2 rounded-full border border-red-500/25 bg-red-500/10 px-3.5 py-2 text-[11px] font-black uppercase tracking-[0.18em] text-red-400">
-            <Sparkles className="h-3.5 w-3.5" />
-            Acesso à sua academia
-          </div>
+          <Eyebrow>Acesso à sua academia</Eyebrow>
 
           <h1 className="mt-7 text-5xl font-black leading-[1.02] tracking-[-0.055em] xl:text-6xl">
             Sua gestão começa
@@ -286,15 +272,6 @@ export default function LoginPage() {
           </p>
         </div>
       </section>
-    </main>
-  );
-}
-
-function BeltMark() {
-  return (
-    <span className="relative block h-7 w-11 overflow-hidden rounded-sm bg-[#191919] shadow-inner shadow-black">
-      <span className="absolute inset-y-0 right-0 w-3.5 bg-red-600" />
-      <span className="absolute right-1 top-1 h-5 w-[2px] bg-white" />
-    </span>
+    </DarkCanvas>
   );
 }

@@ -1,5 +1,7 @@
 "use client";
 
+import { BeltMark } from "@/components/brand";
+
 export default function GlobalError({
   reset,
 }: {
@@ -16,20 +18,34 @@ export default function GlobalError({
           flexDirection: "column",
           alignItems: "center",
           justifyContent: "center",
-          fontFamily: "system-ui, sans-serif",
-          background: "#f3f2f1",
-          color: "#201f1e",
+          fontFamily: "Inter, system-ui, sans-serif",
+          background: "#080808",
+          color: "#fff",
           textAlign: "center",
           padding: 24,
         }}
       >
-        <p style={{ fontSize: 12, letterSpacing: "0.18em", color: "#605e5c" }}>
-          JIUPRO
+        <div style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: 28 }}>
+          <BeltMark />
+          <span style={{ fontWeight: 900, letterSpacing: "-0.04em", fontSize: 18 }}>
+            JIUPRO
+          </span>
+        </div>
+        <p
+          style={{
+            fontSize: 11,
+            letterSpacing: "0.2em",
+            color: "#f87171",
+            fontWeight: 800,
+            textTransform: "uppercase",
+          }}
+        >
+          Sistema indisponível
         </p>
-        <h1 style={{ fontSize: 22, fontWeight: 500, margin: "12px 0 0" }}>
+        <h1 style={{ fontSize: 28, fontWeight: 900, margin: "12px 0 0", letterSpacing: "-0.04em" }}>
           O sistema não conseguiu abrir.
         </h1>
-        <p style={{ maxWidth: 360, fontSize: 14, color: "#605e5c" }}>
+        <p style={{ maxWidth: 360, fontSize: 14, color: "rgba(255,255,255,0.45)", lineHeight: 1.6 }}>
           Recarregue a página. Os dados da academia continuam na nuvem se o
           Supabase estiver ligado.
         </p>
@@ -37,13 +53,16 @@ export default function GlobalError({
           type="button"
           onClick={() => reset()}
           style={{
-            marginTop: 16,
-            height: 40,
-            padding: "0 16px",
+            marginTop: 20,
+            height: 48,
+            padding: "0 24px",
             border: 0,
-            background: "#c41e3a",
+            borderRadius: 12,
+            background: "#dc2626",
             color: "#fff",
             fontSize: 14,
+            fontWeight: 800,
+            cursor: "pointer",
           }}
         >
           Tentar de novo
