@@ -3,7 +3,7 @@
 
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { FormEvent, useState } from "react";
+import { FormEvent, useEffect, useState } from "react";
 import { toast } from "sonner";
 import {
   ArrowLeft,
@@ -20,6 +20,7 @@ import {
 } from "lucide-react";
 import { DarkCanvas, Eyebrow, Wordmark } from "@/components/brand";
 import { DEMO_ACCOUNTS } from "@/lib/seed";
+import { ownerDestination } from "@/lib/auth-redirect";
 import { useStore } from "@/lib/store";
 
 export default function LoginPage() {
@@ -31,6 +32,16 @@ export default function LoginPage() {
   const [showPassword, setShowPassword] = useState(false);
   const [busy, setBusy] = useState(false);
   const [activeDemo, setActiveDemo] = useState<string | null>(null);
+  const [nextPath, setNextPath] = useState("/academia");
+  const [finishPayment, setFinishPayment] = useState(false);
+
+  useEffect(() => {
+    const query = new URLSearchParams(window.location.search);
+    const fromQuery = query.get("email");
+    if (fromQuery) setEmail(fromQuery);
+    setNextPath(ownerDestination(query.get("next"), "owner"));
+    setFinishPayment(query.get("next") === "/academia/configuracoes");
+  }, []);
 
   async function enter(nextEmail = email, nextPassword = password) {
     const normalizedEmail = nextEmail.trim().toLowerCase();
@@ -51,7 +62,7 @@ export default function LoginPage() {
       }
 
       toast.success("Acesso autorizado. Bem-vindo ao JiuPro!");
-      router.push(result.role === "student" ? "/aluno" : "/academia");
+      router.push(ownerDestination(nextPath, result.role));
     } catch {
       toast.error("Não foi possível entrar. Tente novamente.");
     } finally {
@@ -143,7 +154,9 @@ export default function LoginPage() {
                 </p>
                 <h2 className="mt-3 text-3xl font-black tracking-[-0.04em]">Entre no JiuPro</h2>
                 <p className="mt-3 text-sm leading-6 text-white/42">
-                  Use os dados da sua conta ou entre rapidamente por um dos acessos de demonstração.
+                  {finishPayment
+                    ? "Sua academia já existe. Entre e, em Configurações, escolha o plano para aplicar o cupom no Stripe."
+                    : "Use os dados da sua conta ou entre rapidamente por um dos acessos de demonstração."}
                 </p>
               </div>
 

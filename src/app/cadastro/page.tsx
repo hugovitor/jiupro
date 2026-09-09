@@ -68,10 +68,13 @@ function CadastroForm() {
             return;
           }
           try {
+            if (result.resumed) {
+              toast.message("Academia já existia. Abrindo o pagamento para o cupom.");
+            }
             const pay = await startPlanCheckout(plan, {
               email,
               academyName: academy,
-              academyId: store.academy.id,
+              academyId: result.academyId ?? store.academy.id,
             });
             if (pay === "demo") {
               toast.success(`${academy.trim()} aberta. Vamos ao pagamento da assinatura.`);
@@ -202,12 +205,12 @@ function CadastroForm() {
         </button>
       </form>
       <p className="mt-6 text-center text-sm text-white/35">
-        Já tem conta?{" "}
+        Já tem conta, ou parou no cartão?{" "}
         <Link
-          href="/login"
+          href="/login?next=/academia/configuracoes"
           className="font-extrabold text-white underline decoration-red-600 decoration-2 underline-offset-4 hover:text-red-400"
         >
-          Entrar
+          Entre e conclua o pagamento
         </Link>
       </p>
       <p className="mt-3 text-center text-xs text-white/30">

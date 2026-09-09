@@ -57,7 +57,7 @@ import type {
 } from "./types";
 
 export type LoginResult =
-  | { ok: true; role: Role }
+  | { ok: true; role: Role; academyId?: string; resumed?: boolean }
   | { ok: false; error: string };
 
 export type SyncResult =
@@ -238,7 +238,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
       });
       if (!demoState) return { ok: false, error: "Demo indisponível." };
       write(demoState);
-      return { ok: true, role: demo.role };
+      return { ok: true, role: demo.role, academyId: demoState.academy.id };
     }
 
     const local = findUserAcrossAcademies(needle);
@@ -258,7 +258,11 @@ export function StoreProvider({ children }: { children: ReactNode }) {
             rememberPassword(needle, password);
             putAcademy(pulled, password);
             write(pulled);
-            return { ok: true, role: remote.session.role };
+            return {
+              ok: true,
+              role: remote.session.role,
+              academyId: pulled.academy.id,
+            };
           }
           if (!local) {
             return { ok: false, error: pulled.error };
@@ -278,7 +282,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
       });
       if (!next) return { ok: false, error: "Academia não encontrada." };
       write(next);
-      return { ok: true, role: local.user.role };
+      return { ok: true, role: local.user.role, academyId: next.academy.id };
     }
 
     return { ok: false, error: "Conta não encontrada." };
@@ -300,8 +304,22 @@ export function StoreProvider({ children }: { children: ReactNode }) {
     if (input.password.length < 6) {
       return { ok: false, error: "A senha precisa de pelo menos 6 caracteres." };
     }
-    if (DEMO_ACCOUNTS.some((a) => a.email === email) || emailTaken(email) || hasLocalPassword(email)) {
-      return { ok: false, error: "Este e-mail já tem uma academia." };
+    if (DEMO_ACCOUNTS.some((a) => a.email === email)) {
+      return { ok: false, error: "Este e-mail é da demonstração." };
+    }
+
+    const resumeExisting = async (): Promise<LoginResult> => {
+      const existing = await login(email, input.password);
+      if (existing.ok) return { ...existing, resumed: true };
+      return {
+        ok: false,
+        error:
+          "Este e-mail já está cadastrado. Entre com a senha desta conta para concluir o pagamento.",
+      };
+    };
+
+    if (emailTaken(email) || hasLocalPassword(email)) {
+      return resumeExisting();
     }
 
     const slug = uniqueSlug(input.academyName, takenSlugs());
@@ -337,7 +355,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
 
     if (remote.error && remote.error !== "offline") {
       if (/already|registered|exists/i.test(remote.error)) {
-        return { ok: false, error: "Este e-mail já está cadastrado." };
+        return resumeExisting();
       }
     }
 
@@ -359,8 +377,8 @@ export function StoreProvider({ children }: { children: ReactNode }) {
       const pushed = await pushAcademyState(academy);
       if (pushed.state) write(pushed.state);
     }
-    return { ok: true, role: "owner" };
-  }, []);
+    return { ok: true, role: "owner", academyId: academy.academy.id };
+  }, [login]);
 
   const syncNow = useCallback(async (): Promise<SyncResult> => {
     const current = getSnapshot();

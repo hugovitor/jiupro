@@ -109,8 +109,8 @@ function ConfigInner() {
       <section className="border border-border bg-card p-5">
         <h2 className="font-medium">Plano JiuPro · {plan.name}</h2>
         <p className="mt-1 text-sm text-muted-foreground">
-          {brl(plan.price)}/mês · {plan.students} alunos. A academia paga o
-          JiuPro no cartão; os alunos continuam no Pix da casa.
+          {brl(plan.price)}/mês · {plan.students} alunos. Se o cadastro parou no
+          cartão, escolha o plano de novo — o cupom entra na tela do Stripe.
         </p>
         <div className="mt-4 grid gap-2 sm:grid-cols-3">
           {PLANS.map((p) => (
