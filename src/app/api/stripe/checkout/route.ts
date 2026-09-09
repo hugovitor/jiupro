@@ -3,6 +3,7 @@ import { signupPromoFromEnv, signupTrialDays, type CheckoutOffer } from "@/lib/b
 import { planById, PLANS } from "@/lib/plans";
 import {
   checkoutStripeError,
+  findEmailGrant,
   getStripe,
   resolveCheckoutDiscount,
   stripePriceIdForPlan,
@@ -47,16 +48,29 @@ export async function POST(request: Request) {
   }
 
   const typedPromo = body.promoCode?.trim();
-  const autoPromo = offer === "signup" && !typedPromo ? signupPromoFromEnv() : "";
-  const discount = await resolveCheckoutDiscount(typedPromo || autoPromo);
-  if ("error" in discount && discount.error) {
+  const email = body.email?.trim().toLowerCase();
+
+  let discount = await resolveCheckoutDiscount(typedPromo);
+  if (typedPromo && "error" in discount && discount.error) {
     return NextResponse.json({ error: discount.error }, { status: 400 });
+  }
+
+  if (offer === "signup" && !discount.discounts) {
+    const grant = await findEmailGrant(email);
+    if (grant) {
+      discount = { discounts: [{ promotion_code: grant.id }] };
+    }
+  }
+
+  if (offer === "signup" && !discount.discounts) {
+    discount = await resolveCheckoutDiscount(signupPromoFromEnv());
+    if ("error" in discount && discount.error) {
+      discount = { discounts: undefined };
+    }
   }
 
   const trialDays =
     offer === "signup" && !discount.discounts ? signupTrialDays() : 0;
-
-  const email = body.email?.trim().toLowerCase();
   try {
     const session = await stripe.checkout.sessions.create({
       mode: "subscription",

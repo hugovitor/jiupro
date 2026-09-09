@@ -8,10 +8,12 @@ import {
   LayoutGrid,
   LogOut,
   PersonStanding,
+  Shield,
   Users,
 } from "lucide-react";
 import { Wordmark } from "@/components/brand";
 import { Button } from "@/components/ui/button";
+import { isOperatorEmail } from "@/lib/operator";
 import { useStore } from "@/lib/store";
 import { cn } from "@/lib/utils";
 
@@ -123,6 +125,17 @@ export function AcademiaShell({ children }: { children: React.ReactNode }) {
           </div>
         </div>
         <div className="flex items-center gap-3">
+          {isOperatorEmail(user?.email) ? (
+            <Button
+              variant="outline"
+              size="sm"
+              className="hidden border-white/15 text-white/70 hover:bg-white/10 hover:text-white sm:inline-flex"
+              render={<Link href="/operacao" />}
+            >
+              <Shield className="size-3.5" />
+              JiuPro
+            </Button>
+          ) : null}
           <div className="hidden text-right sm:block">
             <p className="text-[13px] font-bold">{user?.name ?? "Conta"}</p>
             <p className="text-[11px] text-white/40">{user?.email}</p>

@@ -44,7 +44,22 @@ export async function POST(request: Request) {
     if (event.type === "checkout.session.completed") {
       const session = event.data.object;
       const planId = asPlanId(session.metadata?.planId);
-      if (planId) await applyPlan(planId, session.metadata?.academyId);
+      const academyId = session.metadata?.academyId;
+      if (academyId) {
+        const db = supabaseAdmin();
+        if (db) {
+          await db
+            .from("academies")
+            .update({
+              ...(planId ? { plan: planId } : {}),
+              stripe_customer_id:
+                typeof session.customer === "string" ? session.customer : null,
+              stripe_subscription_id:
+                typeof session.subscription === "string" ? session.subscription : null,
+            })
+            .eq("id", academyId);
+        }
+      }
     }
     if (
       event.type === "customer.subscription.updated" ||

@@ -78,6 +78,37 @@ async function findCoupon(stripe: Stripe, code: string) {
   );
 }
 
+export async function findEmailGrant(emailRaw?: string) {
+  const stripe = getStripe();
+  const email = emailRaw?.trim().toLowerCase();
+  if (!stripe || !email) return null;
+
+  let startingAfter: string | undefined;
+  for (let i = 0; i < 8; i++) {
+    const page = await stripe.promotionCodes.list({
+      active: true,
+      limit: 100,
+      starting_after: startingAfter,
+    });
+    const hit = page.data.find(
+      (item) => item.metadata?.email?.trim().toLowerCase() === email,
+    );
+    if (hit) return hit;
+    if (!page.has_more) break;
+    startingAfter = page.data.at(-1)?.id;
+  }
+  return null;
+}
+
+export function randomPromoCode() {
+  const alphabet = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
+  let suffix = "";
+  for (let i = 0; i < 8; i++) {
+    suffix += alphabet[Math.floor(Math.random() * alphabet.length)];
+  }
+  return `JP-${suffix}`;
+}
+
 export async function resolveCheckoutDiscount(codeRaw?: string) {
   const stripe = getStripe();
   const code = codeRaw?.trim();

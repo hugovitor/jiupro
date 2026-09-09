@@ -156,6 +156,8 @@ STRIPE_WEBHOOK_SECRET=whsec_…
 
 Cadastro novo entra com **30 dias grátis** (cartão na hora, primeira fatura depois). Para desligar: `NEXT_PUBLIC_STRIPE_TRIAL_DAYS=0`. Para um cupom automático em todo cadastro, sem o cliente digitar: `STRIPE_SIGNUP_PROMO=SEUCODIGO`. Código digitado no cadastro vale no lugar do mês grátis.
 
+O dono do JiuPro gerencia cupons e academias em `/operacao` (e-mail `hugovitormnunes@gmail.com`, ou `JIUPRO_OPERATOR_EMAILS`). Cupom ligado a um e-mail entra sozinho no cadastro dessa pessoa.
+
 `STRIPE_PRICE_*` é opcional. Asaas continua só para mensalidade do aluno.
 
 Asaas e Stripe podem ficar vazios.

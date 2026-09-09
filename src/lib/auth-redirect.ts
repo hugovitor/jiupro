@@ -2,6 +2,7 @@ const OWNER_NEXT = new Set([
   "/academia",
   "/academia/configuracoes",
   "/planos",
+  "/operacao",
 ]);
 
 export function ownerDestination(next: string | null | undefined, role: string) {
