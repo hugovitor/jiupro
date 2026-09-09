@@ -334,3 +334,55 @@ export async function attachLocalAcademy(input: {
   if (pushed.error) return { error: pushed.error, state: pushed.state ?? next };
   return { state: pushed.state ?? next };
 }
+
+export async function requestPasswordReset(email: string) {
+  const client = createSupabaseBrowserClient();
+  if (!client) {
+    return { error: "Não dá para enviar e-mail agora. Fale no WhatsApp do suporte." };
+  }
+  const redirectTo = `${window.location.origin}/atualizar-senha`;
+  const { error } = await client.auth.resetPasswordForEmail(email.trim().toLowerCase(), {
+    redirectTo,
+  });
+  if (error && !/not found|unable to find|user not found/i.test(error.message)) {
+    return { error: error.message };
+  }
+  return { ok: true as const };
+}
+
+export async function establishRecoverySession() {
+  const client = createSupabaseBrowserClient();
+  if (!client) return { error: "Não dá para abrir a recuperação neste navegador." };
+
+  const params = new URLSearchParams(window.location.search);
+  const code = params.get("code");
+  if (code) {
+    const { error } = await client.auth.exchangeCodeForSession(code);
+    if (error) return { error: "Este link expirou ou já foi usado. Peça outro." };
+  }
+
+  const first = await client.auth.getSession();
+  if (first.data.session) {
+    return { email: first.data.session.user.email ?? "" };
+  }
+
+  if (window.location.hash.includes("access_token") || window.location.hash.includes("type=recovery")) {
+    await new Promise((resolve) => window.setTimeout(resolve, 400));
+    const second = await client.auth.getSession();
+    if (second.data.session) {
+      return { email: second.data.session.user.email ?? "" };
+    }
+  }
+
+  return { error: "Este link é inválido ou já foi usado. Peça outro e-mail." };
+}
+
+export async function confirmPasswordReset(password: string) {
+  const client = createSupabaseBrowserClient();
+  if (!client) return { error: "Não dá para salvar a senha agora." };
+  const { data, error } = await client.auth.updateUser({ password });
+  if (error) return { error: error.message };
+  const email = data.user?.email?.trim().toLowerCase() ?? "";
+  await client.auth.signOut();
+  return { ok: true as const, email };
+}

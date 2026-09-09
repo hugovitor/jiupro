@@ -169,7 +169,8 @@ Asaas e Stripe podem ficar vazios.
 3. Cole as duas na Vercel (acima) **ou** em Configurações no app
 4. SQL Editor → no JiuPro, **Copiar SQL** → Run
 5. Authentication → Providers → Email: desligue **Confirm email**
-6. Abra a academia em `/cadastro` (não a demo) → Configurações → **Enviar esta academia**
+6. Authentication → URL Configuration: Site URL `https://jiupro.vercel.app` e Redirect URLs `https://jiupro.vercel.app/atualizar-senha` (e `http://127.0.0.1:43123/atualizar-senha` se for testar local). Sem isso o e-mail de senha esquecida não volta para o app.
+7. Abra a academia em `/cadastro` (não a demo) → Configurações → **Enviar esta academia**
 
 Sem isso, cadastro e painel ficam só no `localStorage`.
 
