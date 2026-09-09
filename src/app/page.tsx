@@ -22,6 +22,7 @@ import {
   SiteFooter,
   SiteHeader,
 } from "@/components/brand";
+import { signupTrialDays, signupTrialLabel } from "@/lib/billing-offer";
 import { brl } from "@/lib/format";
 import { PLANS, planCapacityLabel } from "@/lib/plans";
 
@@ -142,7 +143,11 @@ function Hero() {
           </div>
 
           <div className="mt-10 flex flex-wrap gap-x-7 gap-y-3 text-xs font-medium text-white/45">
-            {["Configuração rápida", "Sem taxa de implantação", "Suporte especializado"].map(
+            {[
+              "Configuração rápida",
+              signupTrialLabel() ?? "Sem taxa de implantação",
+              "Suporte especializado",
+            ].map(
               (item) => (
                 <span key={item} className="flex items-center gap-2">
                   <CheckCircle2 className="h-4 w-4 text-red-500" />
@@ -305,7 +310,11 @@ function PlansSection() {
         <SectionHeading
           eyebrow="Planos e contratação"
           title="Um plano para cada fase da sua academia."
-          description="Sem taxa de implantação. Escolha o plano, cadastre sua equipe e comece a organizar a operação."
+          description={
+            signupTrialDays() > 0
+              ? `${signupTrialLabel()}. Cartão na hora, cobrança do plano depois. Alunos continuam no Pix da casa.`
+              : "Sem taxa de implantação. Escolha o plano, cadastre sua equipe e comece a organizar a operação."
+          }
           dark={false}
           centered
         />
@@ -340,6 +349,11 @@ function PlansSection() {
                   /mês
                 </span>
               </div>
+              {signupTrialLabel() ? (
+                <p className={`mt-2 text-xs font-bold ${plan.popular ? "text-red-400" : "text-red-600"}`}>
+                  {signupTrialLabel()}, depois {brl(plan.price)}/mês
+                </p>
+              ) : null}
               <p
                 className={`mt-5 min-h-12 text-sm leading-6 ${plan.popular ? "text-white/50" : "text-black/50"}`}
               >

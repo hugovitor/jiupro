@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { signupPromoFromEnv, signupTrialDays, type CheckoutOffer } from "@/lib/billing-offer";
 import { planById, PLANS } from "@/lib/plans";
 import {
   checkoutStripeError,
@@ -22,8 +23,10 @@ export async function POST(request: Request) {
     academyName?: string;
     academyId?: string;
     promoCode?: string;
+    offer?: CheckoutOffer;
   };
   const planId = isPlanId(body.planId) ? body.planId : "academia";
+  const offer: CheckoutOffer = body.offer === "signup" ? "signup" : "change";
   const stripe = getStripe();
   const origin = new URL(request.url).origin;
   const plan = planById(planId);
@@ -43,10 +46,15 @@ export async function POST(request: Request) {
     );
   }
 
-  const discount = await resolveCheckoutDiscount(body.promoCode);
+  const typedPromo = body.promoCode?.trim();
+  const autoPromo = offer === "signup" && !typedPromo ? signupPromoFromEnv() : "";
+  const discount = await resolveCheckoutDiscount(typedPromo || autoPromo);
   if ("error" in discount && discount.error) {
     return NextResponse.json({ error: discount.error }, { status: 400 });
   }
+
+  const trialDays =
+    offer === "signup" && !discount.discounts ? signupTrialDays() : 0;
 
   const email = body.email?.trim().toLowerCase();
   try {
@@ -62,16 +70,18 @@ export async function POST(request: Request) {
       billing_address_collection: "required",
       tax_id_collection: { enabled: true },
       phone_number_collection: { enabled: true },
-      payment_method_collection: "if_required",
+      payment_method_collection: trialDays > 0 || !discount.discounts ? "always" : "if_required",
       customer_email: email || undefined,
       metadata: {
         planId,
         email: email ?? "",
         academyName: body.academyName?.trim() ?? "",
         academyId: body.academyId?.trim() ?? "",
+        offer,
       },
       subscription_data: {
         description: `JiuPro ${plan.name}`,
+        ...(trialDays > 0 ? { trial_period_days: trialDays } : {}),
         metadata: {
           planId,
           academyId: body.academyId?.trim() ?? "",

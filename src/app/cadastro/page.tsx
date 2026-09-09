@@ -7,6 +7,7 @@ import { toast } from "sonner";
 import { ArrowRight, LoaderCircle } from "lucide-react";
 import { AuthScreen } from "@/components/auth-screen";
 import { startPlanCheckout } from "@/lib/billing";
+import { signupTrialDays, signupTrialLabel } from "@/lib/billing-offer";
 import { brl } from "@/lib/format";
 import { PLANS, planById, planCapacityLabel } from "@/lib/plans";
 import { useStore } from "@/lib/store";
@@ -30,12 +31,18 @@ function CadastroForm() {
   const [plan, setPlan] = useState<PlanId>(
     PLANS.some((p) => p.id === preset) ? preset : "academia",
   );
+  const trialDays = signupTrialDays();
+  const trialLabel = signupTrialLabel(trialDays);
 
   return (
     <AuthScreen
       kicker="Conta da academia"
       title="Abra a sua academia."
-      subtitle="Cria a sua casa, vazia. Em seguida você assina o JiuPro no cartão."
+      subtitle={
+        trialLabel
+          ? `${trialLabel}. O cartão fica cadastrado; a cobrança do plano começa depois. Alunos no Pix da casa.`
+          : "Cria a sua casa, vazia. Em seguida você assina o JiuPro no cartão."
+      }
       switchHref="/login"
       switchLabel="Já tenho conta"
     >
@@ -77,6 +84,7 @@ function CadastroForm() {
               academyName: academy,
               academyId: result.academyId ?? store.academy.id,
               promoCode,
+              offer: "signup",
             });
             if (pay === "demo") {
               toast.success(`${academy.trim()} aberta. Vamos ao pagamento da assinatura.`);
@@ -202,8 +210,9 @@ function CadastroForm() {
             disabled={busy}
           />
           <p className="text-[11px] leading-5 text-white/30">
-            Use o código promocional do Stripe (modo Ao vivo), não o ID do
-            cupom. Aplicamos antes de abrir o cartão.
+            {trialLabel
+              ? "Opcional. Se preencher, vale o cupom no lugar do mês grátis."
+              : "Opcional. Código promocional do Stripe, modo Ao vivo."}
           </p>
         </div>
         <button

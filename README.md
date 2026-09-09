@@ -154,6 +154,8 @@ STRIPE_WEBHOOK_SECRET=whsec_…
 
 5. Redeploy. Os três planos (R$ 97 / R$ 197 / R$ 347) são criados sozinhos na Stripe na primeira cobrança.
 
+Cadastro novo entra com **30 dias grátis** (cartão na hora, primeira fatura depois). Para desligar: `NEXT_PUBLIC_STRIPE_TRIAL_DAYS=0`. Para um cupom automático em todo cadastro, sem o cliente digitar: `STRIPE_SIGNUP_PROMO=SEUCODIGO`. Código digitado no cadastro vale no lugar do mês grátis.
+
 `STRIPE_PRICE_*` é opcional. Asaas continua só para mensalidade do aluno.
 
 Asaas e Stripe podem ficar vazios.

@@ -19,6 +19,7 @@ import {
 import { DarkCanvas, Eyebrow, SiteFooter, SiteHeader } from "@/components/brand";
 import { brl } from "@/lib/format";
 import { startPlanCheckout } from "@/lib/billing";
+import { signupTrialLabel } from "@/lib/billing-offer";
 import { PLANS, planCapacityLabel } from "@/lib/plans";
 import { useStore } from "@/lib/store";
 import type { PlanId } from "@/lib/types";
@@ -101,12 +102,16 @@ export default function PlanosPage() {
         </h1>
 
         <p className="mx-auto mt-7 max-w-2xl text-sm leading-7 text-white/45 sm:text-base">
-          Uma assinatura por academia, cobrada mensalmente no cartão. Seus alunos continuam pagando as mensalidades diretamente para você.
+          Uma assinatura por academia, cobrada mensalmente no cartão.
+          {signupTrialLabel()
+            ? ` ${signupTrialLabel()} para casa nova.`
+            : null}{" "}
+          Seus alunos continuam pagando as mensalidades diretamente para você.
         </p>
 
         <div className="mt-9 flex flex-wrap items-center justify-center gap-x-7 gap-y-3 text-xs font-medium text-white/40">
           {[
-            "Sem taxa de implantação",
+            signupTrialLabel() ?? "Sem taxa de implantação",
             "Alteração de plano quando precisar",
             "Pagamento seguro",
           ].map((benefit) => (

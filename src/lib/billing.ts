@@ -9,6 +9,7 @@ export async function startPlanCheckout(
     academyName?: string;
     academyId?: string;
     promoCode?: string;
+    offer?: "signup" | "change";
   },
 ) {
   const res = await fetch("/api/stripe/checkout", {
