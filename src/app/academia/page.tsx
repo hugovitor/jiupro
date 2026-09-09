@@ -83,10 +83,10 @@ export default function AcademiaDashboard() {
     <div className="mx-auto max-w-6xl">
       <div className="flex flex-col gap-4 pb-2 sm:flex-row sm:items-end sm:justify-between">
         <div>
-          <p className="text-[12px] text-muted-foreground">
+          <p className="text-[11px] font-black tracking-[0.2em] text-red-500 uppercase">
             {weekdayFull(weekdayToday())} · {monthLabel(month)}
           </p>
-          <h1 className="mt-1 text-[22px] font-medium">Início</h1>
+          <h1 className="mt-2 text-3xl font-black tracking-[-0.04em]">Início</h1>
           {store.isDemo ? (
             <p className="mt-2 text-sm text-muted-foreground">
               Equipe Origem (demonstração).{" "}
@@ -130,8 +130,8 @@ export default function AcademiaDashboard() {
       <div className="mt-8 grid gap-4 lg:grid-cols-[minmax(0,1.1fr)_minmax(0,0.9fr)]">
         <section className="surface p-5">
           <div className="flex items-end justify-between gap-4">
-            <h2 className="text-[14px] font-medium">Próximas aulas</h2>
-            <Link href="/academia/presenca" className="text-xs text-muted-foreground hover:text-foreground">
+            <h2 className="text-sm font-black tracking-tight">Próximas aulas</h2>
+            <Link href="/academia/presenca" className="text-xs font-bold text-red-500 hover:text-red-400">
               Fazer chamada
             </Link>
           </div>
@@ -181,9 +181,9 @@ export default function AcademiaDashboard() {
                         ) : null}
                       </p>
                     </div>
-                    <div className="mt-2 h-1 overflow-hidden bg-muted">
+                    <div className="mt-2 h-1 overflow-hidden rounded-full bg-white/10">
                       <div
-                        className="h-full bg-primary"
+                        className="h-full rounded-full bg-red-600"
                         style={{ width: `${pct}%` }}
                       />
                     </div>
@@ -193,12 +193,12 @@ export default function AcademiaDashboard() {
             </ul>
           )}
           {live ? (
-            <div className="mt-6 flex items-center justify-between border border-border px-4 py-4">
+            <div className="mt-6 flex items-center justify-between rounded-xl border border-red-500/30 bg-red-500/10 px-4 py-4">
               <div>
-                <p className="text-[11px] tracking-[0.16em] text-muted-foreground uppercase">
+                <p className="text-[11px] font-black tracking-[0.16em] text-red-400 uppercase">
                   Aceite · {live.name}
                 </p>
-                <p className="mt-1 text-[18px] font-medium">
+                <p className="mt-1 text-[18px] font-black">
                   {waitingNow === 0
                     ? "Ninguém aguardando"
                     : waitingNow === 1
@@ -214,7 +214,7 @@ export default function AcademiaDashboard() {
               </Button>
             </div>
           ) : (
-            <div className="mt-6 flex items-center justify-between border border-border px-4 py-4">
+            <div className="mt-6 flex items-center justify-between rounded-xl border border-white/10 px-4 py-4">
               <p className="text-sm text-muted-foreground">Sem turma hoje.</p>
               <Button size="sm" variant="outline" render={<Link href="/academia/presenca" />}>
                 Chamada
@@ -236,7 +236,7 @@ export default function AcademiaDashboard() {
 
         <section className="surface p-5">
           <div className="flex items-end justify-between gap-4">
-            <h2 className="text-[14px] font-medium">Pararam de aparecer</h2>
+            <h2 className="text-sm font-black tracking-tight">Pararam de aparecer</h2>
             <p className="text-xs text-muted-foreground">
               {brl(revenue)} no mês · despesas {brl(expenses)}
             </p>
@@ -387,16 +387,20 @@ function StatCard({
   warn?: boolean;
 }) {
   return (
-    <div className="surface flex items-start gap-3 p-4">
-      <span className="flex size-9 items-center justify-center bg-muted text-muted-foreground">
+    <div
+      className={`surface flex items-start gap-3 p-4 ${warn ? "border-red-500/35 bg-red-500/10" : ""}`}
+    >
+      <span
+        className={`flex size-10 items-center justify-center rounded-xl ${warn ? "bg-red-600 text-white" : "bg-white/5 text-white/50"}`}
+      >
         <Icon className="size-4" />
       </span>
       <div className="min-w-0">
-        <p className="text-[11px] tracking-wide text-muted-foreground uppercase">{k}</p>
-        <p className={`mt-1 text-2xl font-semibold tabular-nums ${warn ? "text-destructive" : ""}`}>
+        <p className="text-[10px] font-black tracking-[0.16em] text-white/40 uppercase">{k}</p>
+        <p className={`mt-1 text-2xl font-black tabular-nums ${warn ? "text-red-400" : ""}`}>
           {v}
         </p>
-        {hint ? <p className="mt-0.5 text-[11px] text-muted-foreground">{hint}</p> : null}
+        {hint ? <p className="mt-0.5 text-[11px] text-white/40">{hint}</p> : null}
       </div>
     </div>
   );
@@ -414,8 +418,8 @@ function BoardCol({
   return (
     <section className="surface p-5">
       <div className="flex items-end justify-between">
-        <h2 className="text-[14px] font-medium">{title}</h2>
-        <Link href={href} className="text-xs text-muted-foreground hover:text-foreground">
+        <h2 className="text-sm font-black tracking-tight">{title}</h2>
+        <Link href={href} className="text-xs font-bold text-red-500 hover:text-red-400">
           Ver
         </Link>
       </div>

@@ -57,8 +57,10 @@ export default function AlunoHome() {
     <div className="space-y-6">
       <div className="flex items-center justify-between pb-1">
         <div>
-          <p className="text-sm text-muted-foreground">{weekdayFull(weekdayToday())}</p>
-          <h1 className="text-2xl font-semibold tracking-tight">
+          <p className="text-[10px] font-black tracking-[0.18em] text-red-500 uppercase">
+            {weekdayFull(weekdayToday())}
+          </p>
+          <h1 className="mt-2 text-3xl font-black tracking-[-0.04em]">
             {student?.name.split(" ")[0] ?? "aluno"}
           </h1>
         </div>
@@ -66,7 +68,7 @@ export default function AlunoHome() {
       </div>
 
       <section className="surface p-4">
-        <p className="text-[11px] tracking-[0.16em] text-muted-foreground uppercase">
+        <p className="text-[11px] font-black tracking-[0.16em] text-red-500 uppercase">
           Próxima aula
         </p>
         {classes.length === 0 && (
@@ -231,37 +233,39 @@ function FeaturedClass({
 
   return (
     <div className="mt-3">
-      <p className="font-mono text-[32px] leading-none tracking-tight">{session.startTime}</p>
-      <p className="mt-2 text-sm">
+      <p className="font-mono text-[40px] leading-none font-black tracking-[-0.06em]">
+        {session.startTime}
+      </p>
+      <p className="mt-2 text-sm font-bold">
         {session.name} · {session.gi ? "Gi" : "No-Gi"} · {session.durationMin} min
       </p>
-      <p className="mt-1 text-[12px] text-muted-foreground">
+      <p className="mt-1 text-[12px] text-white/40">
         {phaseLabel(phase)} · {hint}
       </p>
       {validated ? (
-        <div className="mt-4 border border-border bg-muted px-3 py-3 text-sm">
+        <div className="mt-4 rounded-xl border border-emerald-500/30 bg-emerald-500/10 px-3 py-3 text-sm">
           Presença validada pelo professor.
         </div>
       ) : pending ? (
-        <div className="mt-4 space-y-2 border border-border bg-muted px-3 py-3">
+        <div className="mt-4 space-y-2 rounded-xl border border-white/10 bg-white/[0.04] px-3 py-3">
           <p className="text-sm">Você confirmou. Esperando o aceite no tatame.</p>
           <Button size="sm" variant="ghost" onClick={onCancel}>
             Desistir desta aula
           </Button>
         </div>
       ) : full ? (
-        <p className="mt-4 border border-border bg-muted px-3 py-3 text-sm text-muted-foreground">
+        <p className="mt-4 rounded-xl border border-white/10 bg-white/[0.04] px-3 py-3 text-sm text-white/45">
           Turma lotada. Fale com o professor na recepção.
         </p>
       ) : canCheck ? (
         <>
-          <Button className="mt-4 h-12 w-full text-base" size="lg" onClick={onConfirm}>
+          <Button className="mt-4 h-12 w-full rounded-xl text-base font-black" size="lg" onClick={onConfirm}>
             Confirmar que vou
           </Button>
-          <p className="mt-2 text-center text-xs text-muted-foreground">{lockHint}</p>
+          <p className="mt-2 text-center text-xs text-white/40">{lockHint}</p>
         </>
       ) : (
-        <p className="mt-4 border border-border bg-muted px-3 py-3 text-sm text-muted-foreground">
+        <p className="mt-4 rounded-xl border border-white/10 bg-white/[0.04] px-3 py-3 text-sm text-white/45">
           {lockHint}
         </p>
       )}
@@ -293,9 +297,12 @@ function Classmates({
           Seja o primeiro. Os colegas vão ver o seu nome aqui.
         </p>
       ) : (
-        <ul className="mt-3 divide-y divide-border overflow-hidden border border-border">
+        <ul className="mt-3 space-y-2">
           {people.map(({ student, row }) => (
-            <li key={student.id} className="flex items-center gap-3 px-3 py-2">
+            <li
+              key={student.id}
+              className="flex items-center gap-3 rounded-xl border border-white/10 bg-white/[0.03] px-3 py-2"
+            >
               <PersonAvatar name={student.name} hue={student.avatarHue} size="sm" />
               <div className="min-w-0 flex-1">
                 <p className="truncate text-sm font-medium">

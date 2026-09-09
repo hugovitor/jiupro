@@ -51,38 +51,38 @@
 }
 
 :root {
-  --background: #f3f2f1;
-  --foreground: #201f1e;
-  --card: #ffffff;
-  --card-foreground: #201f1e;
-  --popover: #ffffff;
-  --popover-foreground: #201f1e;
-  --primary: #c41e3a;
+  --background: #080808;
+  --foreground: #f5f5f5;
+  --card: #111111;
+  --card-foreground: #f5f5f5;
+  --popover: #141414;
+  --popover-foreground: #f5f5f5;
+  --primary: #dc2626;
   --primary-foreground: #ffffff;
-  --secondary: #edebe9;
-  --secondary-foreground: #201f1e;
-  --muted: #edebe9;
-  --muted-foreground: #605e5c;
-  --accent: #edebe9;
-  --accent-foreground: #201f1e;
-  --destructive: #a4262c;
-  --border: #e1dfdd;
-  --input: #e1dfdd;
-  --ring: #c41e3a;
-  --chart-1: #c41e3a;
-  --chart-2: #201f1e;
-  --chart-3: #8a8886;
-  --chart-4: #5c2e2e;
-  --chart-5: #a4262c;
+  --secondary: #191919;
+  --secondary-foreground: #f5f5f5;
+  --muted: #191919;
+  --muted-foreground: rgba(255, 255, 255, 0.45);
+  --accent: #191919;
+  --accent-foreground: #f5f5f5;
+  --destructive: #f87171;
+  --border: rgba(255, 255, 255, 0.1);
+  --input: rgba(255, 255, 255, 0.12);
+  --ring: #dc2626;
+  --chart-1: #dc2626;
+  --chart-2: #f5f5f5;
+  --chart-3: rgba(255, 255, 255, 0.35);
+  --chart-4: #7f1d1d;
+  --chart-5: #ef4444;
   --radius: 12px;
-  --sidebar: #ffffff;
-  --sidebar-foreground: #201f1e;
-  --sidebar-primary: #c41e3a;
+  --sidebar: #0b0b0b;
+  --sidebar-foreground: #f5f5f5;
+  --sidebar-primary: #dc2626;
   --sidebar-primary-foreground: #ffffff;
-  --sidebar-accent: #f3f2f1;
-  --sidebar-accent-foreground: #201f1e;
-  --sidebar-border: #e1dfdd;
-  --sidebar-ring: #c41e3a;
+  --sidebar-accent: #191919;
+  --sidebar-accent-foreground: #f5f5f5;
+  --sidebar-border: rgba(255, 255, 255, 0.1);
+  --sidebar-ring: #dc2626;
 }
 
 @layer base {
@@ -104,14 +104,14 @@
 
 .font-display,
 .font-heading {
-  font-family: var(--font-body), "Segoe UI", system-ui, sans-serif;
-  letter-spacing: -0.02em;
-  font-weight: 600;
+  font-family: var(--font-body), system-ui, sans-serif;
+  letter-spacing: -0.04em;
+  font-weight: 900;
 }
 
 .surface {
-  border: 1px solid var(--border);
-  background: #fff;
+  border: 1px solid rgb(255 255 255 / 0.1);
+  background: rgb(255 255 255 / 0.03);
   border-radius: 16px;
 }
 

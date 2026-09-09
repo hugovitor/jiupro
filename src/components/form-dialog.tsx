@@ -18,16 +18,16 @@ export function FormDialog({
     <div className="fixed inset-0 z-[80] flex items-center justify-center p-4">
       <button
         type="button"
-        className="absolute inset-0 bg-black/50"
+        className="absolute inset-0 bg-black/70 backdrop-blur-sm"
         aria-label="Fechar"
         onClick={onClose}
       />
       <div
         role="dialog"
         aria-modal="true"
-        className={`relative z-10 w-full bg-popover p-4 text-sm text-popover-foreground shadow-lg ring-1 ring-foreground/10 ${className ?? "max-w-sm"}`}
+        className={`relative z-10 w-full rounded-2xl border border-white/10 bg-popover p-5 text-sm text-popover-foreground shadow-[0_30px_80px_rgba(0,0,0,.55)] ${className ?? "max-w-sm"}`}
       >
-        <h2 className="font-heading text-base font-medium">{title}</h2>
+        <h2 className="font-heading text-base">{title}</h2>
         <div className="mt-3">{children}</div>
       </div>
     </div>

@@ -22,9 +22,10 @@ export function AlunoShell({ children }: { children: React.ReactNode }) {
   const student = currentStudent(store);
 
   return (
-    <div className="flex min-h-screen justify-center bg-[#080808]">
-      <div className="flex min-h-screen w-full max-w-md flex-col border-x border-white/10 bg-white">
-        <header className="sticky top-0 z-30 flex h-16 items-center gap-3 border-b border-white/10 bg-[#080808] px-4 text-white">
+    <div className="flex min-h-screen justify-center bg-[#070707] text-white selection:bg-red-600 selection:text-white">
+      <div className="relative flex min-h-screen w-full max-w-md flex-col border-x border-white/10 bg-[#080808]">
+        <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_50%_0%,rgba(220,38,38,0.14),transparent_36%)]" />
+        <header className="sticky top-0 z-30 flex h-16 items-center gap-3 border-b border-white/10 bg-[#080808]/90 px-4 backdrop-blur-xl">
           <Wordmark href={null} kicker={false} />
           <div className="min-w-0 flex-1 text-right">
             <p className="truncate text-[11px] text-white/40">{store.academy.name}</p>
@@ -44,8 +45,8 @@ export function AlunoShell({ children }: { children: React.ReactNode }) {
             <LogOut className="size-4" />
           </button>
         </header>
-        <main className="flex-1 p-4 pb-20">{children}</main>
-        <nav className="fixed bottom-0 left-1/2 z-20 w-full max-w-md -translate-x-1/2 border-t border-border bg-white pb-[max(0.25rem,env(safe-area-inset-bottom))]">
+        <main className="relative flex-1 p-4 pb-20">{children}</main>
+        <nav className="fixed bottom-0 left-1/2 z-20 w-full max-w-md -translate-x-1/2 border-t border-white/10 bg-[#080808]/95 pb-[max(0.25rem,env(safe-area-inset-bottom))] backdrop-blur-xl">
           <div className="flex">
             {NAV.map((item) => {
               const active =
@@ -58,7 +59,7 @@ export function AlunoShell({ children }: { children: React.ReactNode }) {
                   href={item.href}
                   className={cn(
                     "flex flex-1 flex-col items-center gap-1 py-2 text-[10px]",
-                    active ? "font-bold text-red-600" : "text-muted-foreground",
+                    active ? "font-bold text-red-500" : "text-white/35",
                   )}
                 >
                   <item.icon className="size-4" />

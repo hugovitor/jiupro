@@ -130,10 +130,10 @@ export default function PresencaPage() {
     <div className="mx-auto max-w-5xl space-y-6">
       <div className="flex flex-col gap-3 border-b border-border pb-5 sm:flex-row sm:items-end sm:justify-between">
         <div>
-          <p className="text-[12px] text-muted-foreground">
+          <p className="text-[11px] font-black tracking-[0.2em] text-red-500 uppercase">
             {clockLabel(now)} · São Paulo
           </p>
-          <h1 className="mt-1 text-[22px] font-medium">Presença</h1>
+          <h1 className="mt-2 text-3xl font-black tracking-[-0.04em]">Presença</h1>
           <p className="mt-1 max-w-xl text-sm text-muted-foreground">
             O aluno confirma no celular. Você aceita quem treinou e marca quem
             confirmou e não veio — sem código no quadro.

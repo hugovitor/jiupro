@@ -20,7 +20,7 @@ export function BeltStrip({
   return (
     <span
       className={cn(
-        "relative inline-flex h-3.5 w-[4.5rem] overflow-hidden shadow-[inset_0_1px_0_rgba(255,255,255,0.18)]",
+        "relative inline-flex h-3.5 w-[4.5rem] overflow-hidden rounded-sm shadow-[inset_0_1px_0_rgba(255,255,255,0.18)]",
         light && "ring-1 ring-black/25",
         className,
       )}
@@ -78,7 +78,7 @@ export function BeltBadge({
   return (
     <span
       className={cn(
-        "inline-flex items-center gap-2 border border-border bg-secondary/80 py-0.5 pr-2.5 pl-1.5 text-xs",
+        "inline-flex items-center gap-2 rounded-xl border border-white/10 bg-white/[0.04] py-0.5 pr-2.5 pl-1.5 text-xs",
         className,
       )}
     >
@@ -113,7 +113,7 @@ export function PersonAvatar({
   return (
     <span
       className={cn(
-        "inline-flex shrink-0 items-center justify-center font-display font-medium text-white",
+        "inline-flex shrink-0 items-center justify-center rounded-xl font-display font-medium text-white",
         dim,
       )}
       style={{ background: `hsl(${hue} 10% 18%)` }}
