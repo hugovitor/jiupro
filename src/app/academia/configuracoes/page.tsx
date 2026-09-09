@@ -9,6 +9,8 @@ import { FirstLoginHint } from "@/components/first-login-guide";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { PRODUCT_NAME } from "@/lib/brand";
+import { downloadJson } from "@/lib/lgpd";
 import { startPlanCheckout } from "@/lib/billing";
 import { brl } from "@/lib/format";
 import { PLANS, planById } from "@/lib/plans";
@@ -55,7 +57,7 @@ function ConfigInner() {
       <div>
         <h1 className="font-display text-3xl">Configurações</h1>
         <p className="mt-1 text-sm text-muted-foreground">
-          Dados da casa, Pix dos alunos e plano do JiuPro.
+          Dados da casa, Pix dos alunos e plano do {PRODUCT_NAME}.
         </p>
       </div>
 
@@ -128,7 +130,7 @@ function ConfigInner() {
       <PixForm />
 
       <section className="border border-border bg-card p-5">
-        <h2 className="font-medium">Plano JiuPro · {plan.name}</h2>
+        <h2 className="font-medium">Plano {PRODUCT_NAME} · {plan.name}</h2>
         <p className="mt-1 text-sm text-muted-foreground">
           {brl(plan.price)}/mês · {plan.students} alunos. Cole o código
           promocional abaixo e clique no plano — o desconto já vai no Stripe.
@@ -158,13 +160,72 @@ function ConfigInner() {
 
       <DropInFeeForm />
 
+      {!store.isDemo ? (
+        <section className="surface p-5 text-sm">
+          <p className="text-[10px] font-black tracking-[0.18em] text-red-500 uppercase">LGPD</p>
+          <h2 className="mt-2 text-lg font-black tracking-tight">Dados da casa</h2>
+          <p className="mt-2 text-muted-foreground">
+            A academia é a controladora da ficha dos alunos. Exporte a cópia ou peça exclusão no
+            servidor.
+          </p>
+          <div className="mt-4 flex flex-wrap gap-2">
+            <Button
+              size="sm"
+              variant="outline"
+              onClick={() => {
+                downloadJson(
+                  `ponteira-${store.academy.slug}-dados.json`,
+                  store.exportAcademyData(),
+                );
+                toast.success("Arquivo baixado. Guarde com cuidado — tem CPF e WhatsApp.");
+              }}
+            >
+              Exportar dados
+            </Button>
+            <Button
+              size="sm"
+              variant="outline"
+              render={
+                <a
+                  href={supportWhatsAppHref(
+                    `Olá. Sou o responsável pela academia ${store.academy.name} no ${PRODUCT_NAME}. Quero exercer o direito de exclusão (LGPD): apagar a conta e as fichas no servidor.`,
+                  )}
+                  target="_blank"
+                  rel="noreferrer"
+                />
+              }
+            >
+              Pedir exclusão no servidor
+            </Button>
+            <Button
+              size="sm"
+              variant="destructive"
+              onClick={() => {
+                if (
+                  !window.confirm(
+                    "Apaga a academia neste aparelho e sai. A cópia no servidor só some depois do pedido no WhatsApp.",
+                  )
+                ) {
+                  return;
+                }
+                store.eraseAcademyLocally();
+                toast.message("Dados locais apagados.");
+                window.location.href = "/";
+              }}
+            >
+              Apagar neste aparelho
+            </Button>
+          </div>
+        </section>
+      ) : null}
+
       <section className="border border-border bg-card p-5 text-sm">
-        <h2 className="font-medium">Suporte JiuPro</h2>
+        <h2 className="font-medium">Suporte {PRODUCT_NAME}</h2>
         <p className="mt-2 text-muted-foreground">
-          Plano, cupom, cadastro ou acesso: fale no WhatsApp{" "}
+          Plano, cupom, cadastro, acesso ou LGPD: fale no WhatsApp{" "}
           <a
             className="font-bold text-red-500 hover:text-red-400"
-            href={supportWhatsAppHref("Olá, sou dono de academia no JiuPro.")}
+            href={supportWhatsAppHref(`Olá, sou dono de academia no ${PRODUCT_NAME}.`)}
             target="_blank"
             rel="noreferrer"
           >

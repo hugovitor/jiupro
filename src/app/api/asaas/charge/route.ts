@@ -82,7 +82,7 @@ export async function POST(req: Request) {
       customer: customerId,
       value: Math.round(amount * 100) / 100,
       dueDate: dueDate(),
-      description: `Mensalidade ${month ? monthLabel(month) : ""} — ${student.name} — ${body.academyName ?? "JiuPro"}`.trim(),
+      description: `Mensalidade ${month ? monthLabel(month) : ""} — ${student.name} — ${body.academyName ?? "Ponteira"}`.trim(),
       externalReference: paymentId,
     });
     const pix = await client.pixQrCode(charge.id);

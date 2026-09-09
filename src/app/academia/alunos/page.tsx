@@ -168,6 +168,7 @@ function NovoAluno() {
     name: "",
     email: "",
     phone: "",
+    guardianName: "",
     division: "adult" as Student["division"],
     belt: "white",
     monthlyFee: "180",
@@ -198,10 +199,15 @@ function NovoAluno() {
               toast.error("Nome é obrigatório.");
               return;
             }
+            if (form.division === "kids" && !form.guardianName.trim()) {
+              toast.error("No kids, informe o responsável (LGPD, art. 14).");
+              return;
+            }
             store.addStudent({
               name: form.name.trim(),
               email: form.email,
               phone: form.phone,
+              guardianName: form.guardianName.trim() || undefined,
               birthDate: "2000-01-01",
               division: form.division,
               belt: form.belt as Student["belt"],
@@ -219,6 +225,7 @@ function NovoAluno() {
               name: "",
               email: "",
               phone: "",
+              guardianName: "",
               division: "adult",
               belt: "white",
               monthlyFee: "180",
@@ -282,13 +289,29 @@ function NovoAluno() {
               </select>
             </div>
           </div>
+          {form.division === "kids" ? (
+            <div className="space-y-1.5">
+              <Label>Responsável</Label>
+              <Input
+                value={form.guardianName}
+                onChange={(e) => setForm({ ...form, guardianName: e.target.value })}
+                placeholder="Nome de quem autoriza o cadastro"
+              />
+              <p className="text-[11px] text-muted-foreground">
+                Dado de menor só com consentimento do responsável.
+              </p>
+            </div>
+          ) : null}
           <div className="space-y-1.5">
-            <Label>CPF</Label>
+            <Label>CPF do pagador</Label>
             <Input
               value={formatCpf(form.cpf)}
               onChange={(e) => setForm({ ...form, cpf: e.target.value })}
               placeholder="000.000.000-00"
             />
+            <p className="text-[11px] text-muted-foreground">
+              Opcional. No kids, use o CPF do responsável, não o da criança.
+            </p>
           </div>
           <div className="space-y-1.5">
             <Label>Mensalidade (R$)</Label>

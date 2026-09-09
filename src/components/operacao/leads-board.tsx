@@ -188,7 +188,7 @@ export function OperatorLeadsBoard({ email }: { email?: string | null }) {
           <p className="text-sm text-white/70">{authError}</p>
           <p className="mt-2 text-sm text-white/40">
             A planilha usa a conta online. Digite a senha de {email || "operação"} — a mesma
-            que você usa no JiuPro.
+            que você usa no Ponteira.
           </p>
           <div className="mt-4 max-w-sm space-y-1.5">
             <Label>Senha</Label>

@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { PRODUCT_MARK, PRODUCT_NAME } from "@/lib/brand";
 import { BeltMark } from "./belt-mark";
 import { SUPPORT_PHONE_DISPLAY, supportWhatsAppHref } from "@/lib/support";
 
@@ -20,7 +21,7 @@ export function SiteFooter({
         <div className="flex flex-col justify-between gap-6 sm:flex-row sm:items-center">
           <div className="flex items-center gap-3">
             <BeltMark />
-            <span className="text-lg font-black">JIUPRO</span>
+            <span className="text-lg font-black">{PRODUCT_MARK}</span>
           </div>
           <div className="flex flex-wrap gap-6 text-xs text-white/40">
             {links.map((link) => (
@@ -32,7 +33,7 @@ export function SiteFooter({
         </div>
         <div className="h-px bg-white/10" />
         <div className="flex flex-col gap-2 text-[11px] text-white/30 sm:flex-row sm:items-center sm:justify-between">
-          <span>© 2026 JiuPro. Gestão para academias de Jiu-Jitsu.</span>
+          <span>© 2026 {PRODUCT_NAME}. Gestão para academias de Jiu-Jitsu.</span>
           <a
             href={supportWhatsAppHref()}
             target="_blank"

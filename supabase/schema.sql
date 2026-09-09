@@ -1,4 +1,4 @@
--- JiuPro — schema multi-tenant para academias de Jiu-Jitsu
+-- Ponteira — schema multi-tenant para academias de Jiu-Jitsu
 -- Rode no SQL Editor do Supabase. RLS isolada por academia.
 
 create extension if not exists "pgcrypto";
@@ -439,7 +439,7 @@ alter table public.attendance add column if not exists status text not null defa
 alter table public.attendance add column if not exists validated_at timestamptz;
 alter table public.attendance add column if not exists validated_by uuid;
 
--- Planilha de vendas do dono do JiuPro (painel /operacao). Sem policy: só service role.
+-- Planilha de vendas do dono da Ponteira (painel /operacao). Sem policy: só service role.
 create table if not exists public.operator_leads (
   id uuid primary key default gen_random_uuid(),
   academy_name text not null,

@@ -179,7 +179,7 @@ export function SupabaseConnect() {
       <h2 className="font-medium">Nuvem · obrigatório em produção</h2>
       <p className="mt-1 text-sm text-muted-foreground">
         Sem o projeto, a academia fica só neste navegador. Um projeto novo no
-        Supabase não tem tabela nenhuma — isso é esperado. O JiuPro cria as
+        Supabase não tem tabela nenhuma — isso é esperado. O Ponteira cria as
         tabelas, o Auth e o isolamento por academia. A chave pública é a{" "}
         <strong className="font-medium text-foreground">anon</strong>; nunca
         cole a service role neste formulário.
@@ -323,7 +323,7 @@ export function SupabaseConnect() {
               value={sql}
               readOnly
               className="min-h-48 font-mono text-xs"
-              aria-label="Schema SQL do JiuPro"
+              aria-label="Schema SQL do Ponteira"
             />
           ) : needsSchema ? (
             <p className="text-sm text-muted-foreground">

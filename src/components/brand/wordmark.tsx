@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { PRODUCT_MARK, PRODUCT_NAME, PRODUCT_TAGLINE } from "@/lib/brand";
 import { cn } from "@/lib/utils";
 import { BeltMark } from "./belt-mark";
 
@@ -23,7 +24,7 @@ export function Wordmark({
             inverted ? "text-white" : "text-[#111]",
           )}
         >
-          JIUPRO
+          {PRODUCT_MARK}
         </span>
         {kicker ? (
           <span
@@ -32,7 +33,7 @@ export function Wordmark({
               inverted ? "text-white/40" : "text-black/40",
             )}
           >
-            Gestão no tatame
+            {PRODUCT_TAGLINE}
           </span>
         ) : null}
       </span>
@@ -42,7 +43,7 @@ export function Wordmark({
   if (!href) return mark;
 
   return (
-    <Link href={href} className="group shrink-0" aria-label="JiuPro">
+    <Link href={href} className="group shrink-0" aria-label={PRODUCT_NAME}>
       {mark}
     </Link>
   );

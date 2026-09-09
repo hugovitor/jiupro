@@ -4,6 +4,7 @@ import { Toaster } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { Providers } from "@/components/providers";
 import { metadataBaseUrl, shouldIndexSite } from "@/lib/app-url";
+import { productTitle, PRODUCT_NAME } from "@/lib/brand";
 import "./globals.css";
 
 const inter = Inter({
@@ -20,20 +21,20 @@ const plexMono = IBM_Plex_Mono({
 export const metadata: Metadata = {
   metadataBase: metadataBaseUrl(),
   title: {
-    default: "JiuPro — sistema de gestão para academias de Jiu-Jitsu",
-    template: "%s · JiuPro",
+    default: productTitle(),
+    template: `%s · ${PRODUCT_NAME}`,
   },
   description:
     "Operação da academia: alunos, mensalidades, presença, faixas e estoque. Cada casa, uma conta isolada.",
-  applicationName: "JiuPro",
+  applicationName: PRODUCT_NAME,
   appleWebApp: {
     capable: true,
     statusBarStyle: "default",
-    title: "JiuPro",
+    title: PRODUCT_NAME,
   },
   formatDetection: { telephone: false },
   openGraph: {
-    title: "JiuPro — sistema de gestão para academias de Jiu-Jitsu",
+    title: productTitle(),
     description:
       "Operação da academia: alunos, Pix, faixas e presença. Cada casa, uma conta.",
     locale: "pt_BR",

@@ -31,6 +31,7 @@ import {
   activeState,
   checkPassword,
   emailTaken,
+  eraseAcademy,
   findAcademyByJoinCode,
   findUserAcrossAcademies,
   hasLocalPassword,
@@ -43,6 +44,7 @@ import {
   writeActive,
 } from "./vault";
 import { attendanceStatus, classHeadcount, isOnRoster, isValidated, studentCanSelfCheckIn } from "./attendance";
+import { academyPortability } from "./lgpd";
 import type {
   AcademyEvent,
   AppState,
@@ -123,6 +125,9 @@ type Store = AppState & {
   overdueFor: (studentId: string) => Payment[];
   todayClasses: () => AppState["classes"];
   updateAcademy: (patch: Partial<AppState["academy"]>) => void;
+  exportAcademyData: () => Record<string, unknown>;
+  eraseAcademyLocally: () => void;
+  removeStudent: (id: string) => void;
   addClass: (input: Omit<ClassSession, "id" | "academyId">) => void;
   removeClass: (id: string) => void;
   addEvaluation: (input: Omit<Evaluation, "id" | "academyId">) => void;
@@ -1006,6 +1011,32 @@ export function StoreProvider({ children }: { children: ReactNode }) {
     }));
   }, []);
 
+  const exportAcademyData: Store["exportAcademyData"] = useCallback(() => {
+    return academyPortability(getSnapshot());
+  }, []);
+
+  const eraseAcademyLocally: Store["eraseAcademyLocally"] = useCallback(() => {
+    const prev = getSnapshot();
+    if (prev.academy.id === DEMO_ACADEMY_ID) {
+      write(resetDemoAcademy());
+      return;
+    }
+    write(eraseAcademy(prev.academy.id));
+    void createSupabaseBrowserClient()?.auth.signOut();
+  }, []);
+
+  const removeStudent: Store["removeStudent"] = useCallback((id) => {
+    commit((prev) => ({
+      ...prev,
+      students: prev.students.filter((s) => s.id !== id),
+      payments: prev.payments.filter((p) => p.studentId !== id),
+      attendance: prev.attendance.filter((a) => a.studentId !== id),
+      graduations: prev.graduations.filter((g) => g.studentId !== id),
+      evaluations: prev.evaluations.filter((e) => e.studentId !== id),
+      sales: (prev.sales ?? []).filter((s) => s.studentId !== id),
+    }));
+  }, []);
+
   const addClass: Store["addClass"] = useCallback((input) => {
     commit((prev) => ({
       ...prev,
@@ -1274,6 +1305,9 @@ export function StoreProvider({ children }: { children: ReactNode }) {
       overdueFor,
       todayClasses,
       updateAcademy,
+      exportAcademyData,
+      eraseAcademyLocally,
+      removeStudent,
       addClass,
       removeClass,
       addEvaluation,
@@ -1321,6 +1355,9 @@ export function StoreProvider({ children }: { children: ReactNode }) {
       overdueFor,
       todayClasses,
       updateAcademy,
+      exportAcademyData,
+      eraseAcademyLocally,
+      removeStudent,
       addClass,
       removeClass,
       addEvaluation,

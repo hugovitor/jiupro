@@ -7,6 +7,7 @@ export function operatorEmails() {
   const extra = [
     process.env.JIUPRO_OPERATOR_EMAILS,
     process.env.NEXT_PUBLIC_JIUPRO_OPERATOR_EMAILS,
+    process.env.PONTEIRA_OPERATOR_EMAILS,
   ]
     .flatMap((value) => (value ?? "").split(","))
     .map((value) => value.trim().toLowerCase())
@@ -75,8 +76,8 @@ export async function requireOperator(request: Request) {
   if (!user || !email || !isOperatorEmail(email)) {
     return {
       error: user
-        ? "Sem acesso ao painel do JiuPro."
-        : "Entre de novo com a conta do JiuPro.",
+        ? "Sem acesso ao painel do Ponteira."
+        : "Entre de novo com a conta do Ponteira.",
       status: user ? (403 as const) : (401 as const),
     };
   }

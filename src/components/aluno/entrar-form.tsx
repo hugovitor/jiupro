@@ -6,6 +6,7 @@ import { useEffect, useState } from "react";
 import { toast } from "sonner";
 import { ArrowRight, LoaderCircle } from "lucide-react";
 import { AuthScreen } from "@/components/auth-screen";
+import { LgpdConsent } from "@/components/lgpd-consent";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -58,6 +59,7 @@ export function EntrarAlunoForm({ initialCode = "" }: { initialCode?: string }) 
   const [phone, setPhone] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [accepted, setAccepted] = useState(false);
 
   async function lookup(nextCode: string) {
     const needle = normalizeJoinInput(nextCode);
@@ -199,6 +201,10 @@ export function EntrarAlunoForm({ initialCode = "" }: { initialCode?: string }) 
           className="space-y-4"
           onSubmit={async (e) => {
             e.preventDefault();
+            if (!accepted) {
+              toast.error("Aceite os Termos e a Política de privacidade para continuar.");
+              return;
+            }
             setBusy(true);
             const result = await store.registerStudent({
               code: house.joinCode,
@@ -251,6 +257,7 @@ export function EntrarAlunoForm({ initialCode = "" }: { initialCode?: string }) 
               className={fieldClass}
             />
           </div>
+          <LgpdConsent checked={accepted} onChange={setAccepted} student />
           <Button className="h-12 w-full" disabled={busy} type="submit">
             {busy ? (
               <>

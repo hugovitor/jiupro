@@ -7,6 +7,8 @@ import { FirstLoginHint } from "@/components/first-login-guide";
 import { Button } from "@/components/ui/button";
 import { brl, currentMonth, formatDate } from "@/lib/format";
 import { currentStudent, useStore } from "@/lib/store";
+import { downloadJson, studentPortability, deletionWhatsAppText } from "@/lib/lgpd";
+import { supportWhatsAppHref } from "@/lib/support";
 
 export default function PerfilAluno() {
   const store = useStore();
@@ -111,6 +113,37 @@ export default function PerfilAluno() {
       </div>
 
       <FirstLoginHint className="w-full" label="Ver assistente de novo" />
+
+      {student ? (
+        <div className="space-y-2">
+          <Button
+            variant="outline"
+            className="w-full"
+            onClick={() => {
+              downloadJson(
+                `ponteira-meus-dados.json`,
+                studentPortability(student, store),
+              );
+              toast.success("Seus dados foram baixados.");
+            }}
+          >
+            Baixar meus dados
+          </Button>
+          <Button
+            variant="outline"
+            className="w-full"
+            render={
+              <a
+                href={supportWhatsAppHref(deletionWhatsAppText("student", student.name))}
+                target="_blank"
+                rel="noreferrer"
+              />
+            }
+          >
+            Pedir exclusão no servidor
+          </Button>
+        </div>
+      ) : null}
 
       <p className="text-xs text-muted-foreground">
         Adicione este app à tela inicial do celular: no Safari, Compartilhar →

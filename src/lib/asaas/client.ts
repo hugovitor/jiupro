@@ -54,7 +54,7 @@ export function createAsaasClient(apiKey: string) {
       headers: {
         "Content-Type": "application/json",
         Accept: "application/json",
-        "User-Agent": `JiuPro/0.1 (Next.js; ${env})`,
+        "User-Agent": `Ponteira/0.1 (Next.js; ${env})`,
         access_token: key,
         ...(init?.headers ?? {}),
       },

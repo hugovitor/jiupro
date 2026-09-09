@@ -12,6 +12,8 @@ import { brl } from "@/lib/format";
 import { PLANS, planById, planCapacityLabel } from "@/lib/plans";
 import { useStore } from "@/lib/store";
 import { SUPPORT_PHONE_DISPLAY, supportWhatsAppHref } from "@/lib/support";
+import { LgpdConsent } from "@/components/lgpd-consent";
+import { PRODUCT_NAME } from "@/lib/brand";
 import type { PlanId } from "@/lib/types";
 
 const fieldClass =
@@ -29,6 +31,7 @@ function CadastroForm() {
   const [password, setPassword] = useState("");
   const [busy, setBusy] = useState(false);
   const [promoCode, setPromoCode] = useState("");
+  const [accepted, setAccepted] = useState(false);
   const [plan, setPlan] = useState<PlanId>(
     PLANS.some((p) => p.id === preset) ? preset : "academia",
   );
@@ -42,7 +45,7 @@ function CadastroForm() {
       subtitle={
         trialLabel
           ? `${trialLabel}. O cartão fica cadastrado; a cobrança do plano começa depois. Alunos no Pix da casa.`
-          : "Cria a sua casa, vazia. Em seguida você assina o JiuPro no cartão."
+          : `Cria a sua casa, vazia. Em seguida você assina o ${PRODUCT_NAME} no cartão.`
       }
       switchHref="/login"
       switchLabel="Já tenho conta"
@@ -51,7 +54,7 @@ function CadastroForm() {
         Abrir academia
       </p>
       <p className="mt-3 text-sm leading-6 text-white/45">
-        A assinatura do JiuPro é da academia. Os alunos continuam pagando a
+        A assinatura do {PRODUCT_NAME} é da academia. Os alunos continuam pagando a
         mensalidade no Pix da casa.
       </p>
       <form
@@ -60,6 +63,10 @@ function CadastroForm() {
           e.preventDefault();
           if (!name.trim() || !academy.trim() || !email.trim() || !password) {
             toast.error("Preencha nome, academia, e-mail e senha.");
+            return;
+          }
+          if (!accepted) {
+            toast.error("Aceite os Termos e a Política de privacidade para continuar.");
             return;
           }
           setBusy(true);
@@ -216,6 +223,7 @@ function CadastroForm() {
               : "Opcional. Código promocional do Stripe, modo Ao vivo."}
           </p>
         </div>
+        <LgpdConsent checked={accepted} onChange={setAccepted} />
         <button
           type="submit"
           className="group mt-2 flex h-12 w-full items-center justify-center gap-2 rounded-xl bg-red-600 text-sm font-black text-white shadow-lg shadow-red-950/30 transition hover:bg-red-500 disabled:cursor-not-allowed disabled:opacity-65"
@@ -246,7 +254,7 @@ function CadastroForm() {
       <p className="mt-3 text-center text-xs text-white/30">
         Dúvida? WhatsApp{" "}
         <a
-          href={supportWhatsAppHref("Olá, estou abrindo minha academia no JiuPro.")}
+          href={supportWhatsAppHref(`Olá, estou abrindo minha academia no ${PRODUCT_NAME}.`)}
           target="_blank"
           rel="noreferrer"
           className="underline"

@@ -88,7 +88,7 @@ export default function AtualizarSenhaPage() {
             Pedir outro link
           </Link>
           <a
-            href={supportWhatsAppHref("Olá, o link de recuperação de senha do JiuPro não funcionou.")}
+            href={supportWhatsAppHref("Olá, o link de recuperação de senha do Ponteira não funcionou.")}
             target="_blank"
             rel="noreferrer"
             className="block text-center text-xs font-bold text-red-400 hover:text-red-300"

@@ -31,7 +31,7 @@ async function findAuthUserId(email: string) {
 export async function issueOperatorSession(email: string, password: string) {
   const needle = email.trim().toLowerCase();
   if (!isOperatorEmail(needle)) {
-    return { error: "Sem acesso ao painel do JiuPro.", status: 403 as const };
+    return { error: "Sem acesso ao painel do Ponteira.", status: 403 as const };
   }
   if (password.length < 6) {
     return { error: "Informe a senha da conta.", status: 401 as const };

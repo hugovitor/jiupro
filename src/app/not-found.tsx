@@ -16,7 +16,7 @@ export default function NotFound() {
           Esse tatame ainda não existe.
         </h1>
         <p className="mt-4 max-w-md text-sm leading-6 text-white/45">
-          O endereço não faz parte do JiuPro. Volte ao início ou entre na sua
+          O endereço não faz parte do Ponteira. Volte ao início ou entre na sua
           academia.
         </p>
         <div className="mt-8 flex flex-col gap-3 sm:flex-row">

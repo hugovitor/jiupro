@@ -20,7 +20,7 @@ function ReturnInner() {
     if (!paid || !plan || !PLANS.some((p) => p.id === plan)) return;
     done.current = true;
     store.changePlan(plan as PlanId);
-    toast.success("Pagamento confirmado. Assinatura do JiuPro ativa.");
+    toast.success("Pagamento confirmado. Assinatura do Ponteira ativa.");
   }, [params, store]);
 
   return null;

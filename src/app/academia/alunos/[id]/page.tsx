@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useParams } from "next/navigation";
+import { useParams, useRouter } from "next/navigation";
 import { toast } from "sonner";
 import { AsaasChargeButton } from "@/components/asaas-pix-dialog";
 import { BeltBadge, PersonAvatar } from "@/components/belt-badge";
@@ -26,6 +26,7 @@ import { useState } from "react";
 
 export default function AlunoDetalhePage() {
   const { id } = useParams<{ id: string }>();
+  const router = useRouter();
   const store = useStore();
   const student = store.students.find((s) => s.id === id);
   if (!student) {
@@ -161,6 +162,24 @@ export default function AlunoDetalhePage() {
                 }}
               >
                 {student.status === "inactive" ? "Reativar" : "Inativar"}
+              </Button>
+              <Button
+                variant="destructive"
+                size="sm"
+                onClick={() => {
+                  if (
+                    !window.confirm(
+                      `Apagar a ficha de ${student.name}? Nome, WhatsApp, CPF e presença desta pessoa saem da casa. Isso atende o pedido de exclusão (LGPD).`,
+                    )
+                  ) {
+                    return;
+                  }
+                  store.removeStudent(student.id);
+                  toast.success("Ficha apagada.");
+                  router.push("/academia/alunos");
+                }}
+              >
+                Apagar ficha
               </Button>
               {student.status === "trial" && (
                 <Button

@@ -1,3 +1,3 @@
-# JiuPro
+# Ponteira
 
 See README.md.

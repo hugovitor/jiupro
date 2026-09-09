@@ -1,9 +1,10 @@
 import type { MetadataRoute } from "next";
+import { PRODUCT_NAME } from "@/lib/brand";
 
 export default function manifest(): MetadataRoute.Manifest {
   return {
-    name: "JiuPro",
-    short_name: "JiuPro",
+    name: PRODUCT_NAME,
+    short_name: PRODUCT_NAME,
     description: "A academia no bolso do aluno e no controle do professor.",
     start_url: "/aluno",
     display: "standalone",

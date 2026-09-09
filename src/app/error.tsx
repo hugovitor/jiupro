@@ -20,7 +20,7 @@ interface ErrorPageProps {
 
 export default function ErrorPage({ error, reset }: ErrorPageProps) {
   useEffect(() => {
-    console.error("Erro capturado pelo JiuPro:", error);
+    console.error("Erro capturado pelo Ponteira:", error);
   }, [error]);
 
   function reloadPage() {
@@ -98,8 +98,8 @@ export default function ErrorPage({ error, reset }: ErrorPageProps) {
           <a
             href={supportWhatsAppHref(
               error.digest
-                ? `Olá, deu erro no JiuPro. Código ${error.digest}.`
-                : "Olá, deu erro no JiuPro.",
+                ? `Olá, deu erro no Ponteira. Código ${error.digest}.`
+                : "Olá, deu erro no Ponteira.",
             )}
             target="_blank"
             rel="noreferrer"

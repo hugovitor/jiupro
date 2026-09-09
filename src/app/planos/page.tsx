@@ -94,7 +94,7 @@ export default function PlanosPage() {
       />
 
       <section className="relative mx-auto max-w-7xl px-5 pb-16 pt-20 text-center lg:px-8 lg:pb-24 lg:pt-28">
-        <Eyebrow>Planos JiuPro</Eyebrow>
+        <Eyebrow>Planos Ponteira</Eyebrow>
 
         <h1 className="mx-auto mt-7 max-w-4xl text-4xl font-black leading-[1.02] tracking-[-0.055em] sm:text-5xl lg:text-6xl">
           A gestão certa para cada fase
@@ -280,7 +280,7 @@ export default function PlanosPage() {
             <div>
               <h3 className="text-sm font-extrabold">Cobrança simples e transparente</h3>
               <p className="mt-1 text-xs leading-5 text-white/35">
-                A assinatura do JiuPro é da academia. As mensalidades dos alunos continuam sendo recebidas diretamente pela sua equipe.
+                A assinatura do Ponteira é da academia. As mensalidades dos alunos continuam sendo recebidas diretamente pela sua equipe.
               </p>
             </div>
           </div>
@@ -299,7 +299,7 @@ export default function PlanosPage() {
               Ainda está em dúvida?
             </p>
             <h2 className="mt-3 text-2xl font-black tracking-[-0.04em] sm:text-3xl">
-              Experimente o JiuPro antes de assinar.
+              Experimente o Ponteira antes de assinar.
             </h2>
           </div>
           <Link

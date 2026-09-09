@@ -186,6 +186,18 @@ export function findAcademyByJoinCode(code: string) {
   return null;
 }
 
+export function eraseAcademy(academyId: string) {
+  const v = getVault();
+  if (academyId === DEMO_ACADEMY_ID) {
+    return resetDemoAcademy();
+  }
+  delete v.academies[academyId];
+  v.activeId = DEMO_ACADEMY_ID;
+  v.session = null;
+  saveVault();
+  return activeState();
+}
+
 export function findUserAcrossAcademies(email: string) {
   const v = getVault();
   const needle = email.trim().toLowerCase();

@@ -411,7 +411,7 @@ function FinalCTA() {
             Começar agora <ArrowRight className="h-4 w-4" />
           </Link>
           <a
-            href={supportWhatsAppHref("Olá, quero conhecer o JiuPro.")}
+            href={supportWhatsAppHref("Olá, quero conhecer o Ponteira.")}
             target="_blank"
             rel="noreferrer"
             className="text-center text-xs font-bold text-white/80 hover:text-white"

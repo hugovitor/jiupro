@@ -1,6 +1,7 @@
 "use client";
 
 import { BeltMark } from "@/components/brand";
+import { PRODUCT_MARK } from "@/lib/brand";
 
 export default function GlobalError({
   reset,
@@ -28,7 +29,7 @@ export default function GlobalError({
         <div style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: 28 }}>
           <BeltMark />
           <span style={{ fontWeight: 900, letterSpacing: "-0.04em", fontSize: 18 }}>
-            JIUPRO
+            {PRODUCT_MARK}
           </span>
         </div>
         <p
