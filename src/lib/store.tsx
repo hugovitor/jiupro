@@ -367,11 +367,11 @@ export function StoreProvider({ children }: { children: ReactNode }) {
     if (current.academy.id === DEMO_ACADEMY_ID) {
       return {
         ok: false,
-        error: "A Equipe Origem é só demonstração e não vai para o Supabase.",
+        error: "A Equipe Origem é só demonstração. Abra a sua academia para gravar os dados.",
       };
     }
     if (!isSupabaseConfigured()) {
-      return { ok: false, error: "Cole a URL e a chave anon do projeto." };
+      return { ok: false, error: "Ainda não dá para gravar a academia. Tente de novo ou fale com o suporte." };
     }
     const ready = ensureUuidState(current);
     write(ready);
@@ -383,7 +383,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
         return {
           ok: false,
           error:
-            "Não achei a senha do dono neste navegador. Entre de novo e tente enviar.",
+            "Entre de novo com o e-mail do dono e tente gravar a academia.",
         };
       }
       const attached = await attachLocalAcademy({
@@ -406,7 +406,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
   const pullNow = useCallback(async (): Promise<SyncResult> => {
     const current = getSnapshot();
     if (current.academy.id === DEMO_ACADEMY_ID) {
-      return { ok: false, error: "A demo não baixa do Supabase." };
+      return { ok: false, error: "A demonstração não baixa dados da sua academia." };
     }
     if (!current.session) {
       return { ok: false, error: "Entre na academia para baixar." };

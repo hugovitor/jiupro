@@ -49,9 +49,9 @@ async function replaceJoin(
 
 export async function pushAcademyState(state: AppState) {
   const client = createSupabaseBrowserClient();
-  if (!client) return { error: "Sem projeto Supabase." };
+  if (!client) return { error: "Não foi possível gravar a academia." };
   if (state.academy.id === DEMO_ACADEMY_ID) {
-    return { error: "A Equipe Origem é só demo local." };
+    return { error: "A Equipe Origem é só demonstração." };
   }
   const ready = ensureUuidState(state);
 
@@ -63,7 +63,7 @@ export async function pushAcademyState(state: AppState) {
   if (lookupError) return { error: lookupError.message, state: ready };
   if (!existing) {
     return {
-      error: "Esta academia ainda não existe no Supabase. Use Enviar esta academia.",
+      error: "Esta academia ainda não foi gravada. Tente de novo.",
       missingAcademy: true as const,
       state: ready,
     };
@@ -113,7 +113,7 @@ export async function pushAcademyState(state: AppState) {
     await replaceRows(client, "sales", ready.academy.id, tables.sales);
     await replaceRows(client, "drop_ins", ready.academy.id, tables.dropIns);
   } catch (err) {
-    const message = err instanceof Error ? err.message : "Falha ao gravar no Supabase.";
+    const message = err instanceof Error ? err.message : "Não foi possível salvar agora.";
     return { error: message, state: ready };
   }
   return { state: ready };
@@ -135,8 +135,7 @@ export function scheduleRemotePush(state: AppState) {
 
 export async function pullAcademyState(session: Session): Promise<AppState | { error: string }> {
   const client = createSupabaseBrowserClient();
-  if (!client) return { error: "Sem projeto Supabase." };
-
+  if (!client) return { error: "Não foi possível abrir a academia." };
   const academyId = session.academyId;
   const [
     academy,
@@ -171,7 +170,7 @@ export async function pullAcademyState(session: Session): Promise<AppState | { e
   ]);
 
   if (academy.error) return { error: academy.error.message };
-  if (!academy.data) return { error: "Academia não encontrada no Supabase." };
+  if (!academy.data) return { error: "Academia não encontrada." };
 
   const postIds = (posts.data ?? []).map((p: { id: string }) => String(p.id));
   const eventIds = (events.data ?? []).map((e: { id: string }) => String(e.id));
@@ -309,7 +308,7 @@ export async function attachLocalAcademy(input: {
     });
     if (created.error) return { error: created.error.message };
     if (!created.data.session) {
-      return { error: "Confirme o e-mail no Supabase (Auth → confirmação) e tente de novo." };
+      return { error: "Confirme o e-mail e tente entrar de novo." };
     }
     ownerId = created.data.user?.id;
   }
@@ -325,7 +324,7 @@ export async function attachLocalAcademy(input: {
       input.state.users.find((u) => u.role === "owner")?.name ?? input.state.academy.name,
   });
   if (rpcError) return { error: rpcError.message };
-  if (!academyId) return { error: "Falha ao criar a academia no Supabase." };
+  if (!academyId) return { error: "Não foi possível criar a academia." };
 
   const next = rehomeAcademy(input.state, academyId as string, {
     id: ownerId,

@@ -44,7 +44,7 @@ export default function PlanosPage() {
 
       if (pay === "demo") {
         store.changePlan(planId);
-        toast.success("Plano atualizado com sucesso na demonstração.");
+        toast.success("Plano atualizado na demonstração.");
 
         if (store.session?.role === "student") {
           router.push("/aluno");

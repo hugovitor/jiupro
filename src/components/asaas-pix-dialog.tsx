@@ -123,7 +123,7 @@ export function AsaasChargeButton({
       toast.success(
         data.environment === "production"
           ? "Pix gerado."
-          : "Pix sandbox gerado. Pague no painel Asaas ou aguarde o webhook.",
+          : "Pix de teste gerado.",
       );
     } finally {
       setBusy(false);
@@ -246,10 +246,7 @@ export function AsaasChargeButton({
               </Button>
             </div>
             <p className="text-xs text-muted-foreground">
-              Sandbox: pague a fatura em sandbox.asaas.com. O webhook
-              <code> /api/asaas/webhook </code>
-              baixa sozinho quando a URL for pública; aqui o botão Conferir
-              consulta o status.
+              Depois que o aluno pagar, use Conferir para baixar a mensalidade.
             </p>
           </div>
         )}

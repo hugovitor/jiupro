@@ -46,8 +46,8 @@ export default function GlobalError({
           O sistema não conseguiu abrir.
         </h1>
         <p style={{ maxWidth: 360, fontSize: 14, color: "rgba(255,255,255,0.45)", lineHeight: 1.6 }}>
-          Recarregue a página. Os dados da academia continuam na nuvem se o
-          Supabase estiver ligado.
+          Recarregue a página. Alunos e mensalidades da academia continuam
+          salvos.
         </p>
         <button
           type="button"

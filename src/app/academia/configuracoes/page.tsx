@@ -38,7 +38,7 @@ function ConfigInner() {
       });
       if (pay === "demo") {
         store.changePlan(planId);
-        toast.success("Plano da demo alterado. Em produção o Stripe cobra no cartão.");
+        toast.success("Plano da demonstração alterado.");
       }
     } catch (error) {
       toast.error(
@@ -52,7 +52,7 @@ function ConfigInner() {
       <div>
         <h1 className="font-display text-3xl">Configurações</h1>
         <p className="mt-1 text-sm text-muted-foreground">
-          Nuvem, Pix da casa e assinatura do JiuPro no cartão.
+          Dados da casa, Pix dos alunos e plano do JiuPro.
         </p>
       </div>
 
@@ -111,10 +111,8 @@ function ConfigInner() {
       <section className="border border-border bg-card p-5 text-sm">
         <h2 className="font-medium">Assinatura JiuPro</h2>
         <p className="mt-2 text-muted-foreground">
-          Cartão via Stripe. Webhook: /api/stripe/webhook
-        </p>
-        <p className="mt-1 text-muted-foreground">
-          Sem STRIPE_SECRET_KEY na Vercel, o plano só muda neste navegador.
+          A academia paga o JiuPro no cartão. Os alunos continuam pagando a
+          mensalidade no Pix da casa.
         </p>
       </section>
 
@@ -150,8 +148,7 @@ function PixForm() {
     <section className="border border-border bg-card p-5">
         <h2 className="font-medium">Pix da academia</h2>
         <p className="mt-1 text-sm text-muted-foreground">
-          É o caminho de produção agora: a cobrança no WhatsApp usa esta chave.
-          Asaas (QR dinâmico) entra depois.
+          É a chave que vai na cobrança do WhatsApp para o aluno pagar a mensalidade.
         </p>
       <form
         className="mt-4 grid gap-3"

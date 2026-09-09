@@ -15,7 +15,6 @@ export function AsaasConnect() {
   const [webhookToken, setWebhookToken] = useState("");
   const [busy, setBusy] = useState<"save" | "test" | null>(null);
   const [status, setStatus] = useState<string | null>(null);
-  const [envConfigured, setEnvConfigured] = useState(false);
   const [environment, setEnvironment] = useState("sandbox");
   const [webhookUrl, setWebhookUrl] = useState("");
 
@@ -31,7 +30,6 @@ export function AsaasConnect() {
     void fetch("/api/asaas/account")
       .then((r) => r.json())
       .then((data: { configured?: boolean; environment?: string }) => {
-        setEnvConfigured(Boolean(data.configured));
         if (data.environment) setEnvironment(data.environment);
       })
       .catch(() => undefined);
@@ -93,19 +91,12 @@ export function AsaasConnect() {
 
   return (
     <section className="border border-border bg-card p-5">
-      <h2 className="font-medium">Asaas · depois</h2>
+      <h2 className="font-medium">Mensalidade dos alunos</h2>
       <p className="mt-1 text-sm text-muted-foreground">
-        Opcional. Sem chave, a mensalidade segue no Pix da casa + WhatsApp.
-        Quando for ligar: sandbox primeiro (
-        <span className="font-mono text-xs">$aact_hmlg_</span>), produção depois
-        com <span className="font-mono text-xs">$aact_prod_</span>.
+        A cobrança sai no WhatsApp com a chave Pix da academia. QR automático
+        (Asaas) entra depois, se você quiser — não é obrigatório para operar.
       </p>
-      {envConfigured && (
-        <p className="mt-2 text-sm text-muted-foreground">
-          Já existe <code>ASAAS_API_KEY</code> no servidor ({environment}). A
-          chave abaixo só entra se o .env estiver vazio.
-        </p>
-      )}
+      {process.env.NODE_ENV === "production" ? null : (
       <form
         className="mt-4 grid gap-3"
         onSubmit={(e) => {
@@ -203,6 +194,7 @@ export function AsaasConnect() {
           </Button>
         </div>
       </form>
+      )}
       {status && <p className="mt-3 text-sm">{status}</p>}
     </section>
   );

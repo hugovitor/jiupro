@@ -9,7 +9,6 @@ import { AuthScreen } from "@/components/auth-screen";
 import { startPlanCheckout } from "@/lib/billing";
 import { brl } from "@/lib/format";
 import { PLANS, planById, planCapacityLabel } from "@/lib/plans";
-import { isSupabaseConfigured } from "@/lib/supabase/client";
 import { useStore } from "@/lib/store";
 import type { PlanId } from "@/lib/types";
 
@@ -30,17 +29,12 @@ function CadastroForm() {
   const [plan, setPlan] = useState<PlanId>(
     PLANS.some((p) => p.id === preset) ? preset : "academia",
   );
-  const remote = isSupabaseConfigured();
 
   return (
     <AuthScreen
       kicker="Conta da academia"
-      title="Abra a sua casa, isolada da demonstração."
-      subtitle={
-        remote
-          ? "Com o projeto ligado, a conta também fica no Supabase."
-          : "Neste navegador, isolada da demo. Na Vercel, ligue o Supabase (Configurações ou variáveis do projeto) para não perder os dados."
-      }
+      title="Abra a sua academia."
+      subtitle="Cria a sua casa, vazia, fora da demonstração. Em seguida você assina o JiuPro no cartão."
       switchHref="/login"
       switchLabel="Já tenho conta"
     >
@@ -48,9 +42,8 @@ function CadastroForm() {
         Abrir academia
       </p>
       <p className="mt-3 text-sm leading-6 text-white/45">
-        Cadastro cria a sua casa, não entra como Carla. Em seguida você paga a
-        assinatura do JiuPro no cartão. Alunos continuam pagando a mensalidade
-        no Pix da academia.
+        A assinatura do JiuPro é da academia. Os alunos continuam pagando a
+        mensalidade no Pix da casa.
       </p>
       <form
         className="mt-8 space-y-4"
@@ -81,16 +74,14 @@ function CadastroForm() {
               academyId: store.academy.id,
             });
             if (pay === "demo") {
-              toast.success(
-                `${academy.trim()} aberta. Pagamento online liga quando o Stripe estiver na Vercel.`,
-              );
+              toast.success(`${academy.trim()} aberta. Vamos ao pagamento da assinatura.`);
               router.push("/academia");
             }
           } catch (error) {
             toast.error(
               error instanceof Error
                 ? error.message
-                : "Casa criada. Não deu para abrir o pagamento.",
+                : "Casa criada. Não deu para abrir o pagamento da assinatura.",
             );
             router.push("/academia");
           } finally {
@@ -107,7 +98,7 @@ function CadastroForm() {
             className={fieldClass}
             value={name}
             onChange={(e) => setName(e.target.value)}
-            placeholder="Carla Mendes"
+            placeholder="Ana Ribeiro"
             autoComplete="name"
             disabled={busy}
           />
@@ -121,7 +112,7 @@ function CadastroForm() {
             className={fieldClass}
             value={academy}
             onChange={(e) => setAcademy(e.target.value)}
-            placeholder="Equipe Origem Jiu-Jitsu"
+            placeholder="Nova Equipe Jiu-Jitsu"
             disabled={busy}
           />
         </div>
@@ -220,9 +211,9 @@ function CadastroForm() {
         </Link>
       </p>
       <p className="mt-3 text-center text-xs text-white/30">
-        Quer ver o produto cheio?{" "}
+        Quer só conhecer o sistema?{" "}
         <Link href="/login" className="underline">
-          Entre na demo
+          Entre na demonstração
         </Link>
         .
       </p>

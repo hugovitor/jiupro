@@ -116,13 +116,13 @@ export default function AcademiaDashboard() {
 
       {!store.isDemo && !cloudReady && (
         <div className="mt-6 surface p-4 text-sm">
-          <p className="font-medium">Projeto Supabase ainda vazio</p>
+          <p className="font-medium">A academia ainda não está gravada</p>
           <p className="mt-1 text-muted-foreground">
-            Não tem tabela no Dashboard — o JiuPro cria. Cole a URL e a anon key
-            em Configurações.
+            Cadastre pelo site publicado para não perder alunos e mensalidades
+            se limpar o celular.
           </p>
           <Button className="mt-3" size="sm" render={<Link href="/academia/configuracoes" />}>
-            Configurar nuvem
+            Ver configurações
           </Button>
         </div>
       )}

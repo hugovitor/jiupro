@@ -26,71 +26,34 @@ export function GoLiveCard() {
 
   const envCloud = health?.persistence === "supabase";
   const ready = cloud || envCloud;
-  const publicUrl =
-    health?.url && health.url.startsWith("http")
-      ? health.url
-      : typeof window !== "undefined"
-        ? window.location.origin
-        : "";
   const stripeReady = Boolean(health?.payments?.stripe);
-  const asaasReady = Boolean(health?.payments?.asaas);
 
   return (
     <section className="surface p-5">
-      <p className="text-xs font-medium tracking-wide text-muted-foreground uppercase">
-        Produção
+      <p className="text-[10px] font-black tracking-[0.18em] text-red-500 uppercase">
+        Sua conta
       </p>
-      <h2 className="mt-1 text-lg font-semibold tracking-tight">
-        {ready ? "A academia já opera na nuvem" : "Falta ligar a nuvem"}
+      <h2 className="mt-2 text-lg font-black tracking-tight">
+        {store.isDemo
+          ? "Você está na demonstração"
+          : ready
+            ? "Academia pronta para operar"
+            : "Falta gravar a academia"}
       </h2>
       <p className="mt-2 text-sm text-muted-foreground">
-        A URL da Vercel já serve. Stripe e Asaas entram depois — agora o
-        aluno paga no Pix da casa + WhatsApp.
+        {store.isDemo
+          ? "A Equipe Origem é só para conhecer o painel. Abra a sua casa para cadastrar alunos de verdade."
+          : ready
+            ? stripeReady
+              ? "Os dados ficam na sua conta. A assinatura do JiuPro é no cartão; a mensalidade do aluno, no Pix da academia."
+              : "Os dados ficam na sua conta. A mensalidade do aluno entra pelo Pix da academia."
+            : "Cadastre pelo site publicado para não perder a academia se limpar o celular."}
       </p>
-      {publicUrl ? (
-        <p className="mt-3 break-all font-mono text-[12px] text-muted-foreground">
-          {publicUrl}
-          {health?.env && health.env !== "development" ? ` · ${health.env}` : ""}
-        </p>
-      ) : null}
-      <ol className="mt-4 space-y-2 text-sm">
-        <li>
-          <span className={ready ? "text-foreground" : "text-muted-foreground"}>
-            {ready
-              ? "1. Nuvem ligada. Cadastro e painel não dependem deste navegador."
-              : "1. Ligue o Supabase abaixo. Sem isso a academia some se limpar o browser."}
-          </span>
-        </li>
-        <li>
-          <span className="text-foreground">
-            2. Cole a chave Pix da academia. Cobrança por WhatsApp já funciona.
-          </span>
-        </li>
-        <li>
-          <span className="text-muted-foreground">
-            3. Stripe (assinatura JiuPro no cartão)
-            {stripeReady
-              ? " — cobrança online ligada."
-              : " — cole STRIPE_SECRET_KEY na Vercel para cobrar no cadastro."}
-            {" "}
-            Asaas (Pix do aluno)
-            {asaasReady ? " já está no servidor." : " — depois."}
-          </span>
-        </li>
-      </ol>
-      {publicUrl ? (
-        <div className="mt-4 space-y-1 text-[12px] text-muted-foreground">
-          <p>Webhook Stripe: {publicUrl}/api/stripe/webhook</p>
-          <p>Webhook Asaas: {publicUrl}/api/asaas/webhook</p>
-        </div>
-      ) : null}
       {store.isDemo && (
-        <p className="mt-4 text-sm text-muted-foreground">
-          Você está na Equipe Origem (demo).{" "}
-          <Link href="/cadastro" className="text-foreground underline">
-            Abra a sua academia
-          </Link>{" "}
-          para operar de verdade.
+        <p className="mt-4 text-sm">
+          <Link href="/cadastro" className="font-bold text-red-500 hover:text-red-400">
+            Abrir a minha academia
+          </Link>
         </p>
       )}
     </section>

@@ -162,6 +162,18 @@ export function SupabaseConnect() {
     }
   }
 
+  if (fromEnv) {
+    return (
+      <section className="border border-border bg-card p-5">
+        <h2 className="font-medium">Dados da academia</h2>
+        <p className="mt-1 text-sm text-muted-foreground">
+          Alunos, turmas e mensalidades ficam salvos na sua conta. A
+          demonstração da Equipe Origem não mistura com a sua casa.
+        </p>
+      </section>
+    );
+  }
+
   return (
     <section className="border border-border bg-card p-5">
       <h2 className="font-medium">Nuvem · obrigatório em produção</h2>
