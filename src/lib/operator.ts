@@ -1,4 +1,5 @@
 import { createClient } from "@supabase/supabase-js";
+import { createServerClient } from "@supabase/ssr";
 
 const DEFAULT_OPERATORS = ["hugovitormnunes@gmail.com"];
 
@@ -18,28 +19,64 @@ export function isOperatorEmail(email?: string | null) {
   return operatorEmails().has(email.trim().toLowerCase());
 }
 
-export async function requireOperator(request: Request) {
-  const header = request.headers.get("authorization") ?? "";
-  const token = header.replace(/^Bearer\s+/i, "").trim();
-  if (!token) {
-    return { error: "Entre de novo com a conta do JiuPro.", status: 401 as const };
-  }
-
+async function userFromBearer(token: string) {
   const url = process.env.NEXT_PUBLIC_SUPABASE_URL?.trim();
   const key =
     process.env.SUPABASE_SERVICE_ROLE_KEY?.trim() ||
     process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY?.trim();
-  if (!url || !key) {
+  if (!url || !key) return { missingConfig: true as const };
+  const client = createClient(url, key, { auth: { persistSession: false } });
+  const { data, error } = await client.auth.getUser(token);
+  if (error || !data.user?.email) return null;
+  return data.user;
+}
+
+async function userFromCookies(request: Request) {
+  const url = process.env.NEXT_PUBLIC_SUPABASE_URL?.trim();
+  const anon = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY?.trim();
+  if (!url || !anon) return null;
+  const client = createServerClient(url, anon, {
+    cookies: {
+      getAll() {
+        const header = request.headers.get("cookie") ?? "";
+        return header.split(";").flatMap((part) => {
+          const trimmed = part.trim();
+          if (!trimmed) return [];
+          const i = trimmed.indexOf("=");
+          if (i < 0) return [];
+          return [{ name: trimmed.slice(0, i), value: trimmed.slice(i + 1) }];
+        });
+      },
+      setAll() {
+        /* API routes don't write auth cookies */
+      },
+    },
+  });
+  const { data, error } = await client.auth.getUser();
+  if (error || !data.user?.email) return null;
+  return data.user;
+}
+
+export async function requireOperator(request: Request) {
+  const header = request.headers.get("authorization") ?? "";
+  const token = header.replace(/^Bearer\s+/i, "").trim();
+
+  const fromToken = token ? await userFromBearer(token) : null;
+  if (fromToken && "missingConfig" in fromToken) {
     return { error: "Supabase não está ligado neste deploy.", status: 503 as const };
   }
 
-  const client = createClient(url, key, { auth: { persistSession: false } });
-  const { data, error } = await client.auth.getUser(token);
-  const email = data.user?.email?.trim().toLowerCase();
-  if (error || !email || !isOperatorEmail(email)) {
-    return { error: "Sem acesso ao painel do JiuPro.", status: 403 as const };
+  const user = fromToken ?? (await userFromCookies(request));
+  const email = user?.email?.trim().toLowerCase();
+  if (!user || !email || !isOperatorEmail(email)) {
+    return {
+      error: user
+        ? "Sem acesso ao painel do JiuPro."
+        : "Entre de novo com a conta do JiuPro.",
+      status: user ? (403 as const) : (401 as const),
+    };
   }
-  return { email, userId: data.user!.id };
+  return { email, userId: user.id };
 }
 
 export function supabaseAdmin() {

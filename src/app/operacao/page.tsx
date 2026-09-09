@@ -72,7 +72,10 @@ export default function OperacaoPage() {
     setLoading(true);
     setError(null);
     try {
-      const res = await fetch("/api/operacao", { headers: await operatorHeaders() });
+      const res = await fetch("/api/operacao", {
+        credentials: "include",
+        headers: await operatorHeaders(email),
+      });
       const data = (await res.json()) as Overview & { error?: string };
       if (!res.ok) {
         setError(data.error ?? "Não carregou o painel.");
@@ -104,9 +107,10 @@ export default function OperacaoPage() {
     try {
       const res = await fetch("/api/operacao/grants", {
         method: "POST",
+        credentials: "include",
         headers: {
           "Content-Type": "application/json",
-          ...(await operatorHeaders()),
+          ...(await operatorHeaders(email)),
         },
         body: JSON.stringify({
           email: grantEmail,
@@ -139,9 +143,10 @@ export default function OperacaoPage() {
   async function deactivate(id: string) {
     const res = await fetch("/api/operacao/grants", {
       method: "DELETE",
+      credentials: "include",
       headers: {
         "Content-Type": "application/json",
-        ...(await operatorHeaders()),
+        ...(await operatorHeaders(email)),
       },
       body: JSON.stringify({ id }),
     });
@@ -206,7 +211,7 @@ export default function OperacaoPage() {
           </p>
         </div>
 
-        <OperatorLeadsBoard />
+            <OperatorLeadsBoard email={email} />
 
         <section className="grid gap-4 lg:grid-cols-2">
           <article className="surface p-5">

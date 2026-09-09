@@ -25,7 +25,7 @@ const emptyForm = {
   notes: "",
 };
 
-export function OperatorLeadsBoard() {
+export function OperatorLeadsBoard({ email }: { email?: string | null }) {
   const [leads, setLeads] = useState<OperatorLead[]>([]);
   const [sql, setSql] = useState("");
   const [needsSetup, setNeedsSetup] = useState(false);
@@ -34,9 +34,13 @@ export function OperatorLeadsBoard() {
   const [form, setForm] = useState(emptyForm);
   const [busy, setBusy] = useState(false);
   const [loading, setLoading] = useState(true);
+  const [authError, setAuthError] = useState<string | null>(null);
 
   async function load() {
-    const res = await fetch("/api/operacao/leads", { headers: await operatorHeaders() });
+    const res = await fetch("/api/operacao/leads", {
+      credentials: "include",
+      headers: await operatorHeaders(email),
+    });
     const data = (await res.json()) as {
       leads?: OperatorLead[];
       sql?: string;
@@ -44,10 +48,15 @@ export function OperatorLeadsBoard() {
       error?: string;
     };
     if (!res.ok) {
-      toast.error(data.error ?? "Não carregou a planilha.");
       setLoading(false);
+      if (res.status === 401 || res.status === 403) {
+        setAuthError("A planilha precisa da sessão online. Saia e entre de novo com o e-mail da operação.");
+        return;
+      }
+      toast.error(data.error ?? "Não carregou a planilha.");
       return;
     }
+    setAuthError(null);
     setLeads(data.leads ?? []);
     setSql(data.sql ?? "");
     setNeedsSetup(Boolean(data.needsSetup));
@@ -56,7 +65,7 @@ export function OperatorLeadsBoard() {
 
   useEffect(() => {
     void load();
-  }, []);
+  }, [email]);
 
   const counts = useMemo(() => {
     const next: Record<string, number> = { todos: leads.length };
@@ -94,11 +103,20 @@ export function OperatorLeadsBoard() {
     try {
       const res = await fetch("/api/operacao/leads", {
         method: "POST",
-        headers: { "Content-Type": "application/json", ...(await operatorHeaders()) },
+        credentials: "include",
+        headers: {
+          "Content-Type": "application/json",
+          ...(await operatorHeaders(email)),
+        },
         body: JSON.stringify(form),
       });
       const data = (await res.json()) as { error?: string; sql?: string; needsSetup?: boolean };
       if (!res.ok) {
+        if (res.status === 401 || res.status === 403) {
+          setAuthError("A planilha precisa da sessão online. Saia e entre de novo com o e-mail da operação.");
+          toast.error("Entre de novo com a conta da operação.");
+          return;
+        }
         if (data.sql) setSql(data.sql);
         if (data.needsSetup) setNeedsSetup(true);
         toast.error(data.error ?? "Não gravou a academia.");
@@ -115,7 +133,8 @@ export function OperatorLeadsBoard() {
   async function patch(id: string, next: Partial<OperatorLead>) {
     const res = await fetch("/api/operacao/leads", {
       method: "PATCH",
-      headers: { "Content-Type": "application/json", ...(await operatorHeaders()) },
+      credentials: "include",
+      headers: { "Content-Type": "application/json", ...(await operatorHeaders(email)) },
       body: JSON.stringify({ id, ...next }),
     });
     const data = (await res.json()) as { error?: string };
@@ -130,7 +149,8 @@ export function OperatorLeadsBoard() {
     if (!window.confirm(`Tirar ${name} da planilha?`)) return;
     const res = await fetch("/api/operacao/leads", {
       method: "DELETE",
-      headers: { "Content-Type": "application/json", ...(await operatorHeaders()) },
+      credentials: "include",
+      headers: { "Content-Type": "application/json", ...(await operatorHeaders(email)) },
       body: JSON.stringify({ id }),
     });
     if (!res.ok) {
@@ -149,6 +169,15 @@ export function OperatorLeadsBoard() {
       <p className="text-sm text-white/45">
         Saiu do Maps, entra aqui. Status: novo → falou → demo → trial → fechou (ou não).
       </p>
+
+      {authError ? (
+        <div className="surface p-5">
+          <p className="text-sm text-white/70">{authError}</p>
+          <Button className="mt-3" size="sm" render={<a href="/login?next=/operacao" />}>
+            Entrar de novo
+          </Button>
+        </div>
+      ) : null}
 
       {needsSetup ? (
         <div className="surface p-5">

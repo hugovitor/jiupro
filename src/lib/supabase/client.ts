@@ -1,5 +1,4 @@
-import { createBrowserClient } from "@supabase/ssr";
-import type { SupabaseClient } from "@supabase/supabase-js";
+import { createClient, type SupabaseClient } from "@supabase/supabase-js";
 import { getSupabasePublicConfig, isSupabaseConfigured as configured } from "./config";
 
 export { isSupabaseConfigured } from "./config";
@@ -20,7 +19,16 @@ export function createSupabaseBrowserClient() {
   if (!cfg) return null;
   const key = `${cfg.url}|${cfg.anonKey.slice(0, 12)}`;
   if (cached && cachedKey === key) return cached;
-  cached = createBrowserClient(cfg.url, cfg.anonKey);
+  const inBrowser = typeof window !== "undefined";
+  cached = createClient(cfg.url, cfg.anonKey, {
+    auth: {
+      persistSession: inBrowser,
+      autoRefreshToken: inBrowser,
+      detectSessionInUrl: inBrowser,
+      flowType: "pkce",
+      storage: inBrowser ? window.localStorage : undefined,
+    },
+  });
   cachedKey = key;
   return cached;
 }
