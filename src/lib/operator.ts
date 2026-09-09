@@ -21,11 +21,9 @@ export function isOperatorEmail(email?: string | null) {
 
 async function userFromBearer(token: string) {
   const url = process.env.NEXT_PUBLIC_SUPABASE_URL?.trim();
-  const key =
-    process.env.SUPABASE_SERVICE_ROLE_KEY?.trim() ||
-    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY?.trim();
-  if (!url || !key) return { missingConfig: true as const };
-  const client = createClient(url, key, { auth: { persistSession: false } });
+  const anon = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY?.trim();
+  if (!url || !anon) return { missingConfig: true as const };
+  const client = createClient(url, anon, { auth: { persistSession: false } });
   const { data, error } = await client.auth.getUser(token);
   if (error || !data.user?.email) return null;
   return data.user;
@@ -57,9 +55,15 @@ async function userFromCookies(request: Request) {
   return data.user;
 }
 
-export async function requireOperator(request: Request) {
+function accessTokenFromRequest(request: Request) {
   const header = request.headers.get("authorization") ?? "";
-  const token = header.replace(/^Bearer\s+/i, "").trim();
+  const bearer = header.replace(/^Bearer\s+/i, "").trim();
+  if (bearer) return bearer;
+  return (request.headers.get("x-jiupro-access-token") ?? "").trim();
+}
+
+export async function requireOperator(request: Request) {
+  const token = accessTokenFromRequest(request);
 
   const fromToken = token ? await userFromBearer(token) : null;
   if (fromToken && "missingConfig" in fromToken) {

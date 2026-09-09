@@ -21,6 +21,7 @@ import {
   scheduleRemotePush,
   signInRemote,
 } from "./supabase/sync";
+import { createSupabaseBrowserClient } from "./supabase/client";
 import { ensureUuidState, rehomeAcademy } from "./supabase/mapper";
 import { isSupabaseConfigured } from "./supabase/config";
 import {
@@ -290,6 +291,10 @@ export function StoreProvider({ children }: { children: ReactNode }) {
 
   const logout = useCallback(() => {
     commit((prev) => ({ ...prev, session: null }));
+    if (typeof window !== "undefined") {
+      window.sessionStorage.removeItem("jiupro.operator.jwt");
+    }
+    void createSupabaseBrowserClient()?.auth.signOut();
   }, []);
 
   const resetDemo = useCallback(() => {

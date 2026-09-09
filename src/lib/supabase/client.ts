@@ -22,11 +22,10 @@ export function createSupabaseBrowserClient() {
   const inBrowser = typeof window !== "undefined";
   cached = createClient(cfg.url, cfg.anonKey, {
     auth: {
-      persistSession: inBrowser,
-      autoRefreshToken: inBrowser,
-      detectSessionInUrl: inBrowser,
-      flowType: "pkce",
-      storage: inBrowser ? window.localStorage : undefined,
+          persistSession: inBrowser,
+          autoRefreshToken: inBrowser,
+          detectSessionInUrl: inBrowser,
+          storage: inBrowser ? window.localStorage : undefined,
     },
   });
   cachedKey = key;

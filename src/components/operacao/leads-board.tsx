@@ -12,7 +12,8 @@ import {
   type LeadStatus,
   type OperatorLead,
 } from "@/lib/operator-leads";
-import { operatorHeaders } from "@/lib/operator-client";
+import { operatorHeaders, clearOperatorToken, operatorAccessToken } from "@/lib/operator-client";
+import { rememberPassword } from "@/lib/vault";
 
 const emptyForm = {
   academyName: "",
@@ -35,11 +36,20 @@ export function OperatorLeadsBoard({ email }: { email?: string | null }) {
   const [busy, setBusy] = useState(false);
   const [loading, setLoading] = useState(true);
   const [authError, setAuthError] = useState<string | null>(null);
+  const [unlockPassword, setUnlockPassword] = useState("");
+  const [unlocking, setUnlocking] = useState(false);
 
   async function load() {
+    const auth = await operatorAccessToken(email, unlockPassword || null);
+    if (!auth.token) {
+      setLoading(false);
+      setAuthError(auth.error ?? "Digite a senha da conta para abrir a planilha.");
+      return;
+    }
+
     const res = await fetch("/api/operacao/leads", {
       credentials: "include",
-      headers: await operatorHeaders(email),
+      headers: await operatorHeaders(email, unlockPassword || null),
     });
     const data = (await res.json()) as {
       leads?: OperatorLead[];
@@ -50,7 +60,8 @@ export function OperatorLeadsBoard({ email }: { email?: string | null }) {
     if (!res.ok) {
       setLoading(false);
       if (res.status === 401 || res.status === 403) {
-        setAuthError("A planilha precisa da sessão online. Saia e entre de novo com o e-mail da operação.");
+        clearOperatorToken();
+        setAuthError(data.error ?? "Digite a senha da conta para abrir a planilha.");
         return;
       }
       toast.error(data.error ?? "Não carregou a planilha.");
@@ -113,8 +124,9 @@ export function OperatorLeadsBoard({ email }: { email?: string | null }) {
       const data = (await res.json()) as { error?: string; sql?: string; needsSetup?: boolean };
       if (!res.ok) {
         if (res.status === 401 || res.status === 403) {
-          setAuthError("A planilha precisa da sessão online. Saia e entre de novo com o e-mail da operação.");
-          toast.error("Entre de novo com a conta da operação.");
+          clearOperatorToken();
+          setAuthError(data.error ?? "Digite a senha da conta para abrir a planilha.");
+          toast.error("A planilha não aceitou a sessão. Digite a senha abaixo.");
           return;
         }
         if (data.sql) setSql(data.sql);
@@ -173,12 +185,37 @@ export function OperatorLeadsBoard({ email }: { email?: string | null }) {
       {authError ? (
         <div className="surface p-5">
           <p className="text-sm text-white/70">{authError}</p>
-          <Button className="mt-3" size="sm" render={<a href="/login?next=/operacao" />}>
-            Entrar de novo
+          <p className="mt-2 text-sm text-white/40">
+            A planilha usa a conta online. Digite a senha de {email || "operação"} — a mesma
+            que você usa no JiuPro.
+          </p>
+          <div className="mt-4 max-w-sm space-y-1.5">
+            <Label>Senha</Label>
+            <Input
+              type="password"
+              value={unlockPassword}
+              onChange={(e) => setUnlockPassword(e.target.value)}
+              placeholder="Senha da conta"
+            />
+          </div>
+          <Button
+            className="mt-3"
+            size="sm"
+            disabled={unlocking || unlockPassword.length < 6}
+            onClick={() => {
+              if (!email) return;
+              setUnlocking(true);
+              rememberPassword(email, unlockPassword);
+              void load().finally(() => setUnlocking(false));
+            }}
+          >
+            {unlocking ? "Abrindo…" : "Abrir planilha"}
           </Button>
         </div>
       ) : null}
 
+      {!authError ? (
+        <>
       {needsSetup ? (
         <div className="surface p-5">
           <p className="text-sm text-white/70">
@@ -288,6 +325,8 @@ export function OperatorLeadsBoard({ email }: { email?: string | null }) {
           </tbody>
         </table>
       </div>
+        </>
+      ) : null}
     </section>
   );
 }
