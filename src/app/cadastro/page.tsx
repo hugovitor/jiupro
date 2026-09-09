@@ -11,6 +11,7 @@ import { signupTrialDays, signupTrialLabel } from "@/lib/billing-offer";
 import { brl } from "@/lib/format";
 import { PLANS, planById, planCapacityLabel } from "@/lib/plans";
 import { useStore } from "@/lib/store";
+import { SUPPORT_PHONE_DISPLAY, supportWhatsAppHref } from "@/lib/support";
 import type { PlanId } from "@/lib/types";
 
 const fieldClass =
@@ -241,6 +242,17 @@ function CadastroForm() {
         >
           Entre e conclua o pagamento
         </Link>
+      </p>
+      <p className="mt-3 text-center text-xs text-white/30">
+        Dúvida? WhatsApp{" "}
+        <a
+          href={supportWhatsAppHref("Olá, estou abrindo minha academia no JiuPro.")}
+          target="_blank"
+          rel="noreferrer"
+          className="underline"
+        >
+          {SUPPORT_PHONE_DISPLAY}
+        </a>
       </p>
       <p className="mt-3 text-center text-xs text-white/30">
         Quer só conhecer o sistema?{" "}

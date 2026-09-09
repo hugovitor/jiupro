@@ -25,6 +25,7 @@ import {
 import { signupTrialDays, signupTrialLabel } from "@/lib/billing-offer";
 import { brl } from "@/lib/format";
 import { PLANS, planCapacityLabel } from "@/lib/plans";
+import { SUPPORT_PHONE_DISPLAY, supportWhatsAppHref } from "@/lib/support";
 
 const modules = [
   {
@@ -402,12 +403,22 @@ function FinalCTA() {
             Sua academia merece uma gestão faixa preta.
           </h2>
         </div>
-        <Link
-          href="/cadastro"
-          className="inline-flex h-12 shrink-0 items-center gap-3 rounded-xl bg-white px-7 text-sm font-black text-red-700 transition hover:bg-black hover:text-white"
-        >
-          Começar agora <ArrowRight className="h-4 w-4" />
-        </Link>
+        <div className="flex shrink-0 flex-col gap-3">
+          <Link
+            href="/cadastro"
+            className="inline-flex h-12 items-center justify-center gap-3 rounded-xl bg-white px-7 text-sm font-black text-red-700 transition hover:bg-black hover:text-white"
+          >
+            Começar agora <ArrowRight className="h-4 w-4" />
+          </Link>
+          <a
+            href={supportWhatsAppHref("Olá, quero conhecer o JiuPro.")}
+            target="_blank"
+            rel="noreferrer"
+            className="text-center text-xs font-bold text-white/80 hover:text-white"
+          >
+            Suporte {SUPPORT_PHONE_DISPLAY}
+          </a>
+        </div>
       </div>
     </section>
   );

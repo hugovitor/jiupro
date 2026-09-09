@@ -22,6 +22,7 @@ import { DarkCanvas, Eyebrow, Wordmark } from "@/components/brand";
 import { DEMO_ACCOUNTS } from "@/lib/seed";
 import { ownerDestination } from "@/lib/auth-redirect";
 import { useStore } from "@/lib/store";
+import { SUPPORT_PHONE_DISPLAY, supportWhatsAppHref } from "@/lib/support";
 
 export default function LoginPage() {
   const store = useStore();
@@ -281,7 +282,24 @@ export default function LoginPage() {
           </div>
 
           <p className="mt-5 text-center text-[10px] leading-5 text-white/20">
-            Ao continuar, você concorda com os termos de uso e a política de privacidade do JiuPro.
+            Ao continuar, você concorda com os{" "}
+            <Link href="/termos" className="underline hover:text-white">
+              termos de uso
+            </Link>{" "}
+            e a{" "}
+            <Link href="/privacidade" className="underline hover:text-white">
+              política de privacidade
+            </Link>
+            . Suporte:{" "}
+            <a
+              href={supportWhatsAppHref()}
+              target="_blank"
+              rel="noreferrer"
+              className="underline hover:text-white"
+            >
+              {SUPPORT_PHONE_DISPLAY}
+            </a>
+            .
           </p>
         </div>
       </section>

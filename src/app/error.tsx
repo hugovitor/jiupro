@@ -11,6 +11,7 @@ import {
   ShieldAlert,
 } from "lucide-react";
 import { DarkCanvas, Eyebrow, Wordmark } from "@/components/brand";
+import { SUPPORT_PHONE_DISPLAY, supportWhatsAppHref } from "@/lib/support";
 
 interface ErrorPageProps {
   error: Error & { digest?: string };
@@ -94,6 +95,18 @@ export default function ErrorPage({ error, reset }: ErrorPageProps) {
             <Home className="h-4 w-4" />
             Ir para a página inicial
           </Link>
+          <a
+            href={supportWhatsAppHref(
+              error.digest
+                ? `Olá, deu erro no JiuPro. Código ${error.digest}.`
+                : "Olá, deu erro no JiuPro.",
+            )}
+            target="_blank"
+            rel="noreferrer"
+            className="mt-2 block text-xs font-bold text-white/35 hover:text-white"
+          >
+            Suporte {SUPPORT_PHONE_DISPLAY}
+          </a>
 
           {error.digest ? (
             <div className="mx-auto mt-10 max-w-md rounded-2xl border border-white/8 bg-white/[0.025] p-4">

@@ -12,6 +12,7 @@ import { brl } from "@/lib/format";
 import { PLANS, planById } from "@/lib/plans";
 import { useStore } from "@/lib/store";
 import type { PlanId } from "@/lib/types";
+import { SUPPORT_PHONE_DISPLAY, supportWhatsAppHref } from "@/lib/support";
 
 function ConfigInner() {
   const store = useStore();
@@ -138,6 +139,22 @@ function ConfigInner() {
       </section>
 
       <DropInFeeForm />
+
+      <section className="border border-border bg-card p-5 text-sm">
+        <h2 className="font-medium">Suporte JiuPro</h2>
+        <p className="mt-2 text-muted-foreground">
+          Plano, cupom, cadastro ou acesso: fale no WhatsApp{" "}
+          <a
+            className="font-bold text-red-500 hover:text-red-400"
+            href={supportWhatsAppHref("Olá, sou dono de academia no JiuPro.")}
+            target="_blank"
+            rel="noreferrer"
+          >
+            {SUPPORT_PHONE_DISPLAY}
+          </a>
+          .
+        </p>
+      </section>
     </div>
   );
 }

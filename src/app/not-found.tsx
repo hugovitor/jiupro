@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { Home } from "lucide-react";
 import { DarkCanvas, Eyebrow, Wordmark } from "@/components/brand";
+import { SUPPORT_PHONE_DISPLAY, supportWhatsAppHref } from "@/lib/support";
 
 export default function NotFound() {
   return (
@@ -33,6 +34,14 @@ export default function NotFound() {
             Entrar
           </Link>
         </div>
+        <a
+          href={supportWhatsAppHref()}
+          target="_blank"
+          rel="noreferrer"
+          className="mt-6 text-xs font-bold text-white/35 hover:text-white"
+        >
+          Suporte {SUPPORT_PHONE_DISPLAY}
+        </a>
       </section>
     </DarkCanvas>
   );

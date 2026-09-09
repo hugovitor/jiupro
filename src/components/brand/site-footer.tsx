@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { BeltMark } from "./belt-mark";
+import { SUPPORT_PHONE_DISPLAY, supportWhatsAppHref } from "@/lib/support";
 
 const DEFAULT_LINKS = [
   { href: "/#produto", label: "Produto" },
@@ -30,9 +31,24 @@ export function SiteFooter({
           </div>
         </div>
         <div className="h-px bg-white/10" />
-        <div className="flex flex-col gap-2 text-[11px] text-white/30 sm:flex-row sm:justify-between">
+        <div className="flex flex-col gap-2 text-[11px] text-white/30 sm:flex-row sm:items-center sm:justify-between">
           <span>© 2026 JiuPro. Gestão para academias de Jiu-Jitsu.</span>
-          <span>Cada academia, uma conta. Cada treino, uma evolução.</span>
+          <a
+            href={supportWhatsAppHref()}
+            target="_blank"
+            rel="noreferrer"
+            className="hover:text-white"
+          >
+            Suporte WhatsApp {SUPPORT_PHONE_DISPLAY}
+          </a>
+        </div>
+        <div className="flex flex-wrap gap-4 text-[11px] text-white/25">
+          <Link href="/termos" className="hover:text-white">
+            Termos
+          </Link>
+          <Link href="/privacidade" className="hover:text-white">
+            Privacidade
+          </Link>
         </div>
       </div>
     </footer>
