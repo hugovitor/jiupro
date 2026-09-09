@@ -20,7 +20,7 @@ interface ErrorPageProps {
 
 export default function ErrorPage({ error, reset }: ErrorPageProps) {
   useEffect(() => {
-    console.error("Erro capturado pelo Ponteira:", error);
+    console.error("Erro capturado pelo TatameX:", error);
   }, [error]);
 
   function reloadPage() {
@@ -98,8 +98,8 @@ export default function ErrorPage({ error, reset }: ErrorPageProps) {
           <a
             href={supportWhatsAppHref(
               error.digest
-                ? `Olá, deu erro no Ponteira. Código ${error.digest}.`
-                : "Olá, deu erro no Ponteira.",
+                ? `Olá, deu erro no TatameX. Código ${error.digest}.`
+                : "Olá, deu erro no TatameX.",
             )}
             target="_blank"
             rel="noreferrer"

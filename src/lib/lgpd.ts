@@ -1,11 +1,13 @@
 import type { AppState, Student } from "@/lib/types";
 import { PRODUCT_NAME } from "@/lib/brand";
 
-export const LGPD_CONSENT_KEY = "ponteira.lgpd.notice.v1";
+export const LGPD_CONSENT_KEY = "tatamex.lgpd.notice.v1";
+const LEGACY_CONSENT_KEYS = ["ponteira.lgpd.notice.v1"];
 
 export function lgpdNoticeAccepted() {
   if (typeof window === "undefined") return true;
-  return localStorage.getItem(LGPD_CONSENT_KEY) === "1";
+  if (localStorage.getItem(LGPD_CONSENT_KEY) === "1") return true;
+  return LEGACY_CONSENT_KEYS.some((key) => localStorage.getItem(key) === "1");
 }
 
 export function acceptLgpdNotice() {

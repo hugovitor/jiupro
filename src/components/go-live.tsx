@@ -45,7 +45,7 @@ export function GoLiveCard() {
           ? "A Equipe Origem é só para conhecer o painel. Abra a sua casa para cadastrar alunos de verdade."
           : ready
             ? stripeReady
-              ? "Os dados ficam na sua conta. A assinatura do Ponteira é no cartão; a mensalidade do aluno, no Pix da academia."
+              ? "Os dados ficam na sua conta. A assinatura do TatameX é no cartão; a mensalidade do aluno, no Pix da academia."
               : "Os dados ficam na sua conta. A mensalidade do aluno entra pelo Pix da academia."
             : "Cadastre pelo site publicado para não perder a academia se limpar o celular."}
       </p>

@@ -1,5 +1,5 @@
-export const PRODUCT_NAME = "Ponteira";
-export const PRODUCT_MARK = "PONTEIRA";
+export const PRODUCT_NAME = "TatameX";
+export const PRODUCT_MARK = "TATAMEX";
 export const PRODUCT_TAGLINE = "Gestão no tatame";
 export const PRODUCT_BLURB = "sistema de gestão para academias de Jiu-Jitsu";
 

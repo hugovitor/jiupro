@@ -36,7 +36,7 @@ export async function stripePriceIdForPlan(planId: PlanId) {
   });
   if (existing.data[0]?.id) return existing.data[0].id;
   const product = await stripe.products.create({
-    name: `Ponteira ${plan.name}`,
+    name: `TatameX ${plan.name}`,
     description: `${plan.blurb} Assinatura mensal da academia.`,
     metadata: { planId: plan.id },
   });
@@ -140,7 +140,7 @@ export function checkoutStripeError(err: unknown) {
   if (err instanceof Stripe.errors.StripeInvalidRequestError) {
     const msg = err.message || "";
     if (/appl(y|ies).to|not applicable to this|product/i.test(msg)) {
-      return "Este cupom está limitado a outros produtos. No Stripe, deixe-o válido para todos os produtos Ponteira.";
+      return "Este cupom está limitado a outros produtos. No Stripe, deixe-o válido para todos os produtos TatameX.";
     }
     if (/currency/i.test(msg)) {
       return "Este cupom está em outra moeda. Crie o desconto em BRL.";

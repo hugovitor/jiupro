@@ -1,4 +1,4 @@
-# Ponteira
+# TatameX
 
 Sistema de gestão para academias de Jiu-Jitsu (antes chamado JiuPro). Site e painel no mesmo visual: canvas preto, faixa preta com ponteira vermelha e tipografia pesada. Cada academia tem a sua conta. Os alunos confirmam a aula no celular; o professor valida quem treinou.
 
@@ -20,7 +20,7 @@ Feito para o dono que treina de manhã e administra de noite: mensalidades em at
 - **PWA do aluno** — o dono manda o link/código da casa; o aluno confirma o nome e cria e-mail e senha. Se a ficha já existe, o mesmo e-mail ou WhatsApp vincula. Não há lista de academias.
 - **LGPD** — termos e privacidade, consentimento no cadastro, aviso de armazenamento local, exportar dados, apagar ficha, responsável obrigatório no kids.
 - **Assistente na primeira entrada** — dono configura Pix e convite; aluno vê como confirmar aula, faixa e mensalidade. Não aparece de novo depois de concluir ou pular.
-- **Planos mensais** — Essencial, Academia e Equipe. Escolhe no cadastro; Stripe cobra o Ponteira depois
+- **Planos mensais** — Essencial, Academia e Equipe. Escolhe no cadastro; Stripe cobra o TatameX depois
 - **Cadastro real** — abre a sua academia, vazia, isolada da Equipe Origem
 - **Demo completa** — Equipe Origem (Campinas) nos atalhos de Entrar ou em `/demo`
 - **Supabase** — schema multi-tenant com RLS. Cada entidade é uma tabela, não um JSON único
@@ -47,11 +47,11 @@ Abre em [http://localhost:43123](http://localhost:43123).
 
 ## Supabase
 
-Projeto **novo e vazio** é o esperado. O Dashboard não cria as tabelas do Ponteira — o schema faz isso.
+Projeto **novo e vazio** é o esperado. O Dashboard não cria as tabelas do TatameX — o schema faz isso.
 
 1. Crie um projeto no [Supabase](https://supabase.com)
 2. Dashboard → Project Settings → API: **Project URL** + **anon public** (nunca a service role)
-3. No Ponteira: **Configurações** → colar as duas → Salvar → Testar conexão
+3. No TatameX: **Configurações** → colar as duas → Salvar → Testar conexão
 4. Criar tabelas, uma destas:
    - **Copiar SQL** → SQL Editor → **Run** (não usa a porta 5432), ou
    - Colar a URI Direct ou Session pooler em **Aplicar schema pela URI**. Direct (`db.…supabase.co`) é IPv6; o app reescreve para o pooler IPv4.
@@ -71,11 +71,11 @@ O schema isola dados por `academy_id` (RLS). O cadastro chama `register_academy`
 
 ## Asaas (mensalidades) — depois
 
-Sandbox primeiro. Stripe cobra o **plano do Ponteira**; o Asaas cobra a **mensalidade do aluno**.
+Sandbox primeiro. Stripe cobra o **plano do TatameX**; o Asaas cobra a **mensalidade do aluno**.
 
 1. Crie uma conta em [sandbox.asaas.com](https://sandbox.asaas.com)
 2. Integrações → API Key (começa com `$aact_hmlg_`)
-3. No Ponteira: **Configurações** → colar a chave → Testar sandbox
+3. No TatameX: **Configurações** → colar a chave → Testar sandbox
 4. Em **Cobranças**, **Gerar Pix Asaas** (CPF do aluno é obrigatório)
 5. Pague a fatura no próprio sandbox. **Conferir** consulta o status. Com URL pública, o webhook `POST /api/asaas/webhook` baixa sozinho
 
@@ -109,7 +109,7 @@ Webhook: `POST /api/stripe/webhook`. Sem chaves, o checkout só troca o plano na
 
 Não precisa de domínio próprio no começo. O primeiro deploy gera algo como `https://jiupro-xxxx.vercel.app`.
 
-O app **sobe sem Asaas e sem Stripe**. Mensalidade do aluno: Pix da casa + WhatsApp. Assinatura do Ponteira: você cobra no Pix e libera o plano; o checkout Stripe entra depois.
+O app **sobe sem Asaas e sem Stripe**. Mensalidade do aluno: Pix da casa + WhatsApp. Assinatura do TatameX: você cobra no Pix e libera o plano; o checkout Stripe entra depois.
 
 O único passo obrigatório para **não perder dados** é o **Supabase**. Sem ele o cadastro fica só no navegador de quem abriu.
 
@@ -141,7 +141,7 @@ Opcional — só se quiser fixar a URL (senão o app usa a da Vercel sozinho):
 NEXT_PUBLIC_APP_URL=https://SEU-PROJETO.vercel.app
 ```
 
-### Stripe (assinatura do Ponteira)
+### Stripe (assinatura do TatameX)
 
 Sem a chave, o cadastro abre a academia **sem cobrar**. Com a chave, o cadastro manda o dono para o Checkout da Stripe (cartão, BRL, mensal).
 
@@ -160,7 +160,7 @@ STRIPE_WEBHOOK_SECRET=whsec_…
 
 Cadastro novo entra com **30 dias grátis** (cartão na hora, primeira fatura depois). Para desligar: `NEXT_PUBLIC_STRIPE_TRIAL_DAYS=0`. Para um cupom automático em todo cadastro, sem o cliente digitar: `STRIPE_SIGNUP_PROMO=SEUCODIGO`. Código digitado no cadastro vale no lugar do mês grátis.
 
-O dono do Ponteira gerencia a planilha de academias (Maps → Zap), cupons e contas no ar em `/operacao` (e-mail `hugovitormnunes@gmail.com`, ou `JIUPRO_OPERATOR_EMAILS`). Cupom ligado a um e-mail entra sozinho no cadastro dessa pessoa. A tabela `operator_leads` precisa existir no projeto — o painel mostra o SQL se ainda faltar.
+O dono do TatameX gerencia a planilha de academias (Maps → Zap), cupons e contas no ar em `/operacao` (e-mail `hugovitormnunes@gmail.com`, ou `JIUPRO_OPERATOR_EMAILS`). Cupom ligado a um e-mail entra sozinho no cadastro dessa pessoa. A tabela `operator_leads` precisa existir no projeto — o painel mostra o SQL se ainda faltar.
 
 `STRIPE_PRICE_*` é opcional. Asaas continua só para mensalidade do aluno.
 
@@ -171,7 +171,7 @@ Asaas e Stripe podem ficar vazios.
 1. Crie um projeto no [Supabase](https://supabase.com) (região São Paulo, se aparecer)
 2. Project Settings → API: **Project URL** + **anon public** (nunca a service role no frontend)
 3. Cole as duas na Vercel (acima) **ou** em Configurações no app
-4. SQL Editor → no Ponteira, **Copiar SQL** → Run
+4. SQL Editor → no TatameX, **Copiar SQL** → Run
 5. Authentication → Providers → Email: desligue **Confirm email**
 6. Authentication → URL Configuration: Site URL `https://jiupro.vercel.app` e Redirect URLs `https://jiupro.vercel.app/atualizar-senha` (e `http://127.0.0.1:43123/atualizar-senha` se for testar local). Sem isso o e-mail de senha esquecida não volta para o app.
 7. Abra a academia em `/cadastro` (não a demo) → Configurações → **Enviar esta academia**
@@ -188,7 +188,7 @@ Sem isso, cadastro e painel ficam só no `localStorage`.
 
 ### 5. Pagamentos (depois)
 
-Asaas (Pix dinâmico do aluno) e Stripe (assinatura Ponteira) não bloqueiam o ar.
+Asaas (Pix dinâmico do aluno) e Stripe (assinatura TatameX) não bloqueiam o ar.
 
 ```
 ASAAS_ENV=sandbox

@@ -174,7 +174,7 @@ function ConfigInner() {
               variant="outline"
               onClick={() => {
                 downloadJson(
-                  `ponteira-${store.academy.slug}-dados.json`,
+                  `tatamex-${store.academy.slug}-dados.json`,
                   store.exportAcademyData(),
                 );
                 toast.success("Arquivo baixado. Guarde com cuidado — tem CPF e WhatsApp.");

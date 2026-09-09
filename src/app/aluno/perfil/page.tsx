@@ -121,7 +121,7 @@ export default function PerfilAluno() {
             className="w-full"
             onClick={() => {
               downloadJson(
-                `ponteira-meus-dados.json`,
+                `tatamex-meus-dados.json`,
                 studentPortability(student, store),
               );
               toast.success("Seus dados foram baixados.");

@@ -62,7 +62,7 @@ export default function LoginPage() {
         return;
       }
 
-      toast.success("Acesso autorizado. Bem-vindo ao Ponteira!");
+      toast.success("Acesso autorizado. Bem-vindo ao TatameX!");
       router.push(ownerDestination(nextPath, result.role));
     } catch {
       toast.error("Não foi possível entrar. Tente novamente.");
@@ -153,7 +153,7 @@ export default function LoginPage() {
                 <p className="text-[11px] font-black uppercase tracking-[0.2em] text-red-500">
                   Bem-vindo de volta
                 </p>
-                <h2 className="mt-3 text-3xl font-black tracking-[-0.04em]">Entre no Ponteira</h2>
+                <h2 className="mt-3 text-3xl font-black tracking-[-0.04em]">Entre no TatameX</h2>
                 <p className="mt-3 text-sm leading-6 text-white/42">
                   {finishPayment
                     ? "Sua academia já existe. Entre e, em Configurações, escolha o plano para aplicar o cupom no Stripe."

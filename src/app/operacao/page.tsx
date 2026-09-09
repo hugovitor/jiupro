@@ -187,7 +187,7 @@ export default function OperacaoPage() {
       <DarkCanvas className="flex min-h-screen flex-col items-center justify-center px-5">
         <Wordmark href="/" />
         <p className="mt-8 max-w-md text-center text-sm text-white/50">
-          Este painel é do dono do Ponteira, não da academia. Entre com o e-mail da
+          Este painel é do dono do TatameX, não da academia. Entre com o e-mail da
           operação.
         </p>
         <Link href="/academia" className="mt-6 text-sm font-bold text-red-500">
@@ -216,7 +216,7 @@ export default function OperacaoPage() {
 
       <div className="mx-auto max-w-6xl space-y-10 px-5 py-10">
         <div>
-          <Eyebrow>Operação Ponteira</Eyebrow>
+          <Eyebrow>Operação TatameX</Eyebrow>
           <h1 className="mt-4 text-3xl font-black tracking-[-0.04em] sm:text-4xl">
             Planilha, cupons e academias.
           </h1>
@@ -230,7 +230,7 @@ export default function OperacaoPage() {
 
         <section className="grid gap-4 lg:grid-cols-2">
           <article className="surface p-5">
-            <h2 className="text-sm font-black">O que o cliente paga ao Ponteira</h2>
+            <h2 className="text-sm font-black">O que o cliente paga ao TatameX</h2>
             <p className="mt-3 text-sm leading-6 text-white/50">
               No cadastro a academia é criada na hora. Em seguida o Stripe cobra o
               plano Essencial, Academia ou Equipe no cartão. Casa nova ganha{" "}
@@ -245,7 +245,7 @@ export default function OperacaoPage() {
             <h2 className="text-sm font-black">O que o aluno paga à academia</h2>
             <p className="mt-3 text-sm leading-6 text-white/50">
               Mensalidade, aula avulsa e loja saem no Pix da casa, via WhatsApp.
-              Isso não passa no Stripe do Ponteira. Cupom daqui não altera a
+              Isso não passa no Stripe do TatameX. Cupom daqui não altera a
               mensalidade do aluno.
             </p>
           </article>

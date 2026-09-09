@@ -386,7 +386,7 @@ const STUDENT_STEPS: Step[] = [
   {
     id: "pix",
     title: "Mensalidade no Pix da casa.",
-    body: "Em Perfil está o valor do mês. Copia o Pix da academia — não é pagamento do Ponteira.",
+    body: "Em Perfil está o valor do mês. Copia o Pix da academia — não é pagamento do TatameX.",
     tips: ["Se a academia gerou fatura Asaas, o código da fatura aparece aí."],
   },
 ];

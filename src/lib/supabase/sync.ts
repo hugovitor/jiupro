@@ -143,7 +143,7 @@ export function scheduleRemotePush(state: AppState) {
   const handle = window.setTimeout(() => {
     void pushAcademyState(state).then((result) => {
       if (result.error && !("missingAcademy" in result && result.missingAcademy)) {
-        console.warn("Ponteira: sync Supabase —", result.error);
+        console.warn("TatameX: sync Supabase —", result.error);
       }
     });
   }, 800);
@@ -231,7 +231,7 @@ export async function testSupabaseConnection() {
   if (/does not exist|schema cache|42P01/i.test(msg) || error.code === "PGRST205") {
     return {
       ok: false as const,
-      error: "Projeto alcançado, mas ainda vazio. Aplique o schema do Ponteira (passo 2).",
+      error: "Projeto alcançado, mas ainda vazio. Aplique o schema do TatameX (passo 2).",
       needsSchema: true as const,
     };
   }

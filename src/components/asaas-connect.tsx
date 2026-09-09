@@ -164,9 +164,8 @@ export function AsaasConnect() {
           </div>
         )}
         <p className="text-xs text-muted-foreground">
-          No formulário Asaas: nome <strong className="font-medium text-foreground">PonteiraWebhooks</strong>
-          {" "}(se já existia JiuProWebhooks, pode manter),
-          , versão <strong className="font-medium text-foreground">v3</strong>, envio{" "}
+          No formulário Asaas: nome <strong className="font-medium text-foreground">TatameXWebhooks</strong>
+          {" "}(se já existia JiuProWebhooks, pode manter), versão <strong className="font-medium text-foreground">v3</strong>, envio{" "}
           <strong className="font-medium text-foreground">Sequencial</strong>. Eventos:{" "}
           PAYMENT_RECEIVED e PAYMENT_CONFIRMED. O header que o Asaas manda é{" "}
           <code>asaas-access-token</code> (é o token acima). Integrações → API

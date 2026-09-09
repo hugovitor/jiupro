@@ -94,7 +94,7 @@ export async function POST(request: Request) {
         offer,
       },
       subscription_data: {
-        description: `Ponteira ${plan.name}`,
+        description: `TatameX ${plan.name}`,
         ...(trialDays > 0 ? { trial_period_days: trialDays } : {}),
         metadata: {
           planId,

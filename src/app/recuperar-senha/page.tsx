@@ -69,7 +69,7 @@ export default function RecuperarSenhaPage() {
             <a
               className="font-bold text-red-400 hover:text-red-300"
               href={supportWhatsAppHref(
-                `Olá, pedi recuperação de senha no Ponteira para ${email.trim().toLowerCase()} e o e-mail não chegou.`,
+                `Olá, pedi recuperação de senha no TatameX para ${email.trim().toLowerCase()} e o e-mail não chegou.`,
               )}
               target="_blank"
               rel="noreferrer"

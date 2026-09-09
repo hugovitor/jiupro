@@ -3,6 +3,6 @@ export const SUPPORT_PHONE_E164 = "5561986298327";
 
 export function supportWhatsAppHref(text?: string) {
   const message =
-    text ?? "Olá, vim pela Ponteira e preciso de suporte.";
+    text ?? "Olá, vim pelo TatameX e preciso de suporte.";
   return `https://wa.me/${SUPPORT_PHONE_E164}?text=${encodeURIComponent(message)}`;
 }

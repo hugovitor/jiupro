@@ -1,3 +1,3 @@
-# Ponteira
+# TatameX
 
 See README.md.

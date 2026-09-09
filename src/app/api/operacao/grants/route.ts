@@ -46,7 +46,7 @@ export async function POST(request: Request) {
     const coupon = await stripe.coupons.create({
       percent_off: percent,
       duration: kind === "percent_forever" ? "forever" : "once",
-      name: note || (email ? `Ponteira ${email}` : code),
+      name: note || (email ? `TatameX ${email}` : code),
       metadata: { source: "operacao", email, kind },
     });
     const promo = await stripe.promotionCodes.create({

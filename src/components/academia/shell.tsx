@@ -134,7 +134,7 @@ export function AcademiaShell({ children }: { children: React.ReactNode }) {
               render={<Link href="/operacao" />}
             >
               <Shield className="size-3.5" />
-              Ponteira
+              TatameX
             </Button>
           ) : null}
           <div className="hidden text-right sm:block">
