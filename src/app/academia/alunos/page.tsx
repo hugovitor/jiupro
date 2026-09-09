@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { useMemo, useState } from "react";
 import { toast } from "sonner";
+import { AlunoAppCard } from "@/components/academia/aluno-app-card";
 import { BeltBadge, PersonAvatar } from "@/components/belt-badge";
 import { FormDialog } from "@/components/form-dialog";
 import { Button } from "@/components/ui/button";
@@ -68,6 +69,8 @@ export default function AlunosPage() {
         </div>
         <NovoAluno />
       </div>
+
+      <AlunoAppCard />
 
       <div className="flex flex-col gap-3 sm:flex-row">
         <Input
@@ -183,6 +186,10 @@ function NovoAluno() {
         onClose={() => setOpen(false)}
         title="Cadastrar aluno"
       >
+        <p className="text-sm text-muted-foreground">
+          A ficha fica nesta academia. Depois o aluno cria e-mail e senha no link do app da casa.
+          Use o mesmo WhatsApp ou e-mail para o vínculo bater.
+        </p>
         <form
           className="grid gap-3"
           onSubmit={(e) => {

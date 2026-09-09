@@ -60,6 +60,7 @@ export type Academy = {
   monthlyGoal: number;
   dropInFee: number;
   createdAt: string;
+  joinCode: string;
 };
 
 export type User = {

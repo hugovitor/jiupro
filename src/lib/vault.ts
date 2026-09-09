@@ -28,6 +28,7 @@ function migrateState(state: AppState): AppState {
       pixKey: state.academy.pixKey || "",
       pixName: state.academy.pixName || state.academy.name,
       dropInFee: state.academy.dropInFee || 40,
+      joinCode: state.academy.joinCode || "",
     },
     evaluations: state.evaluations ?? [],
     events: state.events ?? [],
@@ -169,6 +170,20 @@ export function putAcademy(state: AppState, password?: string, previousId?: stri
 
 export function passwordFor(email: string) {
   return getVault().credentials[email.trim().toLowerCase()];
+}
+
+export function findAcademyByJoinCode(code: string) {
+  const needle = code.trim();
+  if (!needle) return null;
+  const upper = needle.toUpperCase();
+  const lower = needle.toLowerCase();
+  const v = getVault();
+  for (const state of Object.values(v.academies)) {
+    const join = (state.academy.joinCode ?? "").toUpperCase();
+    const slug = state.academy.slug.toLowerCase();
+    if (join === upper || slug === lower) return state;
+  }
+  return null;
 }
 
 export function findUserAcrossAcademies(email: string) {

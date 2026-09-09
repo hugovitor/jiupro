@@ -198,6 +198,7 @@ export function academyToRow(a: Academy): Row {
     plan: a.plan,
     monthly_goal: a.monthlyGoal,
     drop_in_fee: a.dropInFee,
+    join_code: a.joinCode || null,
   };
 }
 
@@ -428,6 +429,7 @@ export function tablesToState(input: {
     monthlyGoal: num(a.monthly_goal),
     dropInFee: num(a.drop_in_fee, 40),
     createdAt: str(a.created_at, new Date().toISOString()),
+    joinCode: str(a.join_code).toUpperCase(),
   };
 
   const users: User[] = input.profiles.map((p) => ({

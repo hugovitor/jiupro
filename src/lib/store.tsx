@@ -16,6 +16,7 @@ import { createSeed, DEMO_ACADEMY_ID, DEMO_ACCOUNTS } from "./seed";
 import {
   attachLocalAcademy,
   createAcademyForCurrentUser,
+  joinStudentRemote,
   pullAcademyState,
   pushAcademyState,
   registerRemoteAcademy,
@@ -30,6 +31,7 @@ import {
   activeState,
   checkPassword,
   emailTaken,
+  findAcademyByJoinCode,
   findUserAcrossAcademies,
   hasLocalPassword,
   passwordFor,
@@ -86,6 +88,13 @@ type Store = AppState & {
   logout: () => void;
   resetDemo: () => void;
   registerAcademy: (input: RegisterInput) => Promise<LoginResult>;
+  registerStudent: (input: {
+    code: string;
+    name: string;
+    phone: string;
+    email: string;
+    password: string;
+  }) => Promise<LoginResult>;
   syncNow: () => Promise<SyncResult>;
   pullNow: () => Promise<SyncResult>;
   addStudent: (input: Omit<Student, "id" | "academyId" | "userId" | "avatarHue">) => void;
@@ -430,6 +439,133 @@ export function StoreProvider({ children }: { children: ReactNode }) {
     }
     return { ok: true, role: "owner", academyId: academy.academy.id };
   }, [login]);
+
+  const registerStudent = useCallback(async (input: {
+    code: string;
+    name: string;
+    phone: string;
+    email: string;
+    password: string;
+  }): Promise<LoginResult> => {
+    const email = input.email.trim().toLowerCase();
+    const code = input.code.trim();
+    const name = input.name.trim();
+    if (!code || !name || !email.includes("@") || input.password.length < 6) {
+      return { ok: false, error: "Preencha código da casa, nome, e-mail e senha (mínimo 6)." };
+    }
+
+    if (isSupabaseConfigured()) {
+      const remote = await joinStudentRemote({
+        code,
+        name,
+        phone: input.phone,
+        email,
+        password: input.password,
+      });
+      if (!("error" in remote && remote.error === "offline")) {
+        if ("error" in remote && remote.error) return { ok: false, error: remote.error };
+        if ("session" in remote && remote.session) {
+          const pulled = await pullAcademyState(remote.session);
+          if (!("error" in pulled)) {
+            rememberPassword(email, input.password);
+            putAcademy(pulled, input.password);
+            write(pulled);
+            return { ok: true, role: "student", academyId: pulled.academy.id };
+          }
+          return { ok: false, error: pulled.error };
+        }
+      }
+    }
+
+    const house = findAcademyByJoinCode(code);
+    if (!house || house.academy.id === DEMO_ACADEMY_ID) {
+      return { ok: false, error: "Casa não encontrada. Use o link que a sua academia mandou." };
+    }
+    const across = findUserAcrossAcademies(email);
+    if (across && across.state.academy.id !== house.academy.id) {
+      return {
+        ok: false,
+        error: "Este e-mail já pertence a outra academia. Use outro e-mail no app do aluno.",
+      };
+    }
+    const existingUser = house.users.find((user) => user.email.toLowerCase() === email);
+    if ((existingUser && existingUser.role !== "student") || (across && across.user.role !== "student")) {
+      return { ok: false, error: "Este e-mail já é da equipe da academia. Use outro no app do aluno." };
+    }
+    if (existingUser && !checkPassword(email, input.password) && hasLocalPassword(email)) {
+      return { ok: false, error: "Este e-mail já tem senha. Entre no login." };
+    }
+
+    const digits = input.phone.replace(/\D/g, "");
+    const claimed = house.students.find((student) => {
+      if (student.email.trim().toLowerCase() === email) return true;
+      const phone = student.phone.replace(/\D/g, "");
+      if (digits.length < 10 || phone.length < 10) return false;
+      return phone === digits || phone === `55${digits}` || `55${phone}` === digits;
+    });
+    if (claimed?.userId && existingUser && claimed.userId !== existingUser.id) {
+      return { ok: false, error: "Essa ficha já tem acesso. Entre com o e-mail e a senha." };
+    }
+    if (claimed?.userId && !existingUser) {
+      return { ok: false, error: "Essa ficha já tem acesso. Entre com o e-mail e a senha." };
+    }
+
+    const userId = existingUser?.id ?? crypto.randomUUID();
+    const user = {
+      id: userId,
+      academyId: house.academy.id,
+      name,
+      email,
+      role: "student" as const,
+      phone: input.phone.trim(),
+      avatarHue: 210,
+    };
+    const students = claimed
+      ? house.students.map((student) =>
+          student.id === claimed.id
+            ? {
+                ...student,
+                userId,
+                email: student.email || email,
+                phone: student.phone || input.phone.trim(),
+              }
+            : student,
+        )
+      : [
+          {
+            id: crypto.randomUUID(),
+            academyId: house.academy.id,
+            userId,
+            name,
+            email,
+            phone: input.phone.trim(),
+            birthDate: "2000-01-01",
+            division: "adult" as const,
+            belt: "white" as const,
+            stripes: 0,
+            joinDate: isoDate(0),
+            lastPromotionDate: isoDate(0),
+            status: "active" as const,
+            monthlyFee: 0,
+            notes: "",
+            avatarHue: Math.floor(Math.random() * 360),
+          },
+          ...house.students,
+        ];
+    const users = existingUser
+      ? house.users.map((item) => (item.id === userId ? user : item))
+      : [...house.users, user];
+    const next = {
+      ...house,
+      users,
+      students,
+      session: { userId, academyId: house.academy.id, role: "student" as const },
+    };
+    rememberPassword(email, input.password);
+    putAcademy(next, input.password);
+    write(next);
+    return { ok: true, role: "student", academyId: next.academy.id };
+  }, []);
 
   const syncNow = useCallback(async (): Promise<SyncResult> => {
     const current = getSnapshot();
@@ -1113,6 +1249,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
       logout,
       resetDemo,
       registerAcademy,
+      registerStudent,
       syncNow,
       pullNow,
       addStudent,
@@ -1159,6 +1296,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
       logout,
       resetDemo,
       registerAcademy,
+      registerStudent,
       syncNow,
       pullNow,
       addStudent,
@@ -1203,10 +1341,17 @@ export function StoreProvider({ children }: { children: ReactNode }) {
   return <StoreContext.Provider value={value}>{children}</StoreContext.Provider>;
 }
 
-export function currentStudent(state: { students: Student[]; session: AppState["session"] }) {
-  const byUser = state.students.find((s) => s.userId === state.session?.userId);
+export function currentStudent(state: {
+  academy: { id: string };
+  students: Student[];
+  session: AppState["session"];
+}) {
+  const byUser = state.students.find((s) => s.userId && s.userId === state.session?.userId);
   if (byUser) return byUser;
-  return state.students.find((s) => s.id === "s_joao");
+  if (state.academy.id === DEMO_ACADEMY_ID) {
+    return state.students.find((s) => s.id === "s_joao");
+  }
+  return undefined;
 }
 
 export function useStore() {

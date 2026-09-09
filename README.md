@@ -17,7 +17,7 @@ Feito para o dono que treina de manhã e administra de noite: mensalidades em at
 - **Retenção** — aluno que some ganha WhatsApp de volta no painel
 - **Agenda** — seminário, campeonato, open mat; confirmação no PWA e Zap para quem falta
 - **Loja** — venda no nome do aluno, baixa o estoque, entra no financeiro
-- **PWA do aluno** — confirma a aula, vê quem vai, agenda, mural, faixa e Pix
+- **PWA do aluno** — o dono manda o link/código da casa; o aluno confirma o nome e cria e-mail e senha. Se a ficha já existe, o mesmo e-mail ou WhatsApp vincula. Não há lista de academias.
 - **Planos mensais** — Essencial, Academia e Equipe. Escolhe no cadastro; Stripe cobra o JiuPro depois
 - **Cadastro real** — abre a sua academia, vazia, isolada da Equipe Origem
 - **Demo completa** — Equipe Origem (Campinas) nos atalhos de Entrar ou em `/demo`
@@ -56,6 +56,7 @@ Projeto **novo e vazio** é o esperado. O Dashboard não cria as tabelas do JiuP
 5. Authentication → Providers → Email: desligue **Confirm email** para entrar na hora
 6. Authentication → URL Configuration: Redirect URLs deve incluir `https://jiupro.vercel.app/atualizar-senha` (senha esquecida)
 7. Na sua academia (não na demo): **Enviar esta academia**
+8. App do aluno: em **Alunos**, **Copiar SQL do app** → SQL Editor → Run (uma vez). Depois manda o link `/entrar/CÓDIGO` no grupo. O aluno confirma o nome da casa antes de criar a senha.
 
 Também dá para colocar no `.env.local`:
 

@@ -255,7 +255,11 @@ function CadastroForm() {
         </a>
       </p>
       <p className="mt-3 text-center text-xs text-white/30">
-        Quer só conhecer o sistema?{" "}
+        Sou aluno?{" "}
+        <Link href="/entrar" className="underline">
+          Entrar na minha academia
+        </Link>
+        . Quer só conhecer o sistema?{" "}
         <Link href="/login" className="underline">
           Entre na demonstração
         </Link>

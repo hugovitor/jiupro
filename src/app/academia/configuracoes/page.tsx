@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 import { Suspense, useEffect, useState } from "react";
 import { toast } from "sonner";
+import { AlunoAppCard } from "@/components/academia/aluno-app-card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -56,6 +57,8 @@ function ConfigInner() {
           Dados da casa, Pix dos alunos e plano do JiuPro.
         </p>
       </div>
+
+      <AlunoAppCard />
 
       {store.isDemo && (
         <section className="surface p-5">

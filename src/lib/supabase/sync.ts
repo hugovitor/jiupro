@@ -57,7 +57,7 @@ export async function pushAcademyState(state: AppState) {
 
   const { data: existing, error: lookupError } = await client
     .from("academies")
-    .select("id")
+    .select("id, join_code")
     .eq("id", ready.academy.id)
     .maybeSingle();
   if (lookupError) return { error: lookupError.message, state: ready };
@@ -78,6 +78,23 @@ export async function pushAcademyState(state: AppState) {
     (profileRows ?? []).map((p: { id: string }) => String(p.id)),
   );
   const tables = stateToTables(ready, profileIds);
+  if (!tables.academy.join_code && existing.join_code) {
+    tables.academy.join_code = existing.join_code;
+  }
+
+  const { data: claimedRows } = await client
+    .from("students")
+    .select("id, user_id")
+    .eq("academy_id", ready.academy.id);
+  const claimed = new Map(
+    (claimedRows ?? []).map((row) => [String(row.id), row.user_id ? String(row.user_id) : ""]),
+  );
+  for (const row of tables.students) {
+    if (!row.user_id) {
+      const prev = claimed.get(String(row.id));
+      if (prev) row.user_id = prev;
+    }
+  }
 
   const { error: academyError } = await client
     .from("academies")
@@ -427,4 +444,87 @@ export async function confirmPasswordReset(password: string) {
   const email = data.user?.email?.trim().toLowerCase() ?? "";
   await client.auth.signOut();
   return { ok: true as const, email };
+}
+
+export async function joinStudentRemote(input: {
+  code: string;
+  name: string;
+  phone: string;
+  email: string;
+  password: string;
+}) {
+  const client = createSupabaseBrowserClient();
+  if (!client) return { error: "offline" as const };
+
+  const email = input.email.trim().toLowerCase();
+  const signedUp = await client.auth.signUp({
+    email,
+    password: input.password,
+  });
+
+  if (signedUp.error && !/already|registered|exists/i.test(signedUp.error.message)) {
+    return { error: signedUp.error.message };
+  }
+
+  let accessUser = signedUp.data.session?.user ?? signedUp.data.user;
+  if (!signedUp.data.session) {
+    const signedIn = await client.auth.signInWithPassword({
+      email,
+      password: input.password,
+    });
+    if (signedIn.error || !signedIn.data.user) {
+      if (/invalid login|invalid credentials/i.test(signedIn.error?.message ?? "")) {
+        return {
+          error: "Este e-mail já tem senha. Entre no login com a senha desta conta.",
+        };
+      }
+      if (!signedUp.data.session && signedUp.data.user && !signedIn.data.session) {
+        return {
+          error: "Confirme o e-mail e abra de novo o link da sua academia.",
+          pendingEmail: true as const,
+        };
+      }
+      return { error: signedIn.error?.message ?? "Não entrou na conta." };
+    }
+    accessUser = signedIn.data.user;
+  }
+
+  if (!accessUser) return { error: "Não criou a conta do aluno." };
+
+  const { data: academyId, error: joinError } = await client.rpc("join_academy_as_student", {
+    p_code: input.code,
+    p_name: input.name,
+    p_phone: input.phone,
+  });
+  if (joinError) {
+    if (/join_academy_as_student|PGRST202|does not exist|schema cache/i.test(joinError.message)) {
+      return {
+        error: "A academia ainda precisa rodar o SQL do app do aluno. No painel: Alunos → Copiar SQL do app.",
+      };
+    }
+    return { error: joinError.message };
+  }
+
+  const { data: profile } = await client
+    .from("profiles")
+    .select("id, academy_id, role")
+    .eq("id", accessUser.id)
+    .maybeSingle();
+
+  if (!profile?.academy_id) {
+    return { error: "Não vinculou a academia. Confira o código da casa." };
+  }
+  if (profile.role !== "student") {
+    return {
+      error: "Este e-mail já é da equipe da academia. Use outro e-mail no app do aluno.",
+    };
+  }
+
+  return {
+    session: {
+      userId: String(profile.id),
+      academyId: String(academyId ?? profile.academy_id),
+      role: "student" as const,
+    } satisfies Session,
+  };
 }

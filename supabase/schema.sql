@@ -336,6 +336,50 @@ create policy "academy update" on public.academies
   for update using (id = public.current_academy_id())
   with check (id = public.current_academy_id());
 
+-- Código curto da casa para o aluno entrar no PWA sem escolher academia.
+create or replace function public.jiupro_join_code()
+returns text
+language plpgsql
+as $$
+declare
+  chars text := 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
+  result text;
+  i int;
+begin
+  loop
+    result := '';
+    for i in 1..6 loop
+      result := result || substr(chars, 1 + floor(random() * length(chars))::int, 1);
+    end loop;
+    exit when not exists (select 1 from public.academies where join_code = result);
+  end loop;
+  return result;
+end;
+$$;
+
+alter table public.academies add column if not exists join_code text;
+
+create or replace function public.academies_fill_join_code()
+returns trigger
+language plpgsql
+as $$
+begin
+  if new.join_code is null or new.join_code = '' then
+    if tg_op = 'INSERT' or old.join_code is null or old.join_code = '' then
+      new.join_code := public.jiupro_join_code();
+    else
+      new.join_code := old.join_code;
+    end if;
+  end if;
+  return new;
+end;
+$$;
+
+drop trigger if exists academies_fill_join_code on public.academies;
+create trigger academies_fill_join_code
+  before insert or update on public.academies
+  for each row execute function public.academies_fill_join_code();
+
 create or replace function public.register_academy(
   p_name text,
   p_slug text,
@@ -361,8 +405,8 @@ begin
   if exists (select 1 from public.academies where slug = v_slug) then
     v_slug := v_slug || '-' || substr(replace(gen_random_uuid()::text, '-', ''), 1, 6);
   end if;
-  insert into public.academies (name, slug, city, state, plan, pix_name)
-  values (p_name, v_slug, p_city, p_state, coalesce(p_plan, 'essencial'), p_name)
+  insert into public.academies (name, slug, city, state, plan, pix_name, join_code)
+  values (p_name, v_slug, p_city, p_state, coalesce(p_plan, 'essencial'), p_name, public.jiupro_join_code())
   returning id into v_id;
   insert into public.profiles (id, academy_id, name, role, email)
   values (
@@ -413,6 +457,154 @@ create table if not exists public.operator_leads (
   updated_at timestamptz not null default now()
 );
 alter table public.operator_leads enable row level security;
+
+update public.academies
+  set join_code = public.jiupro_join_code()
+  where join_code is null or join_code = '';
+create unique index if not exists academies_join_code_uidx on public.academies (join_code);
+
+create or replace function public.lookup_academy_join(p_code text)
+returns table (name text, city text, state text, slug text, join_code text)
+language sql
+stable
+security definer
+set search_path = public
+as $$
+  select a.name, a.city, a.state, a.slug, a.join_code
+  from public.academies a
+  where a.join_code = upper(trim(p_code))
+     or lower(a.slug) = lower(trim(p_code))
+  limit 1;
+$$;
+
+revoke all on function public.lookup_academy_join(text) from public;
+grant execute on function public.lookup_academy_join(text) to anon, authenticated;
+
+create or replace function public.join_academy_as_student(
+  p_code text,
+  p_name text,
+  p_phone text
+) returns uuid
+language plpgsql
+security definer
+set search_path = public
+as $$
+declare
+  v_uid uuid := auth.uid();
+  v_email text := lower(trim(coalesce(auth.jwt()->>'email', '')));
+  v_academy uuid;
+  v_student uuid;
+  v_phone text;
+  v_claimed uuid;
+  v_profile_academy uuid;
+  v_profile_role text;
+  v_label text;
+begin
+  if v_uid is null then
+    raise exception 'Entre de novo para criar o acesso.';
+  end if;
+
+  select a.id into v_academy
+  from public.academies a
+  where a.join_code = upper(trim(p_code))
+     or lower(a.slug) = lower(trim(p_code))
+  limit 1;
+
+  if v_academy is null then
+    raise exception 'Casa não encontrada. Use o link ou o código que a sua academia mandou.';
+  end if;
+
+  select p.academy_id, p.role into v_profile_academy, v_profile_role
+  from public.profiles p
+  where p.id = v_uid;
+
+  if found then
+    if v_profile_role is distinct from 'student' then
+      raise exception 'Este e-mail já é da equipe da academia. Use outro e-mail no app do aluno.';
+    end if;
+    if v_profile_academy is not null then
+      if v_profile_academy = v_academy then
+        return v_academy;
+      end if;
+      raise exception 'Este e-mail já pertence a outra academia. Use outro e-mail no app do aluno.';
+    end if;
+  end if;
+
+  v_phone := regexp_replace(coalesce(p_phone, ''), '\D', '', 'g');
+  v_label := nullif(trim(p_name), '');
+
+  if v_email <> '' then
+    select s.id, s.user_id into v_student, v_claimed
+    from public.students s
+    where s.academy_id = v_academy
+      and lower(trim(coalesce(s.email, ''))) = v_email
+    order by s.created_at asc
+    limit 1;
+  end if;
+
+  if v_student is null and length(v_phone) >= 10 then
+    select s.id, s.user_id into v_student, v_claimed
+    from public.students s
+    where s.academy_id = v_academy
+      and regexp_replace(coalesce(s.phone, ''), '\D', '', 'g') in (v_phone, '55' || v_phone)
+    order by s.created_at asc
+    limit 1;
+  end if;
+
+  if v_student is not null and v_claimed is not null and v_claimed <> v_uid then
+    raise exception 'Essa ficha já tem acesso. Entre com o e-mail e a senha que você criou.';
+  end if;
+
+  if exists (select 1 from public.profiles where id = v_uid) then
+    update public.profiles
+    set
+      academy_id = v_academy,
+      role = 'student',
+      name = coalesce(nullif(name, ''), v_label, split_part(v_email, '@', 1), 'Aluno'),
+      email = case when email is null or email = '' then v_email else email end,
+      phone = case when phone is null or phone = '' then nullif(trim(p_phone), '') else phone end
+    where id = v_uid;
+  else
+    insert into public.profiles (id, academy_id, name, role, email, phone)
+    values (
+      v_uid,
+      v_academy,
+      coalesce(v_label, split_part(v_email, '@', 1), 'Aluno'),
+      'student',
+      v_email,
+      nullif(trim(p_phone), '')
+    );
+  end if;
+
+  if v_student is not null then
+    update public.students
+    set
+      user_id = v_uid,
+      email = case when email is null or email = '' then v_email else email end,
+      phone = case when phone is null or phone = '' then nullif(trim(p_phone), '') else phone end
+    where id = v_student;
+  else
+    insert into public.students (
+      academy_id, user_id, name, email, phone, division, belt, status, monthly_fee
+    ) values (
+      v_academy,
+      v_uid,
+      coalesce(v_label, split_part(v_email, '@', 1), 'Aluno'),
+      nullif(v_email, ''),
+      nullif(trim(p_phone), ''),
+      'adult',
+      'white',
+      'active',
+      0
+    );
+  end if;
+
+  return v_academy;
+end;
+$$;
+
+revoke all on function public.join_academy_as_student(text, text, text) from public;
+grant execute on function public.join_academy_as_student(text, text, text) to authenticated;
 
 -- Faz o PostgREST (API) enxergar as tabelas novas neste projeto vazio.
 notify pgrst, 'reload schema';

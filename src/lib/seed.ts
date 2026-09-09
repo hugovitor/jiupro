@@ -52,6 +52,7 @@ export function createSeed(): AppState {
     monthlyGoal: 18000,
     dropInFee: 40,
     createdAt: "2021-03-08T12:00:00.000Z",
+    joinCode: "ORIGEM",
   };
 
   const session = {

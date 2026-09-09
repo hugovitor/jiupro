@@ -1,4 +1,5 @@
 import { uid } from "./format";
+import { generateJoinCode } from "./join-code";
 import { DEMO_ACADEMY_ID } from "./seed";
 import type { AppState, PlanId, User } from "./types";
 
@@ -64,6 +65,7 @@ export function createEmptyAcademy(input: {
       monthlyGoal: 0,
       dropInFee: 40,
       createdAt: new Date().toISOString(),
+      joinCode: generateJoinCode(),
     },
     users: [owner],
     students: [],
