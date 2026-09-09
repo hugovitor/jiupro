@@ -27,6 +27,7 @@ export default function PlanosPage() {
   const store = useStore();
   const router = useRouter();
   const [loadingPlan, setLoadingPlan] = useState<PlanId | null>(null);
+  const [promoCode, setPromoCode] = useState("");
 
   const currentPlanId = store.academy.plan as PlanId | undefined;
 
@@ -40,6 +41,7 @@ export default function PlanosPage() {
         email: store.users.find((user) => user.id === store.session?.userId)?.email,
         academyName: store.academy.name,
         academyId: store.academy.id,
+        promoCode,
       });
 
       if (pay === "demo") {
@@ -117,6 +119,21 @@ export default function PlanosPage() {
       </section>
 
       <section className="relative mx-auto max-w-7xl px-5 pb-24 lg:px-8 lg:pb-32">
+        {store.session ? (
+          <div className="mx-auto mb-8 max-w-md">
+            <label htmlFor="promo-code" className="sr-only">
+              Código promocional
+            </label>
+            <input
+              id="promo-code"
+              value={promoCode}
+              onChange={(e) => setPromoCode(e.target.value)}
+              placeholder="Código promocional (opcional)"
+              autoComplete="off"
+              className="h-12 w-full rounded-xl border border-white/10 bg-white/[0.035] px-4 text-sm text-white outline-none placeholder:text-white/25 hover:border-white/20 focus:border-red-500"
+            />
+          </div>
+        ) : null}
         <div className="grid items-stretch gap-5 lg:grid-cols-3">
           {PLANS.map((plan) => {
             const popular = Boolean(plan.popular);

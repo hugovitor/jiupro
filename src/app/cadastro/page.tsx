@@ -26,6 +26,7 @@ function CadastroForm() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [busy, setBusy] = useState(false);
+  const [promoCode, setPromoCode] = useState("");
   const [plan, setPlan] = useState<PlanId>(
     PLANS.some((p) => p.id === preset) ? preset : "academia",
   );
@@ -75,6 +76,7 @@ function CadastroForm() {
               email,
               academyName: academy,
               academyId: result.academyId ?? store.academy.id,
+              promoCode,
             });
             if (pay === "demo") {
               toast.success(`${academy.trim()} aberta. Vamos ao pagamento da assinatura.`);
@@ -185,6 +187,24 @@ function CadastroForm() {
               </button>
             ))}
           </div>
+        </div>
+        <div className="space-y-2">
+          <label htmlFor="promo" className="text-xs font-bold text-white/70">
+            Código promocional
+          </label>
+          <input
+            id="promo"
+            className={fieldClass}
+            value={promoCode}
+            onChange={(e) => setPromoCode(e.target.value)}
+            placeholder="Opcional"
+            autoComplete="off"
+            disabled={busy}
+          />
+          <p className="text-[11px] leading-5 text-white/30">
+            Use o código promocional do Stripe (modo Ao vivo), não o ID do
+            cupom. Aplicamos antes de abrir o cartão.
+          </p>
         </div>
         <button
           type="submit"

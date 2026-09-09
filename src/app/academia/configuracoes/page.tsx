@@ -17,6 +17,7 @@ function ConfigInner() {
   const store = useStore();
   const params = useSearchParams();
   const plan = planById(store.academy.plan);
+  const [promoCode, setPromoCode] = useState("");
 
   const changePlan = store.changePlan;
   useEffect(() => {
@@ -33,6 +34,7 @@ function ConfigInner() {
         email: store.users.find((u) => u.id === store.session?.userId)?.email,
         academyName: store.academy.name,
         academyId: store.academy.id,
+        promoCode,
       });
       if (pay === "demo") {
         store.changePlan(planId);
@@ -109,9 +111,19 @@ function ConfigInner() {
       <section className="border border-border bg-card p-5">
         <h2 className="font-medium">Plano JiuPro · {plan.name}</h2>
         <p className="mt-1 text-sm text-muted-foreground">
-          {brl(plan.price)}/mês · {plan.students} alunos. Se o cadastro parou no
-          cartão, escolha o plano de novo — o cupom entra na tela do Stripe.
+          {brl(plan.price)}/mês · {plan.students} alunos. Cole o código
+          promocional abaixo e clique no plano — o desconto já vai no Stripe.
         </p>
+        <div className="mt-4 space-y-1.5">
+          <Label htmlFor="promo-code">Código promocional</Label>
+          <Input
+            id="promo-code"
+            value={promoCode}
+            onChange={(e) => setPromoCode(e.target.value)}
+            placeholder="Opcional"
+            autoComplete="off"
+          />
+        </div>
         <div className="mt-4 grid gap-2 sm:grid-cols-3">
           {PLANS.map((p) => (
             <Button

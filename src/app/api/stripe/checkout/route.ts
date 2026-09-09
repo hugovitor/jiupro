@@ -1,6 +1,11 @@
 import { NextResponse } from "next/server";
 import { planById, PLANS } from "@/lib/plans";
-import { getStripe, stripePriceIdForPlan } from "@/lib/stripe";
+import {
+  checkoutStripeError,
+  getStripe,
+  resolveCheckoutDiscount,
+  stripePriceIdForPlan,
+} from "@/lib/stripe";
 import type { PlanId } from "@/lib/types";
 
 export const runtime = "nodejs";
@@ -16,6 +21,7 @@ export async function POST(request: Request) {
     email?: string;
     academyName?: string;
     academyId?: string;
+    promoCode?: string;
   };
   const planId = isPlanId(body.planId) ? body.planId : "academia";
   const stripe = getStripe();
@@ -37,32 +43,44 @@ export async function POST(request: Request) {
     );
   }
 
+  const discount = await resolveCheckoutDiscount(body.promoCode);
+  if ("error" in discount && discount.error) {
+    return NextResponse.json({ error: discount.error }, { status: 400 });
+  }
+
   const email = body.email?.trim().toLowerCase();
-  const session = await stripe.checkout.sessions.create({
-    mode: "subscription",
-    locale: "pt-BR",
-    line_items: [{ price, quantity: 1 }],
-    success_url: `${origin}/academia?assinatura=ok&plan=${planId}`,
-    cancel_url: `${origin}/planos?assinatura=cancelada`,
-    allow_promotion_codes: true,
-    billing_address_collection: "required",
-    tax_id_collection: { enabled: true },
-    phone_number_collection: { enabled: true },
-    customer_email: email || undefined,
-    metadata: {
-      planId,
-      email: email ?? "",
-      academyName: body.academyName?.trim() ?? "",
-      academyId: body.academyId?.trim() ?? "",
-    },
-    subscription_data: {
-      description: `JiuPro ${plan.name}`,
+  try {
+    const session = await stripe.checkout.sessions.create({
+      mode: "subscription",
+      locale: "pt-BR",
+      line_items: [{ price, quantity: 1 }],
+      success_url: `${origin}/academia?assinatura=ok&plan=${planId}`,
+      cancel_url: `${origin}/planos?assinatura=cancelada`,
+      ...(discount.discounts
+        ? { discounts: discount.discounts }
+        : { allow_promotion_codes: true }),
+      billing_address_collection: "required",
+      tax_id_collection: { enabled: true },
+      phone_number_collection: { enabled: true },
+      payment_method_collection: "if_required",
+      customer_email: email || undefined,
       metadata: {
         planId,
+        email: email ?? "",
+        academyName: body.academyName?.trim() ?? "",
         academyId: body.academyId?.trim() ?? "",
       },
-    },
-  });
+      subscription_data: {
+        description: `JiuPro ${plan.name}`,
+        metadata: {
+          planId,
+          academyId: body.academyId?.trim() ?? "",
+        },
+      },
+    });
 
-  return NextResponse.json({ url: session.url });
+    return NextResponse.json({ url: session.url });
+  } catch (err) {
+    return NextResponse.json({ error: checkoutStripeError(err) }, { status: 400 });
+  }
 }

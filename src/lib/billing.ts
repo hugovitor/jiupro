@@ -4,7 +4,12 @@ import type { PlanId } from "@/lib/types";
 
 export async function startPlanCheckout(
   planId: PlanId,
-  extra?: { email?: string; academyName?: string; academyId?: string },
+  extra?: {
+    email?: string;
+    academyName?: string;
+    academyId?: string;
+    promoCode?: string;
+  },
 ) {
   const res = await fetch("/api/stripe/checkout", {
     method: "POST",
