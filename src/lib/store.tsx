@@ -15,6 +15,7 @@ import { currentMonth, isoDate, uid, weekdayToday } from "./format";
 import { createSeed, DEMO_ACADEMY_ID, DEMO_ACCOUNTS } from "./seed";
 import {
   attachLocalAcademy,
+  createAcademyForCurrentUser,
   pullAcademyState,
   pushAcademyState,
   registerRemoteAcademy,
@@ -22,6 +23,7 @@ import {
   signInRemote,
 } from "./supabase/sync";
 import { createSupabaseBrowserClient } from "./supabase/client";
+import { isOperatorEmail } from "./operator";
 import { ensureUuidState, rehomeAcademy } from "./supabase/mapper";
 import { isSupabaseConfigured } from "./supabase/config";
 import {
@@ -248,6 +250,50 @@ export function StoreProvider({ children }: { children: ReactNode }) {
       const remote = await signInRemote(needle, password);
       if (!("error" in remote && remote.error === "offline")) {
         if ("missingProfile" in remote && remote.missingProfile) {
+          if (local && local.state.academy.id !== DEMO_ACADEMY_ID) {
+            const attached = await attachLocalAcademy({
+              email: needle,
+              password,
+              state: local.state,
+            });
+            if (!attached.error && attached.state) {
+              rememberPassword(needle, password);
+              putAcademy(attached.state, password);
+              write(attached.state);
+              return {
+                ok: true,
+                role: attached.state.session?.role ?? "owner",
+                academyId: attached.state.academy.id,
+              };
+            }
+          }
+
+          if (isOperatorEmail(needle)) {
+            const ownerName =
+              local?.state.users.find((user) => user.role === "owner")?.name || "Hugo Vitor";
+            const created = await createAcademyForCurrentUser({
+              name: local?.state.academy.name || "Academia",
+              slug: local?.state.academy.slug || "academia",
+              city: local?.state.academy.city || "Brasil",
+              state: local?.state.academy.state || "SP",
+              plan: local?.state.academy.plan || "academia",
+              ownerName,
+            });
+            if (created.academyId) {
+              const pulled = await pullAcademyState({
+                userId: remote.userId,
+                academyId: created.academyId,
+                role: "owner",
+              });
+              if (!("error" in pulled)) {
+                rememberPassword(needle, password);
+                putAcademy(pulled, password);
+                write(pulled);
+                return { ok: true, role: "owner", academyId: pulled.academy.id };
+              }
+            }
+          }
+
           return {
             ok: false,
             error: "Conta confirmada, mas a academia ainda não foi criada. Cadastre de novo.",

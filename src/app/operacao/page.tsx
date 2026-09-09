@@ -18,6 +18,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { isOperatorEmail } from "@/lib/operator";
 import { operatorHeaders } from "@/lib/operator-client";
+import { createSupabaseBrowserClient } from "@/lib/supabase/client";
 import { useStore } from "@/lib/store";
 
 type Kind = "month_free" | "percent_once" | "percent_forever";
@@ -53,7 +54,9 @@ type Overview = {
 export default function OperacaoPage() {
   const store = useStore();
   const router = useRouter();
-  const email = store.users.find((user) => user.id === store.session?.userId)?.email;
+  const storeEmail = store.users.find((user) => user.id === store.session?.userId)?.email;
+  const [authEmail, setAuthEmail] = useState<string | null>(null);
+  const email = storeEmail || authEmail || undefined;
   const allowed = isOperatorEmail(email);
 
   const [overview, setOverview] = useState<Overview | null>(null);
@@ -89,6 +92,18 @@ export default function OperacaoPage() {
       setLoading(false);
     }
   }
+
+  useEffect(() => {
+    if (storeEmail) {
+      setAuthEmail(storeEmail);
+      return;
+    }
+    const client = createSupabaseBrowserClient();
+    if (!client) return;
+    void client.auth.getUser().then(({ data }) => {
+      setAuthEmail(data.user?.email?.trim().toLowerCase() ?? null);
+    });
+  }, [storeEmail]);
 
   useEffect(() => {
     if (!store.session) {

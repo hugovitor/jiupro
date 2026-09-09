@@ -267,13 +267,33 @@ export async function signInRemote(email: string, password: string) {
   const { data, error } = await client.auth.signInWithPassword({ email, password });
   if (error || !data.user) return { error: error?.message ?? "login" };
 
-  const { data: profile } = await client
+  let { data: profile } = await client
     .from("profiles")
     .select("id, academy_id, name, role")
     .eq("id", data.user.id)
     .maybeSingle();
 
-  if (!profile) return { userId: data.user.id, missingProfile: true as const };
+  if (!profile && data.session?.access_token) {
+    await fetch("/api/auth/ensure-profile", {
+      method: "POST",
+      credentials: "include",
+      headers: { Authorization: `Bearer ${data.session.access_token}` },
+    });
+    const again = await client
+      .from("profiles")
+      .select("id, academy_id, name, role")
+      .eq("id", data.user.id)
+      .maybeSingle();
+    profile = again.data;
+  }
+
+  if (!profile) {
+    return {
+      userId: data.user.id,
+      email: data.user.email ?? email,
+      missingProfile: true as const,
+    };
+  }
 
   return {
     userId: data.user.id,
@@ -284,6 +304,28 @@ export async function signInRemote(email: string, password: string) {
       role: profile.role as Role,
     } satisfies Session,
   };
+}
+
+export async function createAcademyForCurrentUser(input: {
+  name: string;
+  slug: string;
+  city: string;
+  state: string;
+  plan: string;
+  ownerName: string;
+}) {
+  const client = createSupabaseBrowserClient();
+  if (!client) return { error: "offline" as const };
+  const { data: academyId, error } = await client.rpc("register_academy", {
+    p_name: input.name,
+    p_slug: input.slug,
+    p_city: input.city,
+    p_state: input.state,
+    p_plan: input.plan,
+    p_owner_name: input.ownerName,
+  });
+  if (error) return { error: error.message };
+  return { academyId: academyId as string };
 }
 
 export async function attachLocalAcademy(input: {
