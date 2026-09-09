@@ -75,7 +75,7 @@ export function AsaasChargeButton({
     setResult((prev) => ({ ...prev, ...data }));
     if (data.paid) {
       store.applyAsaasPaid(asaasPaymentId);
-      toast.success("Pix recebido no Asaas.");
+      toast.success("Pix recebido.");
     }
   }
 
@@ -120,11 +120,7 @@ export function AsaasChargeButton({
       });
       setResult(data);
       if (data.paid) store.applyAsaasPaid(data.asaasPaymentId!);
-      toast.success(
-        data.environment === "production"
-          ? "Pix gerado."
-          : "Pix de teste gerado.",
-      );
+      toast.success("Pix gerado.");
     } finally {
       setBusy(false);
     }
@@ -162,7 +158,7 @@ export function AsaasChargeButton({
           }
         }}
       >
-        {payment.asaasPaymentId ? "Pix Asaas" : "Gerar Pix Asaas"}
+        {payment.asaasPaymentId ? "Pix" : "Gerar Pix"}
       </Button>
       <FormDialog
         open={open}

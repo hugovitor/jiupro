@@ -276,7 +276,7 @@ function NovoAluno() {
             </div>
           </div>
           <div className="space-y-1.5">
-            <Label>CPF (Pix Asaas)</Label>
+            <Label>CPF</Label>
             <Input
               value={formatCpf(form.cpf)}
               onChange={(e) => setForm({ ...form, cpf: e.target.value })}

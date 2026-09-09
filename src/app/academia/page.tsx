@@ -1,7 +1,6 @@
 "use client";
 
 import Link from "next/link";
-import { useSyncExternalStore } from "react";
 import { CalendarDays, Clock3, UserPlus, Users } from "lucide-react";
 import { BeltBadge, PersonAvatar } from "@/components/belt-badge";
 import { Button } from "@/components/ui/button";
@@ -35,7 +34,6 @@ import {
   monthRevenue,
   overdueTotal,
 } from "@/lib/insights";
-import { isSupabaseConfigured, subscribeSupabaseConfig } from "@/lib/supabase/config";
 import { useStore } from "@/lib/store";
 import { useNow } from "@/lib/use-now";
 import { birthdayMessage, comebackMessage, waHref } from "@/lib/whatsapp";
@@ -43,11 +41,6 @@ import { birthdayMessage, comebackMessage, waHref } from "@/lib/whatsapp";
 export default function AcademiaDashboard() {
   const store = useStore();
   const now = useNow();
-  const cloudReady = useSyncExternalStore(
-    subscribeSupabaseConfig,
-    isSupabaseConfigured,
-    () => false,
-  );
   const month = currentMonth();
   const active = store.students.filter((s) => s.status === "active");
   const trials = store.students.filter((s) => s.status === "trial");
@@ -97,7 +90,7 @@ export default function AcademiaDashboard() {
             </p>
           ) : store.students.length === 0 ? (
             <p className="mt-2 text-sm text-muted-foreground">
-              Casa nova. Cadastre o primeiro aluno — a demo continua em Entrar.
+              Casa nova. Cadastre o primeiro aluno.
             </p>
           ) : (
             <p className="mt-2 text-sm text-muted-foreground">
@@ -113,19 +106,6 @@ export default function AcademiaDashboard() {
         <StatCard icon={Clock3} k="Pagamentos atrasados" v={String(overduePays)} hint={brl(overdue)} warn={overduePays > 0} />
         <StatCard icon={CalendarDays} k="Aulas hoje" v={String(classes.length)} hint={`${todayCount} validados no tatame`} />
       </div>
-
-      {!store.isDemo && !cloudReady && (
-        <div className="mt-6 surface p-4 text-sm">
-          <p className="font-medium">A academia ainda não está gravada</p>
-          <p className="mt-1 text-muted-foreground">
-            Cadastre pelo site publicado para não perder alunos e mensalidades
-            se limpar o celular.
-          </p>
-          <Button className="mt-3" size="sm" render={<Link href="/academia/configuracoes" />}>
-            Ver configurações
-          </Button>
-        </div>
-      )}
 
       <div className="mt-8 grid gap-4 lg:grid-cols-[minmax(0,1.1fr)_minmax(0,0.9fr)]">
         <section className="surface p-5">

@@ -34,7 +34,7 @@ function CadastroForm() {
     <AuthScreen
       kicker="Conta da academia"
       title="Abra a sua academia."
-      subtitle="Cria a sua casa, vazia, fora da demonstração. Em seguida você assina o JiuPro no cartão."
+      subtitle="Cria a sua casa, vazia. Em seguida você assina o JiuPro no cartão."
       switchHref="/login"
       switchLabel="Já tenho conta"
     >

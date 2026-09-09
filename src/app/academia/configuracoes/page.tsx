@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 import { Suspense, useEffect, useState } from "react";
 import { toast } from "sonner";
@@ -11,9 +12,6 @@ import { brl } from "@/lib/format";
 import { PLANS, planById } from "@/lib/plans";
 import { useStore } from "@/lib/store";
 import type { PlanId } from "@/lib/types";
-import { AsaasConnect } from "@/components/asaas-connect";
-import { GoLiveCard } from "@/components/go-live";
-import { SupabaseConnect } from "@/components/supabase-connect";
 
 function ConfigInner() {
   const store = useStore();
@@ -56,7 +54,31 @@ function ConfigInner() {
         </p>
       </div>
 
-      <GoLiveCard />
+      {store.isDemo && (
+        <section className="surface p-5">
+          <p className="text-[10px] font-black tracking-[0.18em] text-red-500 uppercase">
+            Demonstração
+          </p>
+          <p className="mt-2 text-sm text-muted-foreground">
+            A Equipe Origem é só para conhecer o painel.{" "}
+            <Link href="/cadastro" className="font-bold text-red-500 hover:text-red-400">
+              Abra a sua academia
+            </Link>
+            .
+          </p>
+          <Button
+            className="mt-4"
+            variant="outline"
+            size="sm"
+            onClick={() => {
+              store.resetDemo();
+              toast.message("Dados da demonstração restaurados.");
+            }}
+          >
+            Restaurar dados
+          </Button>
+        </section>
+      )}
 
       <section className="border border-border bg-card p-5">
         <h2 className="font-medium">Academia</h2>
@@ -82,16 +104,13 @@ function ConfigInner() {
         </dl>
       </section>
 
-      <SupabaseConnect />
-
       <PixForm />
 
-      <AsaasConnect />
-
       <section className="border border-border bg-card p-5">
-        <h2 className="font-medium">Plano atual · {plan.name}</h2>
+        <h2 className="font-medium">Plano JiuPro · {plan.name}</h2>
         <p className="mt-1 text-sm text-muted-foreground">
-          {brl(plan.price)}/mês · {plan.students} alunos
+          {brl(plan.price)}/mês · {plan.students} alunos. A academia paga o
+          JiuPro no cartão; os alunos continuam no Pix da casa.
         </p>
         <div className="mt-4 grid gap-2 sm:grid-cols-3">
           {PLANS.map((p) => (
@@ -107,26 +126,6 @@ function ConfigInner() {
       </section>
 
       <DropInFeeForm />
-
-      <section className="border border-border bg-card p-5 text-sm">
-        <h2 className="font-medium">Assinatura JiuPro</h2>
-        <p className="mt-2 text-muted-foreground">
-          A academia paga o JiuPro no cartão. Os alunos continuam pagando a
-          mensalidade no Pix da casa.
-        </p>
-      </section>
-
-      {store.isDemo && (
-      <Button
-        variant="outline"
-        onClick={() => {
-          store.resetDemo();
-          toast.message("Demo restaurada.");
-        }}
-      >
-        Restaurar dados de demonstração
-      </Button>
-      )}
     </div>
   );
 }

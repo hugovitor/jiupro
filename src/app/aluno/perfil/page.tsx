@@ -51,7 +51,7 @@ export default function PerfilAluno() {
           <div className="mt-4 space-y-3 bg-background p-3">
             {pay?.asaasPixCopy ? (
               <>
-                <p className="text-xs text-muted-foreground">Pix Asaas desta mensalidade</p>
+                <p className="text-xs text-muted-foreground">Pix desta mensalidade</p>
                 {pay.asaasInvoiceUrl && (
                   <Button
                     size="sm"
@@ -78,7 +78,7 @@ export default function PerfilAluno() {
             ) : (
               <>
                 <p className="text-xs text-destructive">
-                  Pague no Pix abaixo e avise a secretaria, ou peça o QR Asaas na recepção.
+                  Pague no Pix abaixo e avise a secretaria.
                 </p>
                 <p className="text-xs text-muted-foreground">Pix da academia</p>
                 <p className="mt-1 font-mono text-sm">{store.academy.pixKey}</p>

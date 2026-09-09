@@ -21,8 +21,8 @@ export default function CobrancasPage() {
       <div>
         <h1 className="font-display text-3xl">Cobranças</h1>
         <p className="mt-1 text-sm text-muted-foreground">
-          Pix Asaas por aluno quando a sandbox está ligada. WhatsApp e baixa
-          manual continuam.
+          Cobra no WhatsApp com a chave Pix da academia. Baixa na mão quando o
+          aluno pagar.
         </p>
       </div>
 
