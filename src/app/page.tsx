@@ -30,31 +30,37 @@ const modules = [
     title: "Cadastro completo",
     body: "Alunos, responsáveis, turmas, contatos e situação da matrícula.",
     icon: Users,
+    href: "/demo?next=/academia/alunos",
   },
   {
     title: "Gestão financeira",
     body: "Mensalidades, atrasos, isenções, cobranças e fechamento mensal.",
     icon: CircleDollarSign,
+    href: "/demo?next=/academia/financeiro",
   },
   {
     title: "Presença no tatame",
     body: "O aluno confirma, a turma acompanha e o professor valida a presença.",
     icon: ClipboardCheck,
+    href: "/demo?next=/academia/presenca",
   },
   {
     title: "Faixas e graduações",
     body: "Acompanhe tempo de faixa, graus, frequência e alunos preparados.",
     icon: GraduationCap,
+    href: "/demo?next=/academia/graduacoes",
   },
   {
     title: "Estoque da academia",
     body: "Controle kimonos, faixas, tamanhos, vendas e retiradas por aluno.",
     icon: Package,
+    href: "/demo?next=/academia/estoque",
   },
   {
     title: "Aplicativo do aluno",
     body: "Aulas, presença, graduação e mensalidades em um único lugar.",
     icon: Smartphone,
+    href: "/demo?as=aluno",
   },
 ];
 
@@ -208,24 +214,28 @@ function ProductSection() {
           {modules.map((module, index) => {
             const Icon = module.icon;
             return (
-              <motion.article
+              <motion.div
                 key={module.title}
                 initial={{ opacity: 0, y: 20 }}
                 whileInView={{ opacity: 1, y: 0 }}
                 viewport={{ once: true, margin: "-60px" }}
                 transition={{ delay: index * 0.06 }}
-                className="group relative overflow-hidden rounded-2xl border border-black/8 bg-white p-7 shadow-[0_10px_40px_rgba(0,0,0,0.04)] transition duration-300 hover:-translate-y-1 hover:border-red-600/25 hover:shadow-[0_20px_50px_rgba(0,0,0,0.08)]"
               >
-                <div className="absolute inset-x-0 top-0 h-1 origin-left scale-x-0 bg-red-600 transition-transform duration-300 group-hover:scale-x-100" />
-                <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-black text-white transition group-hover:bg-red-600">
-                  <Icon className="h-5 w-5" />
-                </div>
-                <h3 className="mt-7 text-lg font-extrabold tracking-tight">{module.title}</h3>
-                <p className="mt-3 text-sm leading-6 text-black/55">{module.body}</p>
-                <div className="mt-6 flex items-center gap-1 text-xs font-bold text-red-600 opacity-0 transition group-hover:opacity-100">
-                  Conhecer recurso <ChevronRight className="h-3.5 w-3.5" />
-                </div>
-              </motion.article>
+                <Link
+                  href={module.href}
+                  className="group relative block overflow-hidden rounded-2xl border border-black/8 bg-white p-7 shadow-[0_10px_40px_rgba(0,0,0,0.04)] transition duration-300 hover:-translate-y-1 hover:border-red-600/25 hover:shadow-[0_20px_50px_rgba(0,0,0,0.08)]"
+                >
+                  <div className="absolute inset-x-0 top-0 h-1 origin-left scale-x-0 bg-red-600 transition-transform duration-300 group-hover:scale-x-100" />
+                  <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-black text-white transition group-hover:bg-red-600">
+                    <Icon className="h-5 w-5" />
+                  </div>
+                  <h3 className="mt-7 text-lg font-extrabold tracking-tight">{module.title}</h3>
+                  <p className="mt-3 text-sm leading-6 text-black/55">{module.body}</p>
+                  <span className="mt-6 inline-flex items-center gap-1 text-xs font-bold text-red-600 transition group-hover:gap-2">
+                    Conhecer recurso <ChevronRight className="h-3.5 w-3.5" />
+                  </span>
+                </Link>
+              </motion.div>
             );
           })}
         </div>
