@@ -12,6 +12,7 @@ import {
   TicketPercent,
 } from "lucide-react";
 import { DarkCanvas, Eyebrow, Wordmark } from "@/components/brand";
+import { OperatorLeadsBoard } from "@/components/operacao/leads-board";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -197,13 +198,15 @@ export default function OperacaoPage() {
         <div>
           <Eyebrow>Operação JiuPro</Eyebrow>
           <h1 className="mt-4 text-3xl font-black tracking-[-0.04em] sm:text-4xl">
-            Cadastro, cupons e academias.
+            Planilha, cupons e academias.
           </h1>
           <p className="mt-3 max-w-2xl text-sm leading-6 text-white/45">
-            Sua casa de teste continua no painel da academia. Aqui você manda
-            desconto para gente específica e vê quem abriu conta no produto.
+            Saiu do Maps, entra aqui. Cupom para gente específica. Quem já abriu
+            conta no produto. Sua casa de teste continua no painel da academia.
           </p>
         </div>
+
+        <OperatorLeadsBoard />
 
         <section className="grid gap-4 lg:grid-cols-2">
           <article className="surface p-5">

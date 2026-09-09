@@ -395,5 +395,24 @@ alter table public.attendance add column if not exists status text not null defa
 alter table public.attendance add column if not exists validated_at timestamptz;
 alter table public.attendance add column if not exists validated_by uuid;
 
+-- Planilha de vendas do dono do JiuPro (painel /operacao). Sem policy: só service role.
+create table if not exists public.operator_leads (
+  id uuid primary key default gen_random_uuid(),
+  academy_name text not null,
+  city text,
+  state text,
+  phone text,
+  instagram text,
+  owner_name text,
+  pain text,
+  status text not null default 'novo'
+    check (status in ('novo','falou','demo','trial','fechou','nao')),
+  notes text,
+  follow_up_on date,
+  created_at timestamptz not null default now(),
+  updated_at timestamptz not null default now()
+);
+alter table public.operator_leads enable row level security;
+
 -- Faz o PostgREST (API) enxergar as tabelas novas neste projeto vazio.
 notify pgrst, 'reload schema';

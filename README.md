@@ -54,7 +54,8 @@ Projeto **novo e vazio** é o esperado. O Dashboard não cria as tabelas do JiuP
    - **Copiar SQL** → SQL Editor → **Run** (não usa a porta 5432), ou
    - Colar a URI Direct ou Session pooler em **Aplicar schema pela URI**. Direct (`db.…supabase.co`) é IPv6; o app reescreve para o pooler IPv4.
 5. Authentication → Providers → Email: desligue **Confirm email** para entrar na hora
-6. Na sua academia (não na demo): **Enviar esta academia**
+6. Authentication → URL Configuration: Redirect URLs deve incluir `https://jiupro.vercel.app/atualizar-senha` (senha esquecida)
+7. Na sua academia (não na demo): **Enviar esta academia**
 
 Também dá para colocar no `.env.local`:
 
@@ -156,7 +157,7 @@ STRIPE_WEBHOOK_SECRET=whsec_…
 
 Cadastro novo entra com **30 dias grátis** (cartão na hora, primeira fatura depois). Para desligar: `NEXT_PUBLIC_STRIPE_TRIAL_DAYS=0`. Para um cupom automático em todo cadastro, sem o cliente digitar: `STRIPE_SIGNUP_PROMO=SEUCODIGO`. Código digitado no cadastro vale no lugar do mês grátis.
 
-O dono do JiuPro gerencia cupons e academias em `/operacao` (e-mail `hugovitormnunes@gmail.com`, ou `JIUPRO_OPERATOR_EMAILS`). Cupom ligado a um e-mail entra sozinho no cadastro dessa pessoa.
+O dono do JiuPro gerencia a planilha de academias (Maps → Zap), cupons e contas no ar em `/operacao` (e-mail `hugovitormnunes@gmail.com`, ou `JIUPRO_OPERATOR_EMAILS`). Cupom ligado a um e-mail entra sozinho no cadastro dessa pessoa. A tabela `operator_leads` precisa existir no projeto — o painel mostra o SQL se ainda faltar.
 
 `STRIPE_PRICE_*` é opcional. Asaas continua só para mensalidade do aluno.
 
