@@ -75,7 +75,7 @@ export default function FechamentoPage() {
         ];
       }),
     ];
-    downloadCsv(`jiupro-${store.academy.slug}-${month}.csv`, rows);
+    downloadCsv(`tatamex-${store.academy.slug}-${month}.csv`, rows);
     toast.success("Planilha baixada.");
   }
 

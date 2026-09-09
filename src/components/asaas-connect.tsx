@@ -5,6 +5,7 @@ import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { asaasWebhookUrl, isLocalOrigin, publicAppUrl } from "@/lib/app-url";
 import {
   getAsaasBrowserConfig,
   saveAsaasBrowserConfig,
@@ -25,7 +26,11 @@ export function AsaasConnect() {
         setApiKey(saved.apiKey);
         setWebhookToken(saved.webhookToken ?? "");
       }
-      setWebhookUrl(`${window.location.origin}/api/asaas/webhook`);
+      setWebhookUrl(
+        isLocalOrigin(publicAppUrl())
+          ? `${window.location.origin}/api/asaas/webhook`
+          : asaasWebhookUrl(),
+      );
     }, 0);
     void fetch("/api/asaas/account")
       .then((r) => r.json())
@@ -132,7 +137,7 @@ export function AsaasConnect() {
             onClick={() => {
               const bytes = new Uint8Array(24);
               crypto.getRandomValues(bytes);
-              const token = `jiupro_${Array.from(bytes, (b) => b.toString(16).padStart(2, "0")).join("")}`;
+              const token = `tatamex_${Array.from(bytes, (b) => b.toString(16).padStart(2, "0")).join("")}`;
               setWebhookToken(token);
               toast.message("Cole este token também no Asaas.");
             }}

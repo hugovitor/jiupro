@@ -1,3 +1,5 @@
+import { PRODUCTION_APP_URL } from "@/lib/app-url";
+
 export const LEAD_STATUSES = [
   { id: "novo", label: "Novo" },
   { id: "falou", label: "Falou" },
@@ -59,7 +61,7 @@ export function gymWhatsAppHref(phone: string, academyName: string) {
 
 Sou o Hugo, do TatameX. É um sistema só para academia de Jiu-Jitsu: aluno, mensalidade no Pix de vocês, presença no tatame e faixa.
 
-Dá para ver a Equipe Origem funcionando em 2 minutos: https://jiupro.vercel.app/demo
+Dá para ver a Equipe Origem funcionando em 2 minutos: ${PRODUCTION_APP_URL}/demo
 
 Se fizer sentido, abro a conta de vocês com 30 dias sem cobrar.`;
   return `https://wa.me/${e164}?text=${encodeURIComponent(text)}`;

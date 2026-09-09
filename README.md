@@ -56,7 +56,7 @@ Projeto **novo e vazio** é o esperado. O Dashboard não cria as tabelas do Tata
    - **Copiar SQL** → SQL Editor → **Run** (não usa a porta 5432), ou
    - Colar a URI Direct ou Session pooler em **Aplicar schema pela URI**. Direct (`db.…supabase.co`) é IPv6; o app reescreve para o pooler IPv4.
 5. Authentication → Providers → Email: desligue **Confirm email** para entrar na hora
-6. Authentication → URL Configuration: Redirect URLs deve incluir `https://jiupro.vercel.app/atualizar-senha` (senha esquecida)
+6. Authentication → URL Configuration: Redirect URLs deve incluir `https://tatamex.vercel.app/atualizar-senha` (senha esquecida)
 7. Na sua academia (não na demo): **Enviar esta academia**
 8. App do aluno: em **Alunos**, **Copiar SQL do app** → SQL Editor → Run (uma vez). Depois manda o link `/entrar/CÓDIGO` no grupo. O aluno confirma o nome da casa antes de criar a senha.
 
@@ -107,7 +107,7 @@ Webhook: `POST /api/stripe/webhook`. Sem chaves, o checkout só troca o plano na
 
 ## Publicar na Vercel (URL `*.vercel.app`)
 
-Não precisa de domínio próprio no começo. O primeiro deploy gera algo como `https://jiupro-xxxx.vercel.app`.
+Não precisa de domínio próprio no começo. O projeto na Vercel deve se chamar **tatamex** (`https://tatamex.vercel.app`). Se ainda estiver como jiupro: Settings → General → Project Name → `tatamex`.
 
 O app **sobe sem Asaas e sem Stripe**. Mensalidade do aluno: Pix da casa + WhatsApp. Assinatura do TatameX: você cobra no Pix e libera o plano; o checkout Stripe entra depois.
 
@@ -120,8 +120,8 @@ O único passo obrigatório para **não perder dados** é o **Supabase**. Sem el
 3. Node 22 (`.nvmrc`)
 4. **Deploy sem variáveis** — a landing, o login e a demo já abrem
 
-Health check: `GET https://SEU-PROJETO.vercel.app/api/health`  
-Deve responder `ok: true` e `url` com o endereço `*.vercel.app`.
+Health check: `GET https://tatamex.vercel.app/api/health`  
+Deve responder `ok: true`, `service: "tatamex"` e `url` com `https://tatamex.vercel.app`.
 
 ### 2. Variáveis (Production)
 
@@ -138,7 +138,7 @@ SUPABASE_SERVICE_ROLE_KEY=
 Opcional — só se quiser fixar a URL (senão o app usa a da Vercel sozinho):
 
 ```
-NEXT_PUBLIC_APP_URL=https://SEU-PROJETO.vercel.app
+NEXT_PUBLIC_APP_URL=https://tatamex.vercel.app
 ```
 
 ### Stripe (assinatura do TatameX)
@@ -147,9 +147,9 @@ Sem a chave, o cadastro abre a academia **sem cobrar**. Com a chave, o cadastro 
 
 1. Crie a conta em [stripe.com](https://stripe.com) (Brasil, cobranca em reais)
 2. Developers → API keys: **Secret key** (`sk_live_…` em produção)
-3. Developers → Webhooks → Add endpoint: `https://jiupro.vercel.app/api/stripe/webhook`
+3. Developers → Webhooks → Add endpoint: `https://tatamex.vercel.app/api/stripe/webhook`
    Eventos: `checkout.session.completed`, `customer.subscription.updated`, `customer.subscription.deleted`
-4. Na Vercel, em jiupro → Environment Variables (Production):
+4. Na Vercel, em **tatamex** → Environment Variables (Production):
 
 ```
 STRIPE_SECRET_KEY=sk_live_…
@@ -173,7 +173,7 @@ Asaas e Stripe podem ficar vazios.
 3. Cole as duas na Vercel (acima) **ou** em Configurações no app
 4. SQL Editor → no TatameX, **Copiar SQL** → Run
 5. Authentication → Providers → Email: desligue **Confirm email**
-6. Authentication → URL Configuration: Site URL `https://jiupro.vercel.app` e Redirect URLs `https://jiupro.vercel.app/atualizar-senha` (e `http://127.0.0.1:43123/atualizar-senha` se for testar local). Sem isso o e-mail de senha esquecida não volta para o app.
+6. Authentication → URL Configuration: Site URL `https://tatamex.vercel.app` e Redirect URLs `https://tatamex.vercel.app/atualizar-senha` (e `http://127.0.0.1:43123/atualizar-senha` se for testar local). Sem isso o e-mail de senha esquecida não volta para o app.
 7. Abra a academia em `/cadastro` (não a demo) → Configurações → **Enviar esta academia**
 
 Sem isso, cadastro e painel ficam só no `localStorage`.
@@ -201,8 +201,8 @@ STRIPE_PRICE_ACADEMIA=
 STRIPE_PRICE_EQUIPE=
 ```
 
-Webhook Asaas: `https://SEU-PROJETO.vercel.app/api/asaas/webhook` (v3, header `asaas-access-token`, eventos `PAYMENT_RECEIVED` + `PAYMENT_CONFIRMED`).
-Webhook Stripe: `https://SEU-PROJETO.vercel.app/api/stripe/webhook`.
+Webhook Asaas: `https://tatamex.vercel.app/api/asaas/webhook` (v3, header `asaas-access-token`, eventos `PAYMENT_RECEIVED` + `PAYMENT_CONFIRMED`).
+Webhook Stripe: `https://tatamex.vercel.app/api/stripe/webhook`.
 
 ## PWA do aluno
 

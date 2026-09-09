@@ -8,6 +8,7 @@ import {
   resolveCheckoutDiscount,
   stripePriceIdForPlan,
 } from "@/lib/stripe";
+import { checkoutOrigin } from "@/lib/app-url";
 import type { PlanId } from "@/lib/types";
 
 export const runtime = "nodejs";
@@ -29,7 +30,7 @@ export async function POST(request: Request) {
   const planId = isPlanId(body.planId) ? body.planId : "academia";
   const offer: CheckoutOffer = body.offer === "signup" ? "signup" : "change";
   const stripe = getStripe();
-  const origin = new URL(request.url).origin;
+  const origin = checkoutOrigin(request);
   const plan = planById(planId);
 
   if (!stripe) {

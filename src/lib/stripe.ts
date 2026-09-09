@@ -28,13 +28,15 @@ export async function stripePriceIdForPlan(planId: PlanId) {
   const stripe = getStripe();
   if (!stripe) return null;
   const plan = planById(planId);
-  const lookup = `jiupro_${plan.id}_monthly`;
-  const existing = await stripe.prices.list({
-    lookup_keys: [lookup],
-    active: true,
-    limit: 1,
-  });
-  if (existing.data[0]?.id) return existing.data[0].id;
+  for (const lookup of [`tatamex_${plan.id}_monthly`, `jiupro_${plan.id}_monthly`]) {
+    const existing = await stripe.prices.list({
+      lookup_keys: [lookup],
+      active: true,
+      limit: 1,
+    });
+    if (existing.data[0]?.id) return existing.data[0].id;
+  }
+  const lookup = `tatamex_${plan.id}_monthly`;
   const product = await stripe.products.create({
     name: `TatameX ${plan.name}`,
     description: `${plan.blurb} Assinatura mensal da academia.`,

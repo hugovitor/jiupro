@@ -27,7 +27,7 @@ function supabaseAdmin() {
 export async function GET() {
   return Response.json({
     ok: true,
-    service: "jiupro-asaas-webhook",
+    service: "tatamex-asaas-webhook",
     hint: "O Asaas deve enviar POST neste endereço.",
   });
 }

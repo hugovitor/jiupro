@@ -1,5 +1,6 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { createSupabaseBrowserClient } from "./client";
+import { passwordResetUrl, isLocalOrigin, publicAppUrl } from "../app-url";
 import { ensureUuidState, rehomeAcademy, stateToTables, tablesToState } from "./mapper";
 import { DEMO_ACADEMY_ID } from "../seed";
 import type { AppState, Role, Session } from "../types";
@@ -399,7 +400,9 @@ export async function requestPasswordReset(email: string) {
   if (!client) {
     return { error: "Não dá para enviar e-mail agora. Fale no WhatsApp do suporte." };
   }
-  const redirectTo = `${window.location.origin}/atualizar-senha`;
+  const redirectTo = isLocalOrigin(publicAppUrl())
+    ? `${window.location.origin}/atualizar-senha`
+    : passwordResetUrl();
   const { error } = await client.auth.resetPasswordForEmail(email.trim().toLowerCase(), {
     redirectTo,
   });

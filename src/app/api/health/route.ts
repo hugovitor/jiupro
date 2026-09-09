@@ -13,7 +13,7 @@ export async function GET() {
   return Response.json(
     {
       ok: true,
-      service: "jiupro",
+      service: "tatamex",
       time: new Date().toISOString(),
       env: deploymentEnv(),
       url: publicAppUrl(),

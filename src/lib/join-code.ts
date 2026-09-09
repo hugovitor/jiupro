@@ -1,3 +1,5 @@
+import { publicAppUrl } from "@/lib/app-url";
+
 const ALPHABET = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
 
 export function generateJoinCode() {
@@ -21,9 +23,6 @@ export function studentJoinPath(code: string) {
 }
 
 export function studentJoinUrl(code: string, origin?: string) {
-  const base = (origin ?? (typeof window !== "undefined" ? window.location.origin : "")).replace(
-    /\/$/,
-    "",
-  );
+  const base = (origin ?? publicAppUrl()).replace(/\/$/, "");
   return `${base}${studentJoinPath(code)}`;
 }

@@ -61,7 +61,11 @@ function accessTokenFromRequest(request: Request) {
   const header = request.headers.get("authorization") ?? "";
   const bearer = header.replace(/^Bearer\s+/i, "").trim();
   if (bearer) return bearer;
-  return (request.headers.get("x-jiupro-access-token") ?? "").trim();
+  return (
+    (request.headers.get("x-tatamex-access-token") ??
+      request.headers.get("x-jiupro-access-token") ??
+      "") as string
+  ).trim();
 }
 
 export async function requireOperator(request: Request) {

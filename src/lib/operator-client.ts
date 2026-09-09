@@ -99,6 +99,7 @@ export async function operatorHeaders(
   if (!token) return {};
   return {
     Authorization: `Bearer ${token}`,
+    "x-tatamex-access-token": token,
     "x-jiupro-access-token": token,
   };
 }
