@@ -34,6 +34,7 @@ import {
   monthRevenue,
   overdueTotal,
 } from "@/lib/insights";
+import { FirstLoginHint } from "@/components/first-login-guide";
 import { useStore } from "@/lib/store";
 import { useNow } from "@/lib/use-now";
 import { birthdayMessage, comebackMessage, waHref } from "@/lib/whatsapp";
@@ -89,9 +90,10 @@ export default function AcademiaDashboard() {
               .
             </p>
           ) : store.students.length === 0 ? (
-            <p className="mt-2 text-sm text-muted-foreground">
-              Casa nova. Cadastre o primeiro aluno.
-            </p>
+            <div className="mt-3 flex flex-wrap items-center gap-3">
+              <p className="text-sm text-muted-foreground">Casa nova. Cadastre o primeiro aluno.</p>
+              <FirstLoginHint label="Começar com o assistente" />
+            </div>
           ) : (
             <p className="mt-2 text-sm text-muted-foreground">
               Confirmados na aula, atraso no caixa.

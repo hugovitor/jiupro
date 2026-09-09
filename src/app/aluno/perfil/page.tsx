@@ -3,6 +3,7 @@
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 import { BeltBadge, PersonAvatar } from "@/components/belt-badge";
+import { FirstLoginHint } from "@/components/first-login-guide";
 import { Button } from "@/components/ui/button";
 import { brl, currentMonth, formatDate } from "@/lib/format";
 import { currentStudent, useStore } from "@/lib/store";
@@ -108,6 +109,8 @@ export default function PerfilAluno() {
           {store.academy.phone} · {store.academy.instagram}
         </p>
       </div>
+
+      <FirstLoginHint className="w-full" label="Ver assistente de novo" />
 
       <p className="text-xs text-muted-foreground">
         Adicione este app à tela inicial do celular: no Safari, Compartilhar →

@@ -18,6 +18,7 @@ Feito para o dono que treina de manhã e administra de noite: mensalidades em at
 - **Agenda** — seminário, campeonato, open mat; confirmação no PWA e Zap para quem falta
 - **Loja** — venda no nome do aluno, baixa o estoque, entra no financeiro
 - **PWA do aluno** — o dono manda o link/código da casa; o aluno confirma o nome e cria e-mail e senha. Se a ficha já existe, o mesmo e-mail ou WhatsApp vincula. Não há lista de academias.
+- **Assistente na primeira entrada** — dono configura Pix e convite; aluno vê como confirmar aula, faixa e mensalidade. Não aparece de novo depois de concluir ou pular.
 - **Planos mensais** — Essencial, Academia e Equipe. Escolhe no cadastro; Stripe cobra o JiuPro depois
 - **Cadastro real** — abre a sua academia, vazia, isolada da Equipe Origem
 - **Demo completa** — Equipe Origem (Campinas) nos atalhos de Entrar ou em `/demo`

@@ -5,6 +5,7 @@ import { useSearchParams } from "next/navigation";
 import { Suspense, useEffect, useState } from "react";
 import { toast } from "sonner";
 import { AlunoAppCard } from "@/components/academia/aluno-app-card";
+import { FirstLoginHint } from "@/components/first-login-guide";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -59,6 +60,20 @@ function ConfigInner() {
       </div>
 
       <AlunoAppCard />
+
+      {!store.isDemo ? (
+        <section className="surface p-5">
+          <p className="text-[10px] font-black tracking-[0.18em] text-red-500 uppercase">
+            Primeira vez
+          </p>
+          <h2 className="mt-2 text-lg font-black tracking-tight">Assistente de início</h2>
+          <p className="mt-2 text-sm text-muted-foreground">
+            Pix da casa, convite do aluno e como roda a chamada. Abre de novo se alguém da equipe
+            ainda não viu.
+          </p>
+          <FirstLoginHint className="mt-4" />
+        </section>
+      ) : null}
 
       {store.isDemo && (
         <section className="surface p-5">

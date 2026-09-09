@@ -12,6 +12,7 @@ import {
   Users,
 } from "lucide-react";
 import { Wordmark } from "@/components/brand";
+import { FirstLoginGuide } from "@/components/first-login-guide";
 import { Button } from "@/components/ui/button";
 import { isOperatorEmail } from "@/lib/operator";
 import { useStore } from "@/lib/store";
@@ -249,6 +250,7 @@ export function AcademiaShell({ children }: { children: React.ReactNode }) {
           )}
 
           <main className="relative flex-1 p-4 pb-24 lg:p-6">{children}</main>
+          <FirstLoginGuide />
         </div>
       </div>
 

@@ -4,6 +4,7 @@ import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { CalendarDays, Home, LineChart, LogOut, MessageSquare, User } from "lucide-react";
 import { Wordmark } from "@/components/brand";
+import { FirstLoginGuide } from "@/components/first-login-guide";
 import { currentStudent, useStore } from "@/lib/store";
 import { cn } from "@/lib/utils";
 
@@ -46,6 +47,7 @@ export function AlunoShell({ children }: { children: React.ReactNode }) {
           </button>
         </header>
         <main className="relative flex-1 p-4 pb-20">{children}</main>
+        <FirstLoginGuide />
         <nav className="fixed bottom-0 left-1/2 z-20 w-full max-w-md -translate-x-1/2 border-t border-white/10 bg-[#080808]/95 pb-[max(0.25rem,env(safe-area-inset-bottom))] backdrop-blur-xl">
           <div className="flex">
             {NAV.map((item) => {
