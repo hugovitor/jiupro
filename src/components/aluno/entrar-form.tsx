@@ -13,7 +13,7 @@ import { Label } from "@/components/ui/label";
 import { findAcademyByJoinCode, searchAcademiesForJoin } from "@/lib/vault";
 import { useStore } from "@/lib/store";
 import type { PublicAcademyJoin } from "@/lib/student-join";
-import { STUDENT_JOIN_NOT_FOUND, STUDENT_JOIN_SETUP_ERROR } from "@/lib/student-join";
+import { preferredJoinCode, STUDENT_JOIN_NOT_FOUND, STUDENT_JOIN_SETUP_ERROR } from "@/lib/student-join";
 import { DEMO_ACADEMY_ID } from "@/lib/seed";
 import { normalizeJoinInput } from "@/lib/join-code";
 import { SUPPORT_PHONE_DISPLAY, supportWhatsAppHref } from "@/lib/support";
@@ -48,7 +48,7 @@ function localHouse(code: string): PublicAcademyJoin | null {
     city: state.academy.city,
     state: state.academy.state,
     slug: state.academy.slug,
-    joinCode: (state.academy.joinCode || code).toUpperCase(),
+    joinCode: state.academy.joinCode || state.academy.slug || code,
   };
 }
 
@@ -56,7 +56,7 @@ function mergeHouses(list: PublicAcademyJoin[]) {
   const seen = new Set<string>();
   const out: PublicAcademyJoin[] = [];
   for (const house of list) {
-    const key = (house.joinCode || house.slug).toUpperCase();
+    const key = (house.slug || house.joinCode || house.name).toLowerCase();
     if (!key || seen.has(key)) continue;
     seen.add(key);
     out.push(house);
@@ -110,17 +110,19 @@ export function EntrarAlunoForm({ initialCode = "" }: { initialCode?: string }) 
         house?: PublicAcademyJoin;
         needsSetup?: boolean;
       };
-      const local = [
+      const remote = mergeHouses([
         ...(nameData.houses ?? []),
         ...(codeData.house ? [codeData.house] : []),
+      ]);
+      const local = mergeHouses([
         ...searchAcademiesForJoin(needle),
         ...(localHouse(needle) ? [localHouse(needle)!] : []),
         ...(demoMatches(needle) ? [DEMO_HOUSE] : []),
-      ];
-      const houses = mergeHouses(local);
+      ]);
+      const houses = remote.length ? remote : local;
       if (houses.length === 1) {
         setHouse(houses[0]);
-        setQuery(houses[0].joinCode || needle);
+        setQuery(houses[0].name || houses[0].joinCode || needle);
         return;
       }
       if (houses.length > 1) {
@@ -140,7 +142,7 @@ export function EntrarAlunoForm({ initialCode = "" }: { initialCode?: string }) 
       ]);
       if (houses.length === 1) {
         setHouse(houses[0]);
-        setQuery(houses[0].joinCode || needle);
+        setQuery(houses[0].name || houses[0].joinCode || needle);
         return;
       }
       if (houses.length > 1) {
@@ -222,7 +224,7 @@ export function EntrarAlunoForm({ initialCode = "" }: { initialCode?: string }) 
                   className="w-full rounded-2xl border border-white/10 bg-white/[0.03] p-4 text-left transition hover:border-red-500/40 hover:bg-red-500/[0.06]"
                   onClick={() => {
                     setHouse(item);
-                    setQuery(item.joinCode);
+                    setQuery(item.name);
                     setMatches([]);
                   }}
                 >
@@ -299,7 +301,9 @@ export function EntrarAlunoForm({ initialCode = "" }: { initialCode?: string }) 
             }
             setBusy(true);
             const result = await store.registerStudent({
-              code: house.joinCode || house.slug,
+              code: preferredJoinCode(house),
+              slug: house.slug,
+              houseName: house.name,
               name,
               phone,
               email,

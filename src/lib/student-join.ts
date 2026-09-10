@@ -1,6 +1,6 @@
 import { firstName, waHref } from "@/lib/whatsapp";
 import { publicAppUrl } from "@/lib/app-url";
-import { studentJoinUrl } from "@/lib/join-code";
+import { looksLikeHouseCode, studentJoinUrl } from "@/lib/join-code";
 import type { Academy, Student } from "@/lib/types";
 
 export type PublicAcademyJoin = {
@@ -10,6 +10,24 @@ export type PublicAcademyJoin = {
   slug: string;
   joinCode: string;
 };
+
+export function mapPublicHouse(row: Record<string, unknown>): PublicAcademyJoin {
+  const slug = String(row.slug ?? "").trim();
+  const join = String(row.join_code ?? "").trim();
+  return {
+    name: String(row.name ?? "").trim(),
+    city: String(row.city ?? "").trim(),
+    state: String(row.state ?? "").trim(),
+    slug,
+    joinCode: join || slug,
+  };
+}
+
+export function preferredJoinCode(house: Pick<PublicAcademyJoin, "joinCode" | "slug">) {
+  const join = house.joinCode.trim();
+  if (looksLikeHouseCode(join)) return join.toUpperCase();
+  return house.slug.trim() || join;
+}
 
 export const STUDENT_JOIN_NOT_FOUND =
   "Não achamos essa academia. Confira o nome ou peça o WhatsApp da casa.";
@@ -78,6 +96,16 @@ as $$
   where a.join_code = upper(trim(p_code))
      or lower(a.slug) = lower(trim(p_code))
      or lower(trim(a.name)) = lower(trim(p_code))
+     or (
+       length(regexp_replace(lower(trim(p_code)), '[^a-z0-9]', '', 'g')) >= 2
+       and regexp_replace(lower(a.name), '[^a-z0-9]', '', 'g')
+         = regexp_replace(lower(trim(p_code)), '[^a-z0-9]', '', 'g')
+     )
+     or (
+       length(regexp_replace(lower(trim(p_code)), '[^a-z0-9]', '', 'g')) >= 2
+       and regexp_replace(lower(a.slug), '[^a-z0-9]', '', 'g')
+         = regexp_replace(lower(trim(p_code)), '[^a-z0-9]', '', 'g')
+     )
   order by
     case
       when a.join_code = upper(trim(p_code)) then 0
@@ -112,6 +140,11 @@ begin
      or lower(a.slug) = lower(v_q)
      or a.name ilike v_like
      or coalesce(a.city, '') ilike v_like
+     or (
+       length(regexp_replace(lower(v_q), '[^a-z0-9]', '', 'g')) >= 2
+       and regexp_replace(lower(a.name), '[^a-z0-9]', '', 'g')
+         like '%' || regexp_replace(lower(v_q), '[^a-z0-9]', '', 'g') || '%'
+     )
   order by
     case
       when a.join_code = upper(v_q) then 0
@@ -162,6 +195,16 @@ begin
   where a.join_code = upper(v_q)
      or lower(a.slug) = lower(v_q)
      or lower(trim(a.name)) = lower(v_q)
+     or (
+       length(regexp_replace(lower(v_q), '[^a-z0-9]', '', 'g')) >= 2
+       and regexp_replace(lower(a.name), '[^a-z0-9]', '', 'g')
+         = regexp_replace(lower(v_q), '[^a-z0-9]', '', 'g')
+     )
+     or (
+       length(regexp_replace(lower(v_q), '[^a-z0-9]', '', 'g')) >= 2
+       and regexp_replace(lower(a.slug), '[^a-z0-9]', '', 'g')
+         = regexp_replace(lower(v_q), '[^a-z0-9]', '', 'g')
+     )
   order by
     case
       when a.join_code = upper(v_q) then 0

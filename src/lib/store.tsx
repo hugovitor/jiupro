@@ -92,6 +92,8 @@ type Store = AppState & {
   registerAcademy: (input: RegisterInput) => Promise<LoginResult>;
   registerStudent: (input: {
     code: string;
+    slug?: string;
+    houseName?: string;
     name: string;
     phone: string;
     email: string;
@@ -447,6 +449,8 @@ export function StoreProvider({ children }: { children: ReactNode }) {
 
   const registerStudent = useCallback(async (input: {
     code: string;
+    slug?: string;
+    houseName?: string;
     name: string;
     phone: string;
     email: string;
@@ -454,14 +458,18 @@ export function StoreProvider({ children }: { children: ReactNode }) {
   }): Promise<LoginResult> => {
     const email = input.email.trim().toLowerCase();
     const code = input.code.trim();
+    const slug = input.slug?.trim() ?? "";
+    const houseName = input.houseName?.trim() ?? "";
     const name = input.name.trim();
-    if (!code || !name || !email.includes("@") || input.password.length < 6) {
+    if ((!code && !slug && !houseName) || !name || !email.includes("@") || input.password.length < 6) {
       return { ok: false, error: "Preencha nome da academia, seu nome, e-mail e senha (mínimo 6)." };
     }
 
     if (isSupabaseConfigured()) {
       const remote = await joinStudentRemote({
         code,
+        slug,
+        houseName,
         name,
         phone: input.phone,
         email,
@@ -482,7 +490,10 @@ export function StoreProvider({ children }: { children: ReactNode }) {
       }
     }
 
-    const house = findAcademyByJoinCode(code);
+    const house =
+      findAcademyByJoinCode(code) ||
+      (slug ? findAcademyByJoinCode(slug) : null) ||
+      (houseName ? findAcademyByJoinCode(houseName) : null);
     if (!house || house.academy.id === DEMO_ACADEMY_ID) {
       return { ok: false, error: "Casa não encontrada. Busque o nome da sua academia." };
     }

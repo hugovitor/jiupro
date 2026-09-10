@@ -2,6 +2,7 @@ import type { SupabaseClient, User } from "@supabase/supabase-js";
 import { createSupabaseBrowserClient } from "./client";
 import { passwordResetUrl, isLocalOrigin, publicAppUrl } from "../app-url";
 import { mapAuthError } from "../auth-errors";
+import { STUDENT_JOIN_NOT_FOUND } from "../student-join";
 import { ensureUuidState, rehomeAcademy, stateToTables, tablesToState } from "./mapper";
 import { DEMO_ACADEMY_ID } from "../seed";
 import type { AppState, Role, Session } from "../types";
@@ -80,7 +81,7 @@ export async function pushAcademyState(state: AppState) {
     (profileRows ?? []).map((p: { id: string }) => String(p.id)),
   );
   const tables = stateToTables(ready, profileIds);
-  if (!tables.academy.join_code && existing.join_code) {
+  if (existing.join_code) {
     tables.academy.join_code = existing.join_code;
   }
 
@@ -475,6 +476,8 @@ export async function confirmPasswordReset(password: string) {
 
 export async function joinStudentRemote(input: {
   code: string;
+  slug?: string;
+  houseName?: string;
   name: string;
   phone: string;
   email: string;
@@ -489,12 +492,58 @@ export async function joinStudentRemote(input: {
 
   const client = auth.client;
   const accessUser = auth.user;
+  const codes = [input.code, input.slug, input.houseName].map((value) => value?.trim() ?? "").filter(Boolean);
 
-  let { data: academyId, error: joinError } = await client.rpc("join_academy_as_student", {
-    p_code: input.code,
-    p_name: input.name,
-    p_phone: input.phone,
-  });
+  const session = await client.auth.getSession();
+  const token = session.data.session?.access_token;
+  if (token) {
+    const enrolled = await fetch("/api/aluno/entrar", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${token}`,
+      },
+      body: JSON.stringify({
+        code: input.code,
+        slug: input.slug,
+        houseName: input.houseName,
+        name: input.name,
+        phone: input.phone,
+      }),
+    }).catch(() => null);
+    const payload = enrolled
+      ? ((await enrolled.json().catch(() => ({}))) as { academyId?: string; error?: string })
+      : {};
+    if (enrolled?.ok && payload.academyId) {
+      return {
+        session: {
+          userId: accessUser.id,
+          academyId: payload.academyId,
+          role: "student" as const,
+        } satisfies Session,
+      };
+    }
+    if (enrolled && enrolled.status !== 503 && payload.error) {
+      return { error: payload.error };
+    }
+  }
+
+  let academyId: unknown = null;
+  let joinError: { message: string } | null = null;
+  for (const code of codes) {
+    const attempt = await client.rpc("join_academy_as_student", {
+      p_code: code,
+      p_name: input.name,
+      p_phone: input.phone,
+    });
+    if (!attempt.error && attempt.data) {
+      academyId = attempt.data;
+      joinError = null;
+      break;
+    }
+    joinError = attempt.error ? { message: attempt.error.message } : null;
+    if (joinError && !/Casa não encontrada/i.test(joinError.message)) break;
+  }
   if (
     joinError &&
     /Casa não encontrada|join_academy_as_student|PGRST202|does not exist|schema cache/i.test(
@@ -502,13 +551,19 @@ export async function joinStudentRemote(input: {
     )
   ) {
     await fetch("/api/aluno/casa", { method: "POST" }).catch(() => undefined);
-    const retry = await client.rpc("join_academy_as_student", {
-      p_code: input.code,
-      p_name: input.name,
-      p_phone: input.phone,
-    });
-    academyId = retry.data;
-    joinError = retry.error;
+    for (const code of codes) {
+      const retry = await client.rpc("join_academy_as_student", {
+        p_code: code,
+        p_name: input.name,
+        p_phone: input.phone,
+      });
+      if (!retry.error && retry.data) {
+        academyId = retry.data;
+        joinError = null;
+        break;
+      }
+      joinError = retry.error ? { message: retry.error.message } : null;
+    }
   }
   if (joinError) {
     if (/join_academy_as_student|PGRST202|does not exist|schema cache/i.test(joinError.message)) {
@@ -517,6 +572,9 @@ export async function joinStudentRemote(input: {
       };
     }
     return { error: joinError.message };
+  }
+  if (!academyId) {
+    return { error: STUDENT_JOIN_NOT_FOUND };
   }
 
   const { data: profile } = await client

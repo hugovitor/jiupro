@@ -475,6 +475,16 @@ as $$
   where a.join_code = upper(trim(p_code))
      or lower(a.slug) = lower(trim(p_code))
      or lower(trim(a.name)) = lower(trim(p_code))
+     or (
+       length(regexp_replace(lower(trim(p_code)), '[^a-z0-9]', '', 'g')) >= 2
+       and regexp_replace(lower(a.name), '[^a-z0-9]', '', 'g')
+         = regexp_replace(lower(trim(p_code)), '[^a-z0-9]', '', 'g')
+     )
+     or (
+       length(regexp_replace(lower(trim(p_code)), '[^a-z0-9]', '', 'g')) >= 2
+       and regexp_replace(lower(a.slug), '[^a-z0-9]', '', 'g')
+         = regexp_replace(lower(trim(p_code)), '[^a-z0-9]', '', 'g')
+     )
   order by
     case
       when a.join_code = upper(trim(p_code)) then 0
@@ -509,6 +519,11 @@ begin
      or lower(a.slug) = lower(v_q)
      or a.name ilike v_like
      or coalesce(a.city, '') ilike v_like
+     or (
+       length(regexp_replace(lower(v_q), '[^a-z0-9]', '', 'g')) >= 2
+       and regexp_replace(lower(a.name), '[^a-z0-9]', '', 'g')
+         like '%' || regexp_replace(lower(v_q), '[^a-z0-9]', '', 'g') || '%'
+     )
   order by
     case
       when a.join_code = upper(v_q) then 0
@@ -559,6 +574,16 @@ begin
   where a.join_code = upper(v_q)
      or lower(a.slug) = lower(v_q)
      or lower(trim(a.name)) = lower(v_q)
+     or (
+       length(regexp_replace(lower(v_q), '[^a-z0-9]', '', 'g')) >= 2
+       and regexp_replace(lower(a.name), '[^a-z0-9]', '', 'g')
+         = regexp_replace(lower(v_q), '[^a-z0-9]', '', 'g')
+     )
+     or (
+       length(regexp_replace(lower(v_q), '[^a-z0-9]', '', 'g')) >= 2
+       and regexp_replace(lower(a.slug), '[^a-z0-9]', '', 'g')
+         = regexp_replace(lower(v_q), '[^a-z0-9]', '', 'g')
+     )
   order by
     case
       when a.join_code = upper(v_q) then 0

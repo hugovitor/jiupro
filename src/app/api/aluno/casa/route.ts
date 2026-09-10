@@ -1,11 +1,13 @@
 import { NextResponse } from "next/server";
 import { createClient } from "@supabase/supabase-js";
 import { supabaseAdmin } from "@/lib/operator";
-import type { PublicAcademyJoin } from "@/lib/student-join";
 import {
+  mapPublicHouse,
   STUDENT_JOIN_NOT_FOUND,
   STUDENT_JOIN_SETUP_ERROR,
+  type PublicAcademyJoin,
 } from "@/lib/student-join";
+import { searchAcademiesAdmin } from "@/lib/student-enroll";
 import {
   ensureStudentJoinSchema,
   isMissingStudentJoinRpc,
@@ -20,19 +22,14 @@ function dbClient() {
   return supabaseAdmin() ?? (url && anon ? createClient(url, anon, { auth: { persistSession: false } }) : null);
 }
 
-function mapHouse(row: Record<string, unknown>, fallbackCode: string): PublicAcademyJoin {
-  const slug = String(row.slug ?? "").trim();
-  const join = String(row.join_code ?? "").trim();
-  return {
-    name: String(row.name ?? ""),
-    city: String(row.city ?? ""),
-    state: String(row.state ?? ""),
-    slug,
-    joinCode: (join || slug || fallbackCode).toUpperCase(),
-  };
-}
-
 async function lookupHouse(casa: string) {
+  const admin = supabaseAdmin();
+  if (admin) {
+    const found = await searchAcademiesAdmin(admin, casa);
+    if (found.error) return { error: found.error, status: 400 as const };
+    if (found.houses[0]) return { house: found.houses[0] };
+  }
+
   const db = dbClient();
   if (!db) return { error: STUDENT_JOIN_NOT_FOUND, status: 404 as const };
 
@@ -53,10 +50,16 @@ async function lookupHouse(casa: string) {
   const row = Array.isArray(data) ? data[0] : data;
   if (!row) return { error: STUDENT_JOIN_NOT_FOUND, status: 404 as const };
 
-  return { house: mapHouse(row as Record<string, unknown>, casa) };
+  return { house: mapPublicHouse(row as Record<string, unknown>) };
 }
 
 async function searchHouses(query: string) {
+  const admin = supabaseAdmin();
+  if (admin) {
+    const found = await searchAcademiesAdmin(admin, query);
+    if (!found.error) return { houses: found.houses };
+  }
+
   const db = dbClient();
   if (!db) return { houses: [] as PublicAcademyJoin[] };
 
@@ -77,7 +80,7 @@ async function searchHouses(query: string) {
 
   const rows = Array.isArray(data) ? data : data ? [data] : [];
   return {
-    houses: rows.map((row) => mapHouse(row as Record<string, unknown>, query)),
+    houses: rows.map((row) => mapPublicHouse(row as Record<string, unknown>)),
   };
 }
 

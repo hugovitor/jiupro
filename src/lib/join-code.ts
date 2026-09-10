@@ -14,8 +14,23 @@ export function generateJoinCode() {
   return out;
 }
 
+export function looksLikeHouseCode(value: string) {
+  return /^[A-HJ-NP-Z2-9]{6}$/i.test(value.trim());
+}
+
+/** Nome/slug/código comparáveis: sem acento, espaço ou hífen. */
+export function collapseAcademyKey(value: string) {
+  return value
+    .normalize("NFD")
+    .replace(/\p{Diacritic}/gu, "")
+    .toLowerCase()
+    .replace(/[^a-z0-9]/g, "");
+}
+
 export function normalizeJoinInput(value: string) {
-  return value.trim().replace(/\s+/g, "");
+  const trimmed = value.trim();
+  if (looksLikeHouseCode(trimmed)) return trimmed.toUpperCase();
+  return trimmed.replace(/\s+/g, " ");
 }
 
 export function studentJoinPath(code: string) {

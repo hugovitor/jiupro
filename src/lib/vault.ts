@@ -1,3 +1,4 @@
+import { collapseAcademyKey } from "./join-code";
 import { createSeed, DEMO_ACADEMY_ID } from "./seed";
 import type { AppState, Session } from "./types";
 
@@ -177,11 +178,15 @@ export function findAcademyByJoinCode(code: string) {
   if (!needle) return null;
   const upper = needle.toUpperCase();
   const lower = needle.toLowerCase();
+  const collapsed = collapseAcademyKey(needle);
   const v = getVault();
   for (const state of Object.values(v.academies)) {
     const join = (state.academy.joinCode ?? "").toUpperCase();
     const slug = state.academy.slug.toLowerCase();
-    if (join === upper || slug === lower) return state;
+    const nameKey = collapseAcademyKey(state.academy.name);
+    if (join === upper || slug === lower || (collapsed.length >= 2 && nameKey === collapsed)) {
+      return state;
+    }
   }
   return null;
 }
@@ -208,13 +213,17 @@ export function searchAcademiesForJoin(query: string) {
     ]
       .join(" ")
       .toLowerCase();
-    if (!hay.includes(needle)) continue;
+    const collapsedHay = collapseAcademyKey(hay);
+    const collapsedNeedle = collapseAcademyKey(query);
+    if (!hay.includes(needle) && !(collapsedNeedle.length >= 2 && collapsedHay.includes(collapsedNeedle))) {
+      continue;
+    }
     hits.push({
       name: state.academy.name,
       city: state.academy.city,
       state: state.academy.state,
       slug: state.academy.slug,
-      joinCode: (state.academy.joinCode || state.academy.slug).toUpperCase(),
+      joinCode: state.academy.joinCode || state.academy.slug,
     });
     if (hits.length >= 8) break;
   }
