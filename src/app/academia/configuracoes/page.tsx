@@ -27,6 +27,9 @@ function ConfigInner() {
   const changePlan = store.changePlan;
   useEffect(() => {
     const checkout = params.get("checkout");
+    if (params.get("assinatura") === "cancelada") {
+      toast.message("Pagamento cancelado. Cole o código promocional e clique no plano.");
+    }
     if (checkout !== "success" && checkout !== "demo") return;
     const p = params.get("plan") as PlanId | null;
     if (p) changePlan(p);
@@ -133,7 +136,7 @@ function ConfigInner() {
         <h2 className="font-medium">Plano {PRODUCT_NAME} · {plan.name}</h2>
         <p className="mt-1 text-sm text-muted-foreground">
           {brl(plan.price)}/mês · {plan.students} alunos. Cole o código
-          promocional abaixo e clique no plano — o desconto já vai no Stripe.
+          promocional (não o ID do cupom) e clique no plano.
         </p>
         <div className="mt-4 space-y-1.5">
           <Label htmlFor="promo-code">Código promocional</Label>
@@ -141,7 +144,7 @@ function ConfigInner() {
             id="promo-code"
             value={promoCode}
             onChange={(e) => setPromoCode(e.target.value)}
-            placeholder="Opcional"
+            placeholder="Ex: TATAMEX30"
             autoComplete="off"
           />
         </div>

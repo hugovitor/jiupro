@@ -55,12 +55,20 @@ export async function stripePriceIdForPlan(planId: PlanId) {
 }
 
 async function findPromotionCode(stripe: Stripe, code: string) {
-  const listed = await stripe.promotionCodes.list({ code, limit: 5 });
-  return (
-    listed.data.find((item) => item.code.toLowerCase() === code.toLowerCase()) ??
-    listed.data[0] ??
-    null
-  );
+  const trimmed = code.trim();
+  const variants = [...new Set([trimmed, trimmed.toUpperCase(), trimmed.toLowerCase()])];
+  for (const variant of variants) {
+    const listed = await stripe.promotionCodes.list({
+      code: variant,
+      active: true,
+      limit: 5,
+    });
+    const hit = listed.data.find(
+      (item) => item.code.toLowerCase() === trimmed.toLowerCase(),
+    );
+    if (hit) return hit;
+  }
+  return null;
 }
 
 async function findCoupon(stripe: Stripe, code: string) {
@@ -134,7 +142,7 @@ export async function resolveCheckoutDiscount(codeRaw?: string) {
 
   return {
     error:
-      "Código não encontrado na conta Stripe de produção. No painel, modo Ao vivo: o checkout só aceita Código promocional, não o ID interno do cupom. Abra o cupom → Códigos promocionais → crie um código e use esse.",
+      "Este código não existe no Stripe (modo Ao vivo). Use o Código promocional que o cliente digita — em Produtos → Cupons → o cupom → Códigos promocionais. O ID interno (tipo n4t…) o Checkout não aceita.",
   };
 }
 

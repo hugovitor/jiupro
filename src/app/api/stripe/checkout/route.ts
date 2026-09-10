@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { signupPromoFromEnv, signupTrialDays, type CheckoutOffer } from "@/lib/billing-offer";
+import { signupTrialDays, type CheckoutOffer } from "@/lib/billing-offer";
 import { planById, PLANS } from "@/lib/plans";
 import {
   checkoutStripeError,
@@ -55,7 +55,9 @@ export async function POST(request: Request) {
   const typedPromo = body.promoCode?.trim();
   const email = body.email?.trim().toLowerCase();
 
-  let discount = await resolveCheckoutDiscount(typedPromo);
+  let discount = typedPromo
+    ? await resolveCheckoutDiscount(typedPromo)
+    : { discounts: undefined as Awaited<ReturnType<typeof resolveCheckoutDiscount>>["discounts"] };
   if (typedPromo && "error" in discount && discount.error) {
     return NextResponse.json({ error: discount.error }, { status: 400 });
   }
@@ -67,13 +69,6 @@ export async function POST(request: Request) {
     }
   }
 
-  if (offer === "signup" && !discount.discounts) {
-    discount = await resolveCheckoutDiscount(signupPromoFromEnv());
-    if ("error" in discount && discount.error) {
-      discount = { discounts: undefined };
-    }
-  }
-
   const trialDays =
     offer === "signup" && !discount.discounts ? signupTrialDays() : 0;
   try {
@@ -82,10 +77,21 @@ export async function POST(request: Request) {
       locale: "pt-BR",
       line_items: [{ price, quantity: 1 }],
       success_url: `${origin}/academia?assinatura=ok&plan=${planId}&guia=1`,
-      cancel_url: `${origin}/planos?assinatura=cancelada`,
+      cancel_url:
+        offer === "signup"
+          ? `${origin}/academia/configuracoes?assinatura=cancelada`
+          : `${origin}/planos?assinatura=cancelada`,
       ...(discount.discounts
         ? { discounts: discount.discounts }
-        : { allow_promotion_codes: true }),
+        : {
+            allow_promotion_codes: true,
+            custom_text: {
+              submit: {
+                message:
+                  "Cupom: toque em Adicionar código promocional. Use o código que você criou, não o ID do cupom.",
+              },
+            },
+          }),
       billing_address_collection: "required",
       tax_id_collection: { enabled: true },
       phone_number_collection: { enabled: true },

@@ -32,7 +32,6 @@ function CadastroForm() {
   const [password, setPassword] = useState("");
   const [busy, setBusy] = useState(false);
   const [promoCode, setPromoCode] = useState(presetCoupon);
-  const [showCoupon, setShowCoupon] = useState(Boolean(presetCoupon));
   const [accepted, setAccepted] = useState(false);
   const [plan, setPlan] = useState<PlanId>(
     PLANS.some((p) => p.id === preset) ? preset : "academia",
@@ -222,35 +221,25 @@ function CadastroForm() {
           ) : null}
         </div>
 
-        {showCoupon ? (
-          <div className="space-y-2">
-            <label htmlFor="promo" className="text-xs font-bold text-white/70">
-              Código promocional
-            </label>
-            <input
-              id="promo"
-              className={fieldClass}
-              value={promoCode}
-              onChange={(e) => setPromoCode(e.target.value)}
-              placeholder="Opcional"
-              autoComplete="off"
-              disabled={busy}
-            />
-            <p className="text-[11px] leading-5 text-white/30">
-              {trialLabel
-                ? "Se preencher, vale o cupom no lugar do mês grátis."
-                : "Opcional."}
-            </p>
-          </div>
-        ) : (
-          <button
-            type="button"
-            className="text-xs font-bold text-white/40 hover:text-white"
-            onClick={() => setShowCoupon(true)}
-          >
-            Tenho cupom
-          </button>
-        )}
+        <div className="space-y-2">
+          <label htmlFor="promo" className="text-xs font-bold text-white/70">
+            Código promocional
+          </label>
+          <input
+            id="promo"
+            className={fieldClass}
+            value={promoCode}
+            onChange={(e) => setPromoCode(e.target.value)}
+            placeholder="Opcional — o código que você criou, não o ID"
+            autoComplete="off"
+            disabled={busy}
+          />
+          <p className="text-[11px] leading-5 text-white/30">
+            {trialLabel
+              ? "Se preencher, vale o cupom no lugar do mês grátis. No Stripe: Produtos → Cupons → Códigos promocionais."
+              : "Opcional. Use o código promocional, não o ID interno do cupom."}
+          </p>
+        </div>
 
         <LgpdConsent checked={accepted} onChange={setAccepted} />
         <button
