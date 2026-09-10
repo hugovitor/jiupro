@@ -73,8 +73,8 @@ function ConfigInner() {
           </p>
           <h2 className="mt-2 text-lg font-black tracking-tight">Assistente de início</h2>
           <p className="mt-2 text-sm text-muted-foreground">
-            Pix da academia, convite do aluno e como roda a chamada. Abre de novo se alguém da equipe
-            ainda não viu.
+            Pix da academia, convite do aluno e como roda a chamada. Quem marcou “não mostrar mais”
+            só vê de novo por aqui.
           </p>
           <FirstLoginHint className="mt-4" />
         </section>

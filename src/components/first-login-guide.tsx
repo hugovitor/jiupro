@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 import { ArrowRight, CheckCircle2, Copy, GraduationCap, MessageCircle } from "lucide-react";
@@ -10,10 +10,13 @@ import { Label } from "@/components/ui/label";
 import { studentJoinUrl } from "@/lib/join-code";
 import {
   isFirstLoginDone,
+  isFirstLoginSkippedThisVisit,
   markFirstLoginDone,
   onOpenFirstLoginGuide,
   openFirstLoginGuide,
   shouldAutoOpenFirstLogin,
+  skipFirstLoginThisVisit,
+  type FirstLoginIdentity,
 } from "@/lib/first-login";
 import { isoDate } from "@/lib/format";
 import { currentStudent, useStore } from "@/lib/store";
@@ -42,15 +45,34 @@ export function FirstLoginGuide() {
   const student = currentStudent(store);
   const joinCode = store.academy.joinCode || store.academy.slug;
   const joinLink = studentJoinUrl(joinCode);
+  const dismissedRef = useRef(false);
+  const email =
+    store.users.find((user) => user.id === session?.userId)?.email || student?.email || "";
+  const identity: FirstLoginIdentity | null = session
+    ? { userId: session.userId, email, academyId: store.academy.id }
+    : null;
 
-  function closeDone() {
-    if (session) markFirstLoginDone(store.academy.id, session.userId);
+  function closeModal() {
     setOpen(false);
     setStep(0);
   }
 
+  function closeThisVisit() {
+    dismissedRef.current = true;
+    skipFirstLoginThisVisit();
+    closeModal();
+  }
+
+  function closeForever() {
+    dismissedRef.current = true;
+    skipFirstLoginThisVisit();
+    if (identity) markFirstLoginDone(identity);
+    closeModal();
+  }
+
   useEffect(() => {
     return onOpenFirstLoginGuide(() => {
+      dismissedRef.current = false;
       setPixKey(store.academy.pixKey);
       setPixName(store.academy.pixName || store.academy.name);
       setStep(0);
@@ -62,8 +84,10 @@ export function FirstLoginGuide() {
     if (!session) return;
     const forced = new URLSearchParams(window.location.search).get("guia") === "1";
     if (!forced) {
+      if (dismissedRef.current) return;
       if (store.isDemo) return;
-      if (isFirstLoginDone(store.academy.id, session.userId)) return;
+      if (isFirstLoginSkippedThisVisit()) return;
+      if (isFirstLoginDone({ userId: session.userId, email, academyId: store.academy.id })) return;
       if (
         !shouldAutoOpenFirstLogin({
           isDemo: store.isDemo,
@@ -77,7 +101,7 @@ export function FirstLoginGuide() {
     }
     const timer = window.setTimeout(() => setOpen(true), forced ? 200 : 450);
     return () => window.clearTimeout(timer);
-  }, [session, store.academy.id, store.academy.pixKey, store.isDemo, store.students.length]);
+  }, [email, session?.role, session?.userId, store.academy.id, store.academy.pixKey, store.isDemo, store.students.length]);
 
   if (!open || !session) return null;
 
@@ -267,13 +291,29 @@ export function FirstLoginGuide() {
         </div>
 
         <div className="relative flex flex-col gap-2 border-t border-white/10 p-4 sm:flex-row sm:items-center">
-          <button
-            type="button"
-            className="order-2 text-center text-xs font-bold text-white/35 hover:text-white sm:order-1 sm:mr-auto"
-            onClick={closeDone}
-          >
-            Pular por agora
-          </button>
+          <div className="order-2 flex flex-col gap-1 sm:order-1 sm:mr-auto">
+            <button
+              type="button"
+              className="text-center text-sm font-bold text-white/70 hover:text-white sm:text-left"
+              onClick={() => {
+                closeForever();
+                toast.success(
+                  role === "student"
+                    ? "Assistente desligado. Abre de novo em Perfil se quiser."
+                    : "Assistente desligado. Abre de novo em Configurações se quiser.",
+                );
+              }}
+            >
+              Não mostrar mais
+            </button>
+            <button
+              type="button"
+              className="text-center text-xs font-bold text-white/35 hover:text-white sm:text-left"
+              onClick={closeThisVisit}
+            >
+              Agora não
+            </button>
+          </div>
           <div className="order-1 flex gap-2 sm:order-2">
             {step > 0 ? (
               <Button variant="outline" className="flex-1 sm:flex-none" onClick={() => setStep((n) => n - 1)}>
@@ -289,7 +329,7 @@ export function FirstLoginGuide() {
               <Button
                 className="h-11 flex-1"
                 onClick={() => {
-                  closeDone();
+                  closeForever();
                   if (role === "student") router.push("/aluno");
                   else if (current.id === "pronto") router.push("/academia");
                 }}

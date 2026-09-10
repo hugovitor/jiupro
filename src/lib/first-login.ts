@@ -1,7 +1,14 @@
 const STORAGE_KEY = "jiupro.guide.v1";
 const OPEN_EVENT = "jiupro:open-guide";
+const SKIP_VISIT_KEY = "jiupro.guide.skip.v1";
 
 type GuideRecord = { done: boolean };
+
+export type FirstLoginIdentity = {
+  userId: string;
+  email?: string;
+  academyId?: string;
+};
 
 function readAll(): Record<string, GuideRecord> {
   if (typeof window === "undefined") return {};
@@ -14,21 +21,57 @@ function readAll(): Record<string, GuideRecord> {
 }
 
 function writeAll(next: Record<string, GuideRecord>) {
-  localStorage.setItem(STORAGE_KEY, JSON.stringify(next));
+  try {
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(next));
+  } catch {
+    /* private mode / quota */
+  }
+}
+
+function identityKeys(identity: FirstLoginIdentity) {
+  const keys: string[] = [];
+  const email = identity.email?.trim().toLowerCase();
+  if (email) keys.push(`email:${email}`);
+  if (identity.userId) keys.push(`user:${identity.userId}`);
+  if (identity.academyId && identity.userId) {
+    keys.push(firstLoginKey(identity.academyId, identity.userId));
+  }
+  return keys;
 }
 
 export function firstLoginKey(academyId: string, userId: string) {
   return `${academyId}:${userId}`;
 }
 
-export function isFirstLoginDone(academyId: string, userId: string) {
-  return Boolean(readAll()[firstLoginKey(academyId, userId)]?.done);
+export function isFirstLoginDone(identity: FirstLoginIdentity) {
+  const all = readAll();
+  return identityKeys(identity).some((key) => Boolean(all[key]?.done));
 }
 
-export function markFirstLoginDone(academyId: string, userId: string) {
+export function markFirstLoginDone(identity: FirstLoginIdentity) {
   const all = readAll();
-  all[firstLoginKey(academyId, userId)] = { done: true };
+  for (const key of identityKeys(identity)) {
+    all[key] = { done: true };
+  }
   writeAll(all);
+}
+
+export function skipFirstLoginThisVisit() {
+  if (typeof window === "undefined") return;
+  try {
+    sessionStorage.setItem(SKIP_VISIT_KEY, "1");
+  } catch {
+    /* private mode */
+  }
+}
+
+export function isFirstLoginSkippedThisVisit() {
+  if (typeof window === "undefined") return false;
+  try {
+    return sessionStorage.getItem(SKIP_VISIT_KEY) === "1";
+  } catch {
+    return false;
+  }
 }
 
 export function shouldAutoOpenFirstLogin(input: {
