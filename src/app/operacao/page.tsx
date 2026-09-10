@@ -16,6 +16,7 @@ import { OperatorLeadsBoard } from "@/components/operacao/leads-board";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { NativeSelect } from "@/components/ui/native-select";
 import { isOperatorEmail } from "@/lib/operator";
 import { operatorHeaders } from "@/lib/operator-client";
 import { RESET_CONFIRMATION } from "@/lib/reset-confirm";
@@ -314,15 +315,14 @@ export default function OperacaoPage() {
             </div>
             <div className="space-y-1.5">
               <Label>Tipo</Label>
-              <select
+              <NativeSelect
                 value={kind}
                 onChange={(e) => setKind(e.target.value as Kind)}
-                className="h-9 w-full rounded-xl border border-white/10 bg-[#111] px-3 text-sm text-white"
               >
                 <option value="month_free">Primeiro mês grátis</option>
                 <option value="percent_once">% só no primeiro mês</option>
                 <option value="percent_forever">% enquanto a assinatura durar</option>
-              </select>
+              </NativeSelect>
             </div>
             {kind !== "month_free" ? (
               <div className="space-y-1.5">

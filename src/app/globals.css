@@ -95,6 +95,13 @@
   html {
     @apply font-sans;
     background: #080808;
+    color-scheme: dark;
+  }
+  select,
+  select option,
+  select optgroup {
+    background-color: #111111;
+    color: #f5f5f5;
   }
   ::selection {
     background: #dc2626;

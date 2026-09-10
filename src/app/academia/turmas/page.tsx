@@ -7,8 +7,25 @@ import { FormDialog } from "@/components/form-dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { weekdayFull, weekdayName, isoDate, weekdayToday } from "@/lib/format";
 import { useStore } from "@/lib/store";
+
+const WEEKDAYS = [
+  { value: "0", label: "Domingo" },
+  { value: "1", label: "Segunda" },
+  { value: "2", label: "Terça" },
+  { value: "3", label: "Quarta" },
+  { value: "4", label: "Quinta" },
+  { value: "5", label: "Sexta" },
+  { value: "6", label: "Sábado" },
+];
 
 export default function TurmasPage() {
   const store = useStore();
@@ -95,7 +112,7 @@ function NovaTurma() {
   const store = useStore();
   const [open, setOpen] = useState(false);
   const [name, setName] = useState("Adultos Gi");
-  const [weekday, setWeekday] = useState("1");
+  const [weekday, setWeekday] = useState(String(weekdayToday()));
   const [time, setTime] = useState("19:30");
 
   return (
@@ -122,8 +139,9 @@ function NovaTurma() {
               gi: true,
               capacity: 28,
             });
-            toast.success("Turma na grade.");
+            toast.success(`Turma na ${weekdayFull(Number(weekday))}.`);
             setOpen(false);
+            setWeekday(String(weekdayToday()));
           }}
         >
           <div className="space-y-1.5">
@@ -133,17 +151,24 @@ function NovaTurma() {
           <div className="grid grid-cols-2 gap-2">
             <div className="space-y-1.5">
               <Label>Dia</Label>
-              <select
-                className="h-8 w-full rounded-lg border border-input bg-transparent px-2 text-sm"
+              <Select
                 value={weekday}
-                onChange={(e) => setWeekday(e.target.value)}
+                onValueChange={(value) => {
+                  if (value != null) setWeekday(String(value));
+                }}
+                items={WEEKDAYS}
               >
-                {["Dom", "Seg", "Ter", "Qua", "Qui", "Sex", "Sáb"].map((d, i) => (
-                  <option key={d} value={i}>
-                    {d}
-                  </option>
-                ))}
-              </select>
+                <SelectTrigger className="h-9 w-full min-w-0 rounded-lg border-white/15 bg-[#111] text-white">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent alignItemWithTrigger={false} align="start">
+                  {WEEKDAYS.map((day) => (
+                    <SelectItem key={day.value} value={day.value}>
+                      {day.label}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
             </div>
             <div className="space-y-1.5">
               <Label>Horário</Label>

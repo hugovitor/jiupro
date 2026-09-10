@@ -62,7 +62,7 @@ async function replaceRows(
   academyId: string,
   rows: Record<string, unknown>[],
   academyColumn = "academy_id",
-  opts?: { keepClaimed?: boolean },
+  opts?: { keepClaimed?: boolean; keepIfEmpty?: boolean },
 ) {
   const { data: existing, error: readError } = await client
     .from(table)
@@ -82,8 +82,8 @@ async function replaceRows(
   const extra = (existing ?? [])
     .map((r) => String((r as { id: string }).id))
     .filter((id: string) => !keep.has(id) && !claimed.has(id));
-  if (opts?.keepClaimed && !rows.length) {
-    /* A academia local vazia não pode apagar quem já entrou pelo app. */
+  if ((opts?.keepClaimed || opts?.keepIfEmpty) && !rows.length) {
+    /* Lista local vazia não apaga a grade / quem já entrou pelo app. */
   } else if (extra.length) {
     const { error } = await client.from(table).delete().in("id", extra);
     if (error) throw error;
@@ -180,6 +180,16 @@ export async function pushAcademyState(state: AppState, opts?: { refresh?: boole
     }
   }
 
+  if (ready.session?.role === "student") {
+    try {
+      await upsertRows(client, "attendance", tables.attendance);
+    } catch (err) {
+      const message = err instanceof Error ? err.message : "Não foi possível salvar agora.";
+      return { error: message, state: ready };
+    }
+    return { state: ready };
+  }
+
   const { error: academyError } = await client
     .from("academies")
     .update(tables.academy)
@@ -202,7 +212,9 @@ export async function pushAcademyState(state: AppState, opts?: { refresh?: boole
       await replaceRows(client, "students", ready.academy.id, tables.students, "academy_id", {
         keepClaimed: true,
       });
-      await replaceRows(client, "classes", ready.academy.id, tables.classes);
+      await replaceRows(client, "classes", ready.academy.id, tables.classes, "academy_id", {
+        keepIfEmpty: true,
+      });
       await replaceRows(client, "attendance", ready.academy.id, tables.attendance);
       await replaceRows(client, "payments", ready.academy.id, tables.payments);
       await replaceRows(client, "expenses", ready.academy.id, tables.expenses);

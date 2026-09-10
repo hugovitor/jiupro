@@ -1,4 +1,4 @@
-import { uid } from "./format";
+import { uid, weekdayToday } from "./format";
 import { generateJoinCode } from "./join-code";
 import { DEMO_ACADEMY_ID } from "./seed";
 import type { AppState, PlanId, User } from "./types";
@@ -38,6 +38,7 @@ export function createEmptyAcademy(input: {
   const ownerId = input.ownerId ?? uid("u");
   const city = input.city.trim() || "Brasil";
   const uf = (input.state ?? "SP").trim().slice(0, 2).toUpperCase() || "SP";
+  const today = weekdayToday();
   const owner: User = {
     id: ownerId,
     academyId,
@@ -74,7 +75,7 @@ export function createEmptyAcademy(input: {
         id: uid("c"),
         academyId,
         name: "Adultos Gi",
-        weekday: 1,
+        weekday: today,
         startTime: "19:30",
         durationMin: 90,
         instructorId: ownerId,
@@ -86,7 +87,7 @@ export function createEmptyAcademy(input: {
         id: uid("c"),
         academyId,
         name: "Kids",
-        weekday: 3,
+        weekday: (today + 2) % 7,
         startTime: "18:00",
         durationMin: 60,
         instructorId: ownerId,

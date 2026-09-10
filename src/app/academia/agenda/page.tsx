@@ -7,6 +7,7 @@ import { FormDialog } from "@/components/form-dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { NativeSelect } from "@/components/ui/native-select";
 import { brl, formatDay, isoDate } from "@/lib/format";
 import { EVENT_KIND_LABEL } from "@/lib/insights";
 import { useStore } from "@/lib/store";
@@ -201,8 +202,7 @@ function NovoEvento() {
           <div className="grid grid-cols-2 gap-2">
             <div className="space-y-1.5">
               <Label>Tipo</Label>
-              <select
-                className="h-8 w-full rounded-lg border border-input bg-transparent px-2 text-sm"
+              <NativeSelect
                 value={kind}
                 onChange={(e) => setKind(e.target.value as EventKind)}
               >
@@ -211,7 +211,7 @@ function NovoEvento() {
                     {EVENT_KIND_LABEL[k]}
                   </option>
                 ))}
-              </select>
+              </NativeSelect>
             </div>
             <div className="space-y-1.5">
               <Label>Inscrição (R$)</Label>

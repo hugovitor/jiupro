@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { toast } from "sonner";
 import { FormDialog } from "@/components/form-dialog";
 import { PersonAvatar } from "@/components/belt-badge";
@@ -23,7 +23,7 @@ import {
   sortByName,
   statusLabel,
 } from "@/lib/attendance";
-import { brl, clockLabel, currentMonth, formatTime, isoDate, minutes } from "@/lib/format";
+import { brl, clockLabel, currentMonth, formatTime, isoDate, minutes, weekdayName } from "@/lib/format";
 import { useStore } from "@/lib/store";
 import type { Attendance, ClassSession, Student } from "@/lib/types";
 import { useNow } from "@/lib/use-now";
@@ -33,10 +33,22 @@ export default function PresencaPage() {
   const store = useStore();
   const now = useNow();
   const today = isoDate(0);
+
+  useEffect(() => {
+    void store.syncNow().catch(() => undefined);
+  }, [store.syncNow]);
+
   const todayList = useMemo(() => {
-    const list = store.todayClasses();
-    return [...list].sort((a, b) => minutes(a.startTime) - minutes(b.startTime));
-  }, [store]);
+    const byDay = store.todayClasses();
+    const withCheckIn = store.classes.filter((cls) =>
+      store.attendance.some(
+        (row) => row.classId === cls.id && row.date === today && isOnRoster(row),
+      ),
+    );
+    const seen = new Map<string, ClassSession>();
+    for (const cls of [...byDay, ...withCheckIn]) seen.set(cls.id, cls);
+    return [...seen.values()].sort((a, b) => minutes(a.startTime) - minutes(b.startTime));
+  }, [store, today]);
   const recommended = recommendClass(todayList, now);
   const [pinnedId, setPinnedId] = useState<string | null>(null);
   const [q, setQ] = useState("");
@@ -124,7 +136,12 @@ export default function PresencaPage() {
   const cap = cls?.capacity ?? 0;
   const full = cap > 0 && heads >= cap;
   const open = Math.max(0, cap - heads);
-  const tabs = todayList.length ? todayList : store.classes;
+  const todayIds = new Set(todayList.map((c) => c.id));
+  const tabs = [...store.classes].sort((a, b) => {
+    const todayDelta = Number(todayIds.has(b.id)) - Number(todayIds.has(a.id));
+    if (todayDelta) return todayDelta;
+    return a.weekday - b.weekday || minutes(a.startTime) - minutes(b.startTime);
+  });
 
   return (
     <div className="mx-auto max-w-5xl space-y-6">
@@ -171,7 +188,9 @@ export default function PresencaPage() {
                 <span className="size-1.5 bg-primary" aria-hidden />
               ) : null}
               <span className="font-mono tabular-nums">{c.startTime}</span>
-              <span>{c.name}</span>
+              <span>
+                {weekdayName(c.weekday).toUpperCase()} · {c.name}
+              </span>
               <span className="text-[11px] text-muted-foreground">
                 {n}
                 {pending ? ` · ${pending}` : ""}

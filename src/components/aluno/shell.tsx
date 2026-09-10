@@ -1,10 +1,12 @@
 "use client";
 
+import { useEffect } from "react";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { CalendarDays, Home, LineChart, LogOut, MessageSquare, User } from "lucide-react";
 import { Wordmark } from "@/components/brand";
 import { FirstLoginGuide } from "@/components/first-login-guide";
+import { DEMO_ACADEMY_ID } from "@/lib/seed";
 import { currentStudent, useStore } from "@/lib/store";
 import { cn } from "@/lib/utils";
 
@@ -21,6 +23,18 @@ export function AlunoShell({ children }: { children: React.ReactNode }) {
   const router = useRouter();
   const store = useStore();
   const student = currentStudent(store);
+
+  useEffect(() => {
+    if (store.academy.id === DEMO_ACADEMY_ID) return;
+    void store.pullNow().catch(() => undefined);
+    const onVis = () => {
+      if (document.visibilityState === "visible") {
+        void store.pullNow().catch(() => undefined);
+      }
+    };
+    document.addEventListener("visibilitychange", onVis);
+    return () => document.removeEventListener("visibilitychange", onVis);
+  }, [store.academy.id, store.pullNow]);
 
   return (
     <div className="flex min-h-screen justify-center bg-[#070707] text-white selection:bg-red-600 selection:text-white">

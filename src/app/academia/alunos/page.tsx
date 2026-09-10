@@ -10,6 +10,7 @@ import { FormDialog } from "@/components/form-dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { NativeSelect } from "@/components/ui/native-select";
 import {
   Table,
   TableBody,
@@ -312,8 +313,7 @@ function NovoAluno() {
               <div className="grid grid-cols-2 gap-2">
                 <div className="space-y-1.5">
                   <Label>Turma</Label>
-                  <select
-                    className="h-8 w-full rounded-lg border border-input bg-transparent px-2 text-sm"
+                  <NativeSelect
                     value={form.division}
                     onChange={(e) =>
                       setForm({
@@ -325,12 +325,11 @@ function NovoAluno() {
                   >
                     <option value="adult">Adulto</option>
                     <option value="kids">Kids</option>
-                  </select>
+                  </NativeSelect>
                 </div>
                 <div className="space-y-1.5">
                   <Label>Faixa</Label>
-                  <select
-                    className="h-8 w-full rounded-lg border border-input bg-transparent px-2 text-sm"
+                  <NativeSelect
                     value={form.belt}
                     onChange={(e) => setForm({ ...form, belt: e.target.value })}
                   >
@@ -339,7 +338,7 @@ function NovoAluno() {
                         {b.label}
                       </option>
                     ))}
-                  </select>
+                  </NativeSelect>
                 </div>
               </div>
               {form.division === "kids" ? (

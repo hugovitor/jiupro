@@ -176,14 +176,25 @@ const listeners = new Set<() => void>();
 let cached: AppState | null = null;
 let clientReady = false;
 let pushCancel: (() => void) | undefined;
+let writeEpoch = 0;
 
 function persist(state: AppState): AppState {
   const next =
     state.academy.id === DEMO_ACADEMY_ID ? state : ensureUuidState(state);
   writeActive(next);
+  writeEpoch += 1;
   pushCancel?.();
   pushCancel = scheduleRemotePush(next);
   return next;
+}
+
+function flushRemotePush() {
+  if (typeof window === "undefined") return;
+  pushCancel?.();
+  pushCancel = undefined;
+  const state = cached;
+  if (!state || state.academy.id === DEMO_ACADEMY_ID) return;
+  void pushAcademyState(state);
 }
 
 function load(): AppState {
@@ -597,6 +608,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
     }
     const ready = ensureUuidState(current);
     write(ready);
+    const epoch = writeEpoch;
     const owner = ready.users.find((u) => u.role === "owner");
     const password = owner ? passwordFor(owner.email) : undefined;
     const pushed = await pushAcademyState(ready, { refresh: true });
@@ -614,14 +626,14 @@ export function StoreProvider({ children }: { children: ReactNode }) {
         state: ready,
       });
       if (attached.error) return { ok: false, error: attached.error };
-      if (attached.state) {
+      if (attached.state && writeEpoch === epoch) {
         putAcademy(attached.state, password, ready.academy.id);
         write(attached.state);
       }
       return { ok: true };
     }
     if (pushed.error) return { ok: false, error: pushed.error };
-    if (pushed.state) write(pushed.state);
+    if (pushed.state && writeEpoch === epoch) write(pushed.state);
     return { ok: true };
   }, []);
 
@@ -633,8 +645,10 @@ export function StoreProvider({ children }: { children: ReactNode }) {
     if (!current.session) {
       return { ok: false, error: "Entre na academia para baixar." };
     }
+    const epoch = writeEpoch;
     const pulled = await pullAcademyState(current.session);
     if ("error" in pulled) return { ok: false, error: pulled.error };
+    if (writeEpoch !== epoch) return { ok: true };
     putAcademy(pulled);
     write(pulled);
     return { ok: true };
@@ -1057,6 +1071,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
         { ...input, id: uid("c"), academyId: prev.academy.id },
       ],
     }));
+    flushRemotePush();
   }, []);
 
   const removeClass: Store["removeClass"] = useCallback((id) => {
@@ -1099,7 +1114,9 @@ export function StoreProvider({ children }: { children: ReactNode }) {
         today,
       );
       if (session.capacity > 0 && heads >= session.capacity) return false;
-      return checkIn(studentId, classId, "app");
+      const ok = checkIn(studentId, classId, "app");
+      if (ok) flushRemotePush();
+      return ok;
     },
     [checkIn],
   );

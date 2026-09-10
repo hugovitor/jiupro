@@ -6,6 +6,7 @@ import { ClipboardList, Copy, MessageCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { NativeSelect } from "@/components/ui/native-select";
 import {
   gymWhatsAppHref,
   LEAD_STATUSES,
@@ -369,17 +370,17 @@ function LeadRow({
         ) : null}
       </td>
       <td className="px-4 py-3">
-        <select
+        <NativeSelect
           value={lead.status}
           onChange={(e) => void onPatch(lead.id, { status: e.target.value as LeadStatus })}
-          className="h-9 rounded-xl border border-white/10 bg-[#111] px-2 text-xs text-white"
+          className="h-9 w-auto min-w-[9rem] text-xs"
         >
           {LEAD_STATUSES.map((status) => (
             <option key={status.id} value={status.id}>
               {status.label}
             </option>
           ))}
-        </select>
+        </NativeSelect>
       </td>
       <td className="px-4 py-3">
         <input

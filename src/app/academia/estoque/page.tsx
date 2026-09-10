@@ -6,6 +6,7 @@ import { FormDialog } from "@/components/form-dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { NativeSelect } from "@/components/ui/native-select";
 import { brl } from "@/lib/format";
 import { useStore } from "@/lib/store";
 import type { InventoryCategory } from "@/lib/types";
@@ -139,8 +140,7 @@ function VenderItem({ itemId, disabled }: { itemId: string; disabled?: boolean }
         >
           <div className="space-y-1.5">
             <Label>Aluno</Label>
-            <select
-              className="h-8 w-full rounded-lg border border-input bg-transparent px-2 text-sm"
+            <NativeSelect
               value={studentId}
               onChange={(e) => setStudentId(e.target.value)}
             >
@@ -149,7 +149,7 @@ function VenderItem({ itemId, disabled }: { itemId: string; disabled?: boolean }
                   {s.name}
                 </option>
               ))}
-            </select>
+            </NativeSelect>
           </div>
           <Button type="submit">Baixar 1 un. no Pix</Button>
         </form>

@@ -10,6 +10,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { NativeSelect } from "@/components/ui/native-select";
 import { brl, currentMonth, isoDate, monthLabel } from "@/lib/format";
 import { monthDropInRevenue, monthExpenses, monthRevenue, monthStoreSales, overdueTotal } from "@/lib/insights";
 import { useStore } from "@/lib/store";
@@ -215,8 +216,7 @@ function NovaDespesa() {
             </div>
             <div className="space-y-1.5">
               <Label>Categoria</Label>
-              <select
-                className="h-8 w-full rounded-lg border border-input bg-transparent px-2 text-sm"
+              <NativeSelect
                 value={category}
                 onChange={(e) => setCategory(e.target.value as ExpenseCategory)}
               >
@@ -225,7 +225,7 @@ function NovaDespesa() {
                     {EXPENSE_LABEL[k]}
                   </option>
                 ))}
-              </select>
+              </NativeSelect>
             </div>
           </div>
           <Button type="submit">Salvar</Button>
