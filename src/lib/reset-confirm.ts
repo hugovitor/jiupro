@@ -1,0 +1,1 @@
+export const RESET_CONFIRMATION = "COMECAR DO ZERO";

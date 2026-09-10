@@ -151,6 +151,23 @@ export function resetDemoAcademy() {
   return activeState();
 }
 
+/** Apaga academias deste navegador e deixa só a demonstração. */
+export function wipeLocalAcademies() {
+  const v = getVault();
+  const seed = createSeed();
+  v.academies = { [DEMO_ACADEMY_ID]: stripSession(seed) };
+  v.activeId = DEMO_ACADEMY_ID;
+  v.session = null;
+  v.credentials = {};
+  saveVault();
+  if (typeof window !== "undefined") {
+    window.localStorage.removeItem(LEGACY_STATE_KEY);
+    window.localStorage.removeItem(SESSION_KEY);
+    window.sessionStorage.removeItem("jiupro.operator.jwt");
+  }
+  return activeState();
+}
+
 export function switchAcademy(academyId: string, session: Session) {
   const v = getVault();
   if (!v.academies[academyId]) return null;

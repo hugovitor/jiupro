@@ -18,8 +18,10 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { isOperatorEmail } from "@/lib/operator";
 import { operatorHeaders } from "@/lib/operator-client";
+import { RESET_CONFIRMATION } from "@/lib/reset-confirm";
 import { createSupabaseBrowserClient } from "@/lib/supabase/client";
 import { useStore } from "@/lib/store";
+import { wipeLocalAcademies } from "@/lib/vault";
 
 type Kind = "month_free" | "percent_once" | "percent_forever";
 
@@ -70,6 +72,8 @@ export default function OperacaoPage() {
   const [note, setNote] = useState("");
   const [maxRedemptions, setMaxRedemptions] = useState("1");
   const [lastCode, setLastCode] = useState<string | null>(null);
+  const [resetConfirm, setResetConfirm] = useState("");
+  const [resetting, setResetting] = useState(false);
 
   async function load() {
     setLoading(true);
@@ -152,6 +156,43 @@ export default function OperacaoPage() {
       await load();
     } finally {
       setBusy(false);
+    }
+  }
+
+  async function resetDatabase() {
+    if (resetConfirm.trim().toUpperCase() !== RESET_CONFIRMATION) {
+      toast.error(`Digite ${RESET_CONFIRMATION} para confirmar.`);
+      return;
+    }
+    setResetting(true);
+    try {
+      const res = await fetch("/api/operacao/reset", {
+        method: "POST",
+        credentials: "include",
+        headers: {
+          "Content-Type": "application/json",
+          ...(await operatorHeaders(email)),
+        },
+        body: JSON.stringify({ confirm: RESET_CONFIRMATION }),
+      });
+      const data = (await res.json()) as {
+        error?: string;
+        academies?: number;
+        students?: number;
+        users?: number;
+      };
+      if (!res.ok) {
+        toast.error(data.error ?? "Não limpou o banco.");
+        return;
+      }
+      wipeLocalAcademies();
+      await createSupabaseBrowserClient()?.auth.signOut();
+      toast.success(
+        `Banco limpo: ${data.academies ?? 0} academia(s), ${data.students ?? 0} aluno(s), ${data.users ?? 0} login(s) de teste.`,
+      );
+      window.location.href = "/cadastro";
+    } finally {
+      setResetting(false);
     }
   }
 
@@ -441,6 +482,32 @@ export default function OperacaoPage() {
               </tbody>
             </table>
           </div>
+        </section>
+
+        <section className="rounded-2xl border border-red-600/30 bg-red-600/10 p-5">
+          <h2 className="text-sm font-black text-red-400">Começar o teste do zero</h2>
+          <p className="mt-2 max-w-2xl text-sm leading-6 text-white/55">
+            Apaga academias, alunos, fichas e logins de teste no servidor. A sua conta da
+            operação ({email}) permanece para você cadastrar de novo. Também limpa este
+            navegador. No celular, saia do app e entre de novo.
+          </p>
+          <div className="mt-4 max-w-sm space-y-1.5">
+            <Label>Digite {RESET_CONFIRMATION}</Label>
+            <Input
+              value={resetConfirm}
+              onChange={(e) => setResetConfirm(e.target.value)}
+              placeholder={RESET_CONFIRMATION}
+              autoCapitalize="characters"
+            />
+          </div>
+          <Button
+            className="mt-4"
+            variant="destructive"
+            disabled={resetting || resetConfirm.trim().toUpperCase() !== RESET_CONFIRMATION}
+            onClick={() => void resetDatabase()}
+          >
+            {resetting ? "Limpando…" : "Apagar banco e começar de novo"}
+          </Button>
         </section>
       </div>
     </DarkCanvas>
