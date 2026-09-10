@@ -273,7 +273,7 @@ export default function LoginPage() {
               </div>
 
               <p className="mt-8 text-center text-xs text-white/35">
-                Sou aluno da casa?{" "}
+                Sou aluno da academia?{" "}
                 <Link href="/entrar" className="font-extrabold text-white underline decoration-red-600 decoration-2 underline-offset-4 transition hover:text-red-400">
                   Encontre sua academia
                 </Link>

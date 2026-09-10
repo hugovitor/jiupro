@@ -222,7 +222,7 @@ export default function OperacaoPage() {
           </h1>
           <p className="mt-3 max-w-2xl text-sm leading-6 text-white/45">
             Saiu do Maps, entra aqui. Cupom para gente específica. Quem já abriu
-            conta no produto. Sua casa de teste continua no painel da academia.
+            conta no produto. Sua academia de teste continua no painel.
           </p>
         </div>
 
@@ -233,7 +233,7 @@ export default function OperacaoPage() {
             <h2 className="text-sm font-black">O que o cliente paga ao TatameX</h2>
             <p className="mt-3 text-sm leading-6 text-white/50">
               No cadastro a academia é criada na hora. Em seguida o Stripe cobra o
-              plano Essencial, Academia ou Equipe no cartão. Casa nova ganha{" "}
+              plano Essencial, Academia ou Equipe no cartão. Academia nova ganha{" "}
               <strong className="text-white">
                 {overview?.trialLabel ?? "30 dias grátis"}
               </strong>
@@ -244,7 +244,7 @@ export default function OperacaoPage() {
           <article className="surface p-5">
             <h2 className="text-sm font-black">O que o aluno paga à academia</h2>
             <p className="mt-3 text-sm leading-6 text-white/50">
-              Mensalidade, aula avulsa e loja saem no Pix da casa, via WhatsApp.
+              Mensalidade, aula avulsa e loja saem no Pix da academia, via WhatsApp.
               Isso não passa no Stripe do TatameX. Cupom daqui não altera a
               mensalidade do aluno.
             </p>
@@ -402,7 +402,7 @@ export default function OperacaoPage() {
             <table className="w-full min-w-[640px] text-left text-sm">
               <thead className="bg-white/[0.03] text-[11px] tracking-wide text-white/40 uppercase">
                 <tr>
-                  <th className="px-4 py-3 font-bold">Casa</th>
+                  <th className="px-4 py-3 font-bold">Academia</th>
                   <th className="px-4 py-3 font-bold">Dono</th>
                   <th className="px-4 py-3 font-bold">Plano</th>
                   <th className="px-4 py-3 font-bold">Stripe</th>

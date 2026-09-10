@@ -168,7 +168,7 @@ export function SupabaseConnect() {
         <h2 className="font-medium">Dados da academia</h2>
         <p className="mt-1 text-sm text-muted-foreground">
           Alunos, turmas e mensalidades ficam salvos na sua conta. A
-          demonstração da Equipe Origem não mistura com a sua casa.
+          demonstração da Equipe Origem não mistura com a sua academia.
         </p>
       </section>
     );

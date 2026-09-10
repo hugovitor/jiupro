@@ -22,7 +22,7 @@ export default function GraduacoesPage() {
         <h1 className="font-display text-3xl">Graduações</h1>
         <p className="mt-1 text-sm text-muted-foreground">
           Quadro IBJJF (kids, adulto e coral). A fila usa tempo + presença da
-          casa; você confirma no tatame.
+          academia; você confirma no tatame.
         </p>
       </div>
 

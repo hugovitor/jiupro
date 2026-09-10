@@ -2,7 +2,7 @@ import { NextResponse } from "next/server";
 import { createClient } from "@supabase/supabase-js";
 import { supabaseAdmin } from "@/lib/operator";
 import { enrollStudentInAcademy, ensureStudentRosterRow, resolveHouseViaJoinRpc } from "@/lib/student-enroll";
-import { preferredJoinCode, STUDENT_JOIN_NOT_FOUND, STUDENT_JOIN_SETUP_ERROR } from "@/lib/student-join";
+import { isStudentJoinNotFound, preferredJoinCode, STUDENT_JOIN_NOT_FOUND, STUDENT_JOIN_SETUP_ERROR } from "@/lib/student-join";
 import { ensureStudentJoinSchema } from "@/lib/supabase/ensure-student-join";
 
 export const runtime = "nodejs";
@@ -56,7 +56,7 @@ async function joinWithUserToken(
     });
     if (!error && data) return { academyId: String(data) };
     lastError = error?.message ?? "";
-    if (lastError && !/Casa não encontrada/i.test(lastError)) {
+    if (lastError && !isStudentJoinNotFound(lastError)) {
       return { error: lastError };
     }
   }
@@ -129,7 +129,7 @@ export async function POST(request: Request) {
     }
     return NextResponse.json({ ok: true, academyId: viaRpc.academyId });
   }
-  if (viaRpc && "error" in viaRpc && viaRpc.error && !/Casa não encontrada/i.test(viaRpc.error)) {
+  if (viaRpc && "error" in viaRpc && viaRpc.error && !isStudentJoinNotFound(viaRpc.error)) {
     return NextResponse.json({ error: viaRpc.error }, { status: 400 });
   }
 

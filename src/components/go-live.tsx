@@ -42,7 +42,7 @@ export function GoLiveCard() {
       </h2>
       <p className="mt-2 text-sm text-muted-foreground">
         {store.isDemo
-          ? "A Equipe Origem é só para conhecer o painel. Abra a sua casa para cadastrar alunos de verdade."
+          ? "A Equipe Origem é só para conhecer o painel. Abra a sua academia para cadastrar alunos de verdade."
           : ready
             ? stripeReady
               ? "Os dados ficam na sua conta. A assinatura do TatameX é no cartão; a mensalidade do aluno, no Pix da academia."

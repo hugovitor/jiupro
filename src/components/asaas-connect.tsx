@@ -46,7 +46,7 @@ export function AsaasConnect() {
     try {
       if (!apiKey.trim()) {
         saveAsaasBrowserConfig(null);
-        setStatus("Asaas desligado neste navegador. Mensalidade volta para Pix da casa.");
+        setStatus("Asaas desligado neste navegador. Mensalidade volta para Pix da academia.");
         toast.message("Asaas desligado.");
         return;
       }

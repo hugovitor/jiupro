@@ -25,7 +25,7 @@ export const metadata: Metadata = {
     template: `%s · ${PRODUCT_NAME}`,
   },
   description:
-    "Operação da academia: alunos, mensalidades, presença, faixas e estoque. Cada casa, uma conta isolada.",
+    "Operação da academia: alunos, mensalidades, presença, faixas e estoque. Cada academia, uma conta isolada.",
   applicationName: PRODUCT_NAME,
   appleWebApp: {
     capable: true,
@@ -36,7 +36,7 @@ export const metadata: Metadata = {
   openGraph: {
     title: productTitle(),
     description:
-      "Operação da academia: alunos, Pix, faixas e presença. Cada casa, uma conta.",
+      "Operação da academia: alunos, Pix, faixas e presença. Cada academia, uma conta.",
     locale: "pt_BR",
     type: "website",
   },

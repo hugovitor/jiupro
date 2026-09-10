@@ -23,7 +23,7 @@ function ReturnInner() {
     store.changePlan(plan as PlanId);
     toast.success(
       demoSignup
-        ? "Academia aberta. Vamos deixar a casa pronta."
+        ? "Academia aberta. Vamos deixar a academia pronta."
         : "Pagamento confirmado. Assinatura do TatameX ativa.",
     );
   }, [params, store]);

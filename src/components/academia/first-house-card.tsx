@@ -17,7 +17,7 @@ export function FirstHouseCard() {
   return (
     <section className="mt-6 overflow-hidden rounded-2xl border border-red-600/25 bg-gradient-to-b from-red-600/12 to-white/[0.03] p-5">
       <p className="text-[10px] font-black tracking-[0.18em] text-red-500 uppercase">
-        Casa nova
+        Academia nova
       </p>
       <h2 className="mt-2 text-xl font-black tracking-tight">Primeiro aluno</h2>
       <p className="mt-2 text-sm leading-6 text-muted-foreground">

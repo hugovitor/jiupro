@@ -88,7 +88,7 @@ export function downloadJson(filename: string, data: unknown) {
 
 export function deletionWhatsAppText(kind: "academy" | "student", label: string) {
   if (kind === "academy") {
-    return `Olá. Sou o responsável pela academia ${label} no ${PRODUCT_NAME}. Quero exercer o direito de exclusão (LGPD, art. 18): apagar a conta, alunos, presenças e cobranças desta casa no servidor.`;
+    return `Olá. Sou o responsável pela academia ${label} no ${PRODUCT_NAME}. Quero exercer o direito de exclusão (LGPD, art. 18): apagar a conta, alunos, presenças e cobranças desta academia no servidor.`;
   }
   return `Olá. Sou ${label}, aluno no ${PRODUCT_NAME}. Quero apagar meu acesso e meus dados pessoais no app (LGPD, art. 18).`;
 }

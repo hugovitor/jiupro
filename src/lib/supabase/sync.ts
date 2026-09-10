@@ -3,7 +3,7 @@ import { createSupabaseBrowserClient } from "./client";
 import { passwordResetUrl, isLocalOrigin, publicAppUrl } from "../app-url";
 import { mapAuthError } from "../auth-errors";
 import { looksLikeHouseCode } from "../join-code";
-import { preferredJoinCode, STUDENT_JOIN_NOT_FOUND, type PublicAcademyJoin } from "../student-join";
+import { isStudentJoinNotFound, preferredJoinCode, STUDENT_JOIN_NOT_FOUND, type PublicAcademyJoin } from "../student-join";
 import { ensureUuidState, rehomeAcademy, stateToTables, tablesToState } from "./mapper";
 import { DEMO_ACADEMY_ID } from "../seed";
 import type { AppState, Role, Session } from "../types";
@@ -83,7 +83,7 @@ async function replaceRows(
     .map((r) => String((r as { id: string }).id))
     .filter((id: string) => !keep.has(id) && !claimed.has(id));
   if (opts?.keepClaimed && !rows.length) {
-    /* A casa local vazia não pode apagar quem já entrou pelo app. */
+    /* A academia local vazia não pode apagar quem já entrou pelo app. */
   } else if (extra.length) {
     const { error } = await client.from(table).delete().in("id", extra);
     if (error) throw error;
@@ -671,7 +671,7 @@ export async function joinStudentRemote(input: {
       } satisfies Session,
     };
   }
-  if (first && first.status !== 503 && first.error && !/Casa não encontrada/i.test(first.error)) {
+  if (first && first.status !== 503 && first.error && !isStudentJoinNotFound(first.error)) {
     return { error: first.error };
   }
 
@@ -690,7 +690,7 @@ export async function joinStudentRemote(input: {
         } satisfies Session,
       };
     }
-    if (retry && retry.status !== 503 && retry.error && !/Casa não encontrada/i.test(retry.error)) {
+    if (retry && retry.status !== 503 && retry.error && !isStudentJoinNotFound(retry.error)) {
       return { error: retry.error };
     }
 
@@ -708,7 +708,7 @@ export async function joinStudentRemote(input: {
         } satisfies Session,
       };
     }
-    if (rpc.error && !/Casa não encontrada/i.test(rpc.error.message)) {
+    if (rpc.error && !isStudentJoinNotFound(rpc.error.message)) {
       return { error: rpc.error.message };
     }
   }

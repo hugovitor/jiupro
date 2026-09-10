@@ -95,7 +95,7 @@ export function FirstLoginGuide() {
       return;
     }
     store.updateAcademy({ pixKey: key, pixName: pixName.trim() || store.academy.name });
-    toast.success("Pix da casa salvo.");
+    toast.success("Pix da academia salvo.");
     setStep((n) => n + 1);
   }
 
@@ -118,7 +118,7 @@ export function FirstLoginGuide() {
       monthlyFee: 180,
       notes: "",
     });
-    toast.success(`${studentName.trim()} entrou na ficha desta casa.`);
+    toast.success(`${studentName.trim()} entrou na ficha desta academia.`);
     setStudentName("");
     setStudentPhone("");
     setStudentEmail("");
@@ -231,7 +231,7 @@ export function FirstLoginGuide() {
                   />
                 </div>
                 <Button size="sm" variant="secondary" onClick={saveFirstStudent}>
-                  Cadastrar nesta casa
+                  Cadastrar nesta academia
                 </Button>
               </div>
             </div>
@@ -320,11 +320,11 @@ type Step = {
 const OWNER_STEPS: Step[] = [
   {
     id: "ola",
-    title: "Três coisas e a casa roda.",
+    title: "Três coisas e a academia roda.",
     body: "Pix para a mensalidade, o primeiro aluno e a presença na aula. Você cadastra a turma ou o aluno encontra a academia pelo nome.",
     tips: [
       "Este painel é só da sua academia.",
-      "Alunos pagam no Pix da casa. O cartão é da assinatura do TatameX.",
+      "Alunos pagam no Pix da academia. O cartão é da assinatura do TatameX.",
     ],
   },
   {
@@ -342,7 +342,7 @@ const OWNER_STEPS: Step[] = [
     title: "Na aula: dois toques.",
     body: "O aluno toca em Confirmar que vou. No tatame você aceita quem treinou. Adultos Gi e Kids já vêm na grade — mude em Turmas se quiser.",
     tips: [
-      "Cobrança: WhatsApp + Pix da casa.",
+      "Cobrança: WhatsApp + Pix da academia.",
       "Faixa usa tempo e presença, não chute.",
     ],
   },
@@ -352,7 +352,7 @@ const INSTRUCTOR_STEPS: Step[] = [
   {
     id: "ola",
     title: "Você está na operação.",
-    body: "Mesmo painel da casa. Sua parte é turma, chamada e graduação.",
+    body: "Mesmo painel da academia. Sua parte é turma, chamada e graduação.",
   },
   {
     id: "presenca",
@@ -369,8 +369,8 @@ const INSTRUCTOR_STEPS: Step[] = [
 const STUDENT_STEPS: Step[] = [
   {
     id: "casa",
-    title: "Você entrou na sua casa.",
-    body: "Este app é da academia que você escolheu. Presença, faixa e Pix da casa ficam aqui.",
+    title: "Você entrou na sua academia.",
+    body: "Este app é da academia que você escolheu. Presença, faixa e Pix da academia ficam aqui.",
   },
   {
     id: "aula",
@@ -385,7 +385,7 @@ const STUDENT_STEPS: Step[] = [
   },
   {
     id: "pix",
-    title: "Mensalidade no Pix da casa.",
+    title: "Mensalidade no Pix da academia.",
     body: "Em Perfil está o valor do mês. Copia o Pix da academia — não é pagamento do TatameX.",
   },
 ];

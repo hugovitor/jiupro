@@ -336,7 +336,7 @@ create policy "academy update" on public.academies
   for update using (id = public.current_academy_id())
   with check (id = public.current_academy_id());
 
--- Código curto da casa para o aluno entrar no PWA sem escolher academia.
+-- Código curto da academia para o aluno entrar no PWA.
 create or replace function public.jiupro_join_code()
 returns text
 language plpgsql
@@ -619,7 +619,7 @@ begin
   end if;
 
   if v_q is null or v_q = '' then
-    raise exception 'Casa não encontrada. Busque o nome da sua academia.';
+    raise exception 'Academia não encontrada. Busque o nome da sua academia.';
   end if;
 
   select a.id into v_academy
@@ -647,7 +647,7 @@ begin
   limit 1;
 
   if v_academy is null then
-    raise exception 'Casa não encontrada. Busque o nome da sua academia.';
+    raise exception 'Academia não encontrada. Busque o nome da sua academia.';
   end if;
 
   update public.academies

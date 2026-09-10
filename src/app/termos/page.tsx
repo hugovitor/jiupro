@@ -19,8 +19,8 @@ export default function TermosPage() {
         <h2 className="mt-10 text-base font-black text-white">O serviço</h2>
         <p className="mt-3">
           O {PRODUCT_NAME} é gestão para academias de Jiu-Jitsu: alunos, presença, faixa, Pix da
-          casa e estoque. A academia assina o plano. Os alunos pagam a mensalidade no Pix da
-          própria casa — isso não passa no cartão do {PRODUCT_NAME}.
+          academia e estoque. A academia assina o plano. Os alunos pagam a mensalidade no Pix da
+          própria academia — isso não passa no cartão do {PRODUCT_NAME}.
         </p>
         <p className="mt-3">
           Cada academia tem a sua conta. A demonstração da Equipe Origem não mistura com a sua
@@ -30,11 +30,11 @@ export default function TermosPage() {
         <h2 className="mt-10 text-base font-black text-white">Conta e responsabilidades</h2>
         <p className="mt-3">
           O dono responde pelo cadastro dos alunos, pelo consentimento do responsável no kids e
-          pelas mensagens de WhatsApp que a casa dispara. O {PRODUCT_NAME} não usa a lista de
+          pelas mensagens de WhatsApp que a academia dispara. O {PRODUCT_NAME} não usa a lista de
           alunos para vender para terceiros.
         </p>
         <p className="mt-3">
-          O aluno entra só com o código da casa. Um e-mail não troca de academia. E-mail de dono
+          O aluno entra só com o código da academia. Um e-mail não troca de academia. E-mail de dono
           ou professor não vira app de aluno.
         </p>
 
@@ -45,13 +45,13 @@ export default function TermosPage() {
             Política de privacidade
           </Link>
           . A academia é controladora da ficha do aluno; o {PRODUCT_NAME} opera esses dados para a
-          casa. Titular pode exportar, corrigir e pedir exclusão.
+          academia. Titular pode exportar, corrigir e pedir exclusão.
         </p>
 
         <h2 className="mt-10 text-base font-black text-white">Pagamento e cancelamento</h2>
         <p className="mt-3">
           A assinatura pode ser cancelada no Stripe. O período de teste, quando anunciado, vale
-          para academia nova no cadastro. Cupom específico substitui o teste. Encerrar a casa no
+          para academia nova no cadastro. Cupom específico substitui o teste. Encerrar a academia no
           app apaga a cópia neste aparelho; a exclusão no servidor pede o canal de suporte.
         </p>
 

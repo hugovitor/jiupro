@@ -30,12 +30,16 @@ export function preferredJoinCode(house: Pick<PublicAcademyJoin, "joinCode" | "s
 }
 
 export const STUDENT_JOIN_NOT_FOUND =
-  "Não achamos essa academia. Confira o nome ou peça o WhatsApp da casa.";
+  "Não achamos essa academia. Confira o nome ou peça o WhatsApp da academia.";
 
 export const STUDENT_JOIN_SETUP_ERROR =
-  "O app da casa ainda está sendo preparado. Fale com o professor ou no WhatsApp de suporte.";
+  "O app da academia ainda está sendo preparado. Fale com o professor ou no WhatsApp de suporte.";
 
-export const STUDENT_JOIN_SQL = `-- App do aluno: código da casa + vínculo da ficha.
+export function isStudentJoinNotFound(message?: string) {
+  return /(casa|academia) não encontrada/i.test(message ?? "");
+}
+
+export const STUDENT_JOIN_SQL = `-- App do aluno: código da academia + vínculo da ficha.
 create or replace function public.jiupro_join_code()
 returns text
 language plpgsql
@@ -189,7 +193,7 @@ begin
   end if;
 
   if v_q is null or v_q = '' then
-    raise exception 'Casa não encontrada. Busque o nome da sua academia.';
+    raise exception 'Academia não encontrada. Busque o nome da sua academia.';
   end if;
 
   select a.id into v_academy
@@ -217,7 +221,7 @@ begin
   limit 1;
 
   if v_academy is null then
-    raise exception 'Casa não encontrada. Busque o nome da sua academia.';
+    raise exception 'Academia não encontrada. Busque o nome da sua academia.';
   end if;
 
   update public.academies
@@ -440,9 +444,9 @@ App da ${academy.name}:
 
 ${link}
 
-Se a academia já te cadastrou, confirma o nome da casa e cria a senha com o mesmo e-mail ou WhatsApp da ficha.
+Se a academia já te cadastrou, confirma o nome da academia e cria a senha com o mesmo e-mail ou WhatsApp da ficha.
 
-Se ainda não te cadastrou, busca o nome da academia nessa tela e se cadastra — sua ficha aparece na lista da casa.`;
+Se ainda não te cadastrou, busca o nome da academia nessa tela e se cadastra — sua ficha aparece na lista da academia.`;
 }
 
 export function studentAppInviteHref(

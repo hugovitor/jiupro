@@ -121,7 +121,7 @@ function Hero() {
           <div className="mt-8 flex max-w-2xl gap-5">
             <div className="hidden w-1 shrink-0 bg-gradient-to-b from-red-600 via-red-600 to-transparent sm:block" />
             <p className="text-base leading-8 text-white/58 sm:text-lg">
-              Pix da casa na mensalidade. Presença em dois toques. Faixa com
+              Pix da academia na mensalidade. Presença em dois toques. Faixa com
               tempo e treino. Você cadastra a turma, ou o aluno encontra a
               academia pelo nome e entra na lista.
             </p>
@@ -189,7 +189,7 @@ function TrustBar() {
     <section className="border-y border-white/10 bg-white/[0.025]">
       <div className="mx-auto grid max-w-7xl divide-y divide-white/10 px-5 sm:grid-cols-3 sm:divide-x sm:divide-y-0 lg:px-8">
         {[
-          ["Pix da casa", "mensalidade do aluno"],
+          ["Pix da academia", "mensalidade do aluno"],
           ["Dois toques", "presença no tatame"],
           ["Pelo nome", "o aluno acha a academia"],
         ].map(([value, label]) => (
@@ -271,7 +271,7 @@ function AppSection() {
               ],
               [
                 "Cadastro pelo nome",
-                "O aluno busca a academia, confirma a casa e cria a senha. Se a ficha já existia, o mesmo e-mail puxa os dados.",
+                "O aluno busca a academia, confirma o nome e cria a senha. Se a ficha já existia, o mesmo e-mail puxa os dados.",
               ],
               [
                 "Evolução visível",
@@ -313,7 +313,7 @@ function PlansSection() {
           title="Um plano para cada fase da sua academia."
           description={
             signupTrialDays() > 0
-              ? `${signupTrialLabel()}. Cartão na hora, cobrança do plano depois. Alunos continuam no Pix da casa.`
+              ? `${signupTrialLabel()}. Cartão na hora, cobrança do plano depois. Alunos continuam no Pix da academia.`
               : "Sem taxa de implantação. Escolha o plano, cadastre sua equipe e comece a organizar a operação."
           }
           dark={false}

@@ -457,7 +457,7 @@ function ProximoEvento() {
   if (!next) return null;
   return (
     <Link href="/aluno/agenda" className="surface block p-4">
-      <p className="text-xs text-muted-foreground">Próximo da casa</p>
+      <p className="text-xs text-muted-foreground">Próximo da academia</p>
       <p className="mt-1 font-medium">{next.title}</p>
       <p className="text-xs text-muted-foreground">
         {formatDay(next.date)} · {next.time} · {next.place}

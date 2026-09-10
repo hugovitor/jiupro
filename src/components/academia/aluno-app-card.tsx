@@ -34,7 +34,7 @@ export function AlunoAppCard() {
         </li>
         <li>
           <strong className="text-foreground">O aluno se cadastra.</strong> Ele busca o nome da
-          academia no app. A ficha nasce nesta casa.
+          academia no app. A ficha nasce nesta academia.
         </li>
       </ol>
       <p className="mt-4 break-all text-xs text-muted-foreground">{link}</p>

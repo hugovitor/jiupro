@@ -496,7 +496,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
       (slug ? findAcademyByJoinCode(slug) : null) ||
       (houseName ? findAcademyByJoinCode(houseName) : null);
     if (!house || house.academy.id === DEMO_ACADEMY_ID) {
-      return { ok: false, error: "Casa não encontrada. Busque o nome da sua academia." };
+      return { ok: false, error: "Academia não encontrada. Busque o nome da sua academia." };
     }
     const across = findUserAcrossAcademies(email);
     if (across && across.state.academy.id !== house.academy.id) {

@@ -19,7 +19,7 @@ export function LgpdBanner() {
       <div className="mx-auto flex max-w-3xl flex-col gap-3 sm:flex-row sm:items-center">
         <p className="flex-1 text-xs leading-relaxed text-white/55">
           Guardamos sessão e dados da academia neste aparelho para o app funcionar. Sem cookie de
-          anúncio. CPF, WhatsApp e dados de menor ficam na ficha da casa.{" "}
+          anúncio. CPF, WhatsApp e dados de menor ficam na ficha da academia.{" "}
           <Link href="/privacidade" className="font-bold text-white underline underline-offset-2">
             Política de privacidade
           </Link>

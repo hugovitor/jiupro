@@ -17,7 +17,7 @@ export function postgresUriFromEnv() {
   return "";
 }
 
-const SCHEMA_VERSION = "2026-09-10-canonical-house";
+const SCHEMA_VERSION = "2026-09-10-academia-copy";
 let appliedVersion = "";
 let inFlight: Promise<boolean> | null = null;
 

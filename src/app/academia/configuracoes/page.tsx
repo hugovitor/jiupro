@@ -60,7 +60,7 @@ function ConfigInner() {
       <div>
         <h1 className="font-display text-3xl">Configurações</h1>
         <p className="mt-1 text-sm text-muted-foreground">
-          Dados da casa, Pix dos alunos e plano do {PRODUCT_NAME}.
+          Dados da academia, Pix dos alunos e plano do {PRODUCT_NAME}.
         </p>
       </div>
 
@@ -73,7 +73,7 @@ function ConfigInner() {
           </p>
           <h2 className="mt-2 text-lg font-black tracking-tight">Assistente de início</h2>
           <p className="mt-2 text-sm text-muted-foreground">
-            Pix da casa, convite do aluno e como roda a chamada. Abre de novo se alguém da equipe
+            Pix da academia, convite do aluno e como roda a chamada. Abre de novo se alguém da equipe
             ainda não viu.
           </p>
           <FirstLoginHint className="mt-4" />
@@ -166,7 +166,7 @@ function ConfigInner() {
       {!store.isDemo ? (
         <section className="surface p-5 text-sm">
           <p className="text-[10px] font-black tracking-[0.18em] text-red-500 uppercase">LGPD</p>
-          <h2 className="mt-2 text-lg font-black tracking-tight">Dados da casa</h2>
+          <h2 className="mt-2 text-lg font-black tracking-tight">Dados da academia</h2>
           <p className="mt-2 text-muted-foreground">
             A academia é a controladora da ficha dos alunos. Exporte a cópia ou peça exclusão no
             servidor.

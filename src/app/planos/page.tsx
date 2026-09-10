@@ -104,7 +104,7 @@ export default function PlanosPage() {
         <p className="mx-auto mt-7 max-w-2xl text-sm leading-7 text-white/45 sm:text-base">
           Uma assinatura por academia, cobrada mensalmente no cartão.
           {signupTrialLabel()
-            ? ` ${signupTrialLabel()} para casa nova.`
+            ? ` ${signupTrialLabel()} para academia nova.`
             : null}{" "}
           Seus alunos continuam pagando as mensalidades diretamente para você.
         </p>

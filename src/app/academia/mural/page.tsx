@@ -16,7 +16,7 @@ export default function MuralPage() {
       <div>
         <h1 className="font-display text-3xl">Mural</h1>
         <p className="mt-1 text-sm text-muted-foreground">
-          Avisos da casa e conversa da equipe. O aluno vê a mesma timeline no PWA.
+          Avisos da academia e conversa da equipe. O aluno vê a mesma timeline no PWA.
         </p>
       </div>
 

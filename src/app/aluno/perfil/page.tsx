@@ -29,7 +29,7 @@ export default function PerfilAluno() {
             <p className="font-medium">{student.name}</p>
             <BeltBadge belt={student.belt} stripes={student.stripes} compact />
             <p className="mt-1 text-xs text-muted-foreground">
-              Na casa desde {formatDate(student.joinDate)}
+              Na academia desde {formatDate(student.joinDate)}
             </p>
           </div>
         </div>

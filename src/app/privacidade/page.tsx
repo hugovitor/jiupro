@@ -21,10 +21,10 @@ export default function PrivacidadePage() {
           A academia é a <strong className="text-white/80">controladora</strong> dos dados dos
           alunos (ficha, presença, faixa, mensalidade, CPF, WhatsApp, responsável no kids). O{" "}
           {PRODUCT_NAME} é <strong className="text-white/80">operador</strong> desses dados: guarda
-          e processa só para a casa operar.
+          e processa só para a academia operar.
         </p>
         <p className="mt-3">
-          Da conta do dono (e-mail, senha, plano, Pix da casa), o controlador é {CONTROLLER_NAME} (
+          Da conta do dono (e-mail, senha, plano, Pix da academia), o controlador é {CONTROLLER_NAME} (
           {CONTROLLER_EMAIL}), encarregado pelos canais abaixo até nomear outro.
         </p>
 
@@ -33,9 +33,9 @@ export default function PrivacidadePage() {
           <li>Dono e professores: nome, e-mail, telefone, senha (hash no Auth).</li>
           <li>
             Alunos: nome, e-mail, WhatsApp, data de nascimento, faixa, presença, mensalidade, CPF
-            (só se a casa gerar Pix Asaas), responsável no kids.
+            (só se a academia gerar Pix Asaas), responsável no kids.
           </li>
-          <li>Operação: turmas, estoque, mural, eventos — ligados à academia, não a outras casas.</li>
+          <li>Operação: turmas, estoque, mural, eventos — ligados à academia, não a outras academias.</li>
           <li>
             Neste aparelho: sessão e cópia local da academia (localStorage), para o painel abrir
             offline. Sem cookie de anúncio, sem pixel de rede social.
@@ -61,20 +61,20 @@ export default function PrivacidadePage() {
         <ul className="mt-3 list-disc space-y-2 pl-5">
           <li>Supabase: autenticação e banco da academia (pode haver transferência internacional).</li>
           <li>Stripe: só a assinatura do {PRODUCT_NAME}, não a mensalidade do aluno.</li>
-          <li>Asaas: só se a casa ligar a chave e gerar Pix — aí vai CPF do pagador.</li>
+          <li>Asaas: só se a academia ligar a chave e gerar Pix — aí vai CPF do pagador.</li>
           <li>
             WhatsApp: a mensagem sai do número da academia ou do suporte. O {PRODUCT_NAME} não
             dispara marketing em massa.
           </li>
         </ul>
         <p className="mt-3">
-          Não vendemos lista de aluno. Não misturamos uma casa com outra.
+          Não vendemos lista de aluno. Não misturamos uma academia com outra.
         </p>
 
         <h2 className="mt-10 text-base font-black text-white">Seus direitos (art. 18)</h2>
         <p className="mt-3">
           Confirmar, acessar, corrigir, anonimizar, portar e apagar. No app: exportar JSON em
-          Configurações (dono) ou Perfil (aluno); apagar ficha; encerrar a casa neste aparelho.
+          Configurações (dono) ou Perfil (aluno); apagar ficha; encerrar a academia neste aparelho.
           Exclusão no servidor: WhatsApp do encarregado. Resposta em até 15 dias.
         </p>
         <p className="mt-3">

@@ -225,7 +225,7 @@ export default function PresencaPage() {
                 </p>
               ) : recommended?.id === cls.id ? (
                 <p className="mt-4 text-[12px] text-muted-foreground">
-                  Turma sugerida agora para esta casa.
+                  Turma sugerida agora para esta academia.
                 </p>
               ) : (
                 <p className="mt-4 text-[12px] text-muted-foreground">
@@ -603,7 +603,7 @@ function Visitante({ classId, disabled }: { classId: string; disabled?: boolean 
           }}
         >
           <p className="text-sm text-muted-foreground">
-            Quem veio de outra academia. Taxa da casa: {brl(fee)}.
+            Quem veio de outra academia. Taxa da academia: {brl(fee)}.
           </p>
           <div className="space-y-1.5">
             <Label>Nome</Label>

@@ -63,7 +63,7 @@ function createdMs(row: HouseRow) {
   return Number.isFinite(raw) ? raw : Number.MAX_SAFE_INTEGER;
 }
 
-/** Casa original: a mais antiga, slug sem sufixo aleatório. */
+/** Academia original: a mais antiga, slug sem sufixo aleatório. */
 export function pickCanonicalHouse(houses: HouseRow[]): HouseRow | null {
   if (!houses.length) return null;
   return [...houses].sort((a, b) => {

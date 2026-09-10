@@ -46,11 +46,11 @@ function CadastroForm() {
   return (
     <AuthScreen
       kicker="Abrir academia"
-      title="Cadastre a casa e o dono."
+      title="Cadastre a academia e o dono."
       subtitle={
         trialLabel
-          ? `${trialLabel}. Você informa o cartão agora; a cobrança do ${PRODUCT_NAME} começa depois. Alunos pagam no Pix da casa.`
-          : `Cria a academia vazia. Em seguida você assina o ${PRODUCT_NAME} no cartão. Alunos pagam no Pix da casa.`
+          ? `${trialLabel}. Você informa o cartão agora; a cobrança do ${PRODUCT_NAME} começa depois. Alunos pagam no Pix da academia.`
+          : `Cria a academia vazia. Em seguida você assina o ${PRODUCT_NAME} no cartão. Alunos pagam no Pix da academia.`
       }
       switchHref="/login"
       switchLabel="Já tenho conta"
@@ -94,14 +94,14 @@ function CadastroForm() {
               offer: "signup",
             });
             if (pay === "demo") {
-              toast.success(`${academy.trim()} aberta. Vamos deixar a casa pronta.`);
+              toast.success(`${academy.trim()} aberta. Vamos deixar a academia pronta.`);
               router.push("/academia?guia=1");
             }
           } catch (error) {
             toast.error(
               error instanceof Error
                 ? error.message
-                : "Casa criada. Não deu para abrir o pagamento da assinatura.",
+                : "Academia criada. Não deu para abrir o pagamento da assinatura.",
             );
             router.push("/academia?guia=1");
           } finally {

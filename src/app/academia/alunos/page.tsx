@@ -209,7 +209,7 @@ function NovoAluno() {
           <div className="space-y-4">
             <p className="text-sm text-muted-foreground">
               A ficha de {saved.name} já está nesta academia. Manda o WhatsApp para ele confirmar
-              o nome da casa e criar a senha. Se ainda não tiver WhatsApp, o aluno busca o nome da
+              o nome da academia e criar a senha. Se ainda não tiver WhatsApp, o aluno busca o nome da
               academia no app e se cadastra sozinho.
             </p>
             {saved.phone.trim() ? (
@@ -237,7 +237,7 @@ function NovoAluno() {
           <>
             <p className="text-sm text-muted-foreground">
               A ficha fica nesta academia. Com WhatsApp, você manda o acesso na hora. Sem ficha, o
-              aluno busca o nome da casa no app e entra na lista sozinho.
+              aluno busca o nome da academia no app e entra na lista sozinho.
             </p>
             <form
               className="grid gap-3"

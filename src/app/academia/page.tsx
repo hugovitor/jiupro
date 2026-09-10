@@ -91,7 +91,7 @@ export default function AcademiaDashboard() {
             </p>
           ) : store.students.length === 0 ? (
             <p className="mt-2 text-sm text-muted-foreground">
-              Casa nova. Cadastre o primeiro aluno ou mande o link do app.
+              Academia nova. Cadastre o primeiro aluno ou mande o link do app.
             </p>
           ) : (
             <p className="mt-2 text-sm text-muted-foreground">

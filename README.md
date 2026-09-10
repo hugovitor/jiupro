@@ -7,7 +7,7 @@ Feito para o dono que treina de manhã e administra de noite: mensalidades em at
 ## O que já funciona nesta fatia
 
 - **Painel da academia** — alunos, faixas/graus, turmas, chamada, financeiro, estoque, mural e plano
-- **Cobranças agora** — WhatsApp + chave Pix da casa + baixa manual (Asaas entra depois)
+- **Cobranças agora** — WhatsApp + chave Pix da academia + baixa manual (Asaas entra depois)
 - **Fechamento do mês** — recebido × despesa, gerar mensalidades do próximo mês, CSV
 - **Experimentais** — captar aula experimental e converter em mensalista
 - **Presença em duas etapas** — o aluno confirma no celular; os colegas veem quem está na lista; o professor aceita quem treinou ou marca quem confirmou e não veio
@@ -17,15 +17,15 @@ Feito para o dono que treina de manhã e administra de noite: mensalidades em at
 - **Retenção** — aluno que some ganha WhatsApp de volta no painel
 - **Agenda** — seminário, campeonato, open mat; confirmação no PWA e Zap para quem falta
 - **Loja** — venda no nome do aluno, baixa o estoque, entra no financeiro
-- **PWA do aluno** — o dono cadastra a ficha e manda o WhatsApp para criar a senha. Se ainda não tem ficha, o aluno busca o nome da academia, confirma a casa e se cadastra — a ficha aparece na lista da academia. Cadastro de dono com o mesmo nome e cidade reaproveita a casa que já existe; não cria uma academia duplicada.
+- **PWA do aluno** — o dono cadastra a ficha e manda o WhatsApp para criar a senha. Se ainda não tem ficha, o aluno busca o nome da academia, confirma a academia e se cadastra — a ficha aparece na lista. Cadastro de dono com o mesmo nome e cidade reaproveita a academia que já existe; não cria uma academia duplicada.
 - **LGPD** — termos e privacidade, consentimento no cadastro, aviso de armazenamento local, exportar dados, apagar ficha, responsável obrigatório no kids.
 - **Assistente na primeira entrada** — depois do cadastro o dono cai no assistente (Pix, convite, presença). Aluno vê como confirmar aula, faixa e mensalidade. Não aparece de novo depois de concluir ou pular.
 - **Planos mensais** — Essencial, Academia e Equipe. Cadastro começa no Academia; cupom fica escondido até quem tiver código. Stripe cobra o TatameX depois
-- **Cadastro real** — nome, academia, cidade, e-mail e senha. Abre a casa vazia, isolada da Equipe Origem
+- **Cadastro real** — nome, academia, cidade, e-mail e senha. Abre a academia vazia, isolada da Equipe Origem
 - **Demo completa** — Equipe Origem (Campinas) nos atalhos de Entrar ou em `/demo`
 - **Supabase** — schema multi-tenant com RLS. Cada entidade é uma tabela, não um JSON único
 
-A demo da Equipe Origem continua no navegador. **Cadastro** cria outra academia (não entra como Carla). Sem chaves de Supabase, a casa nova fica no `localStorage` deste browser. Com Project URL + anon key (em Configurações ou `.env.local`), o cadastro cria usuário no Auth, a academia em `academies` e o painel nas tabelas.
+A demo da Equipe Origem continua no navegador. **Cadastro** cria outra academia (não entra como Carla). Sem chaves de Supabase, a academia nova fica no `localStorage` deste browser. Com Project URL + anon key (em Configurações ou `.env.local`), o cadastro cria usuário no Auth, a academia em `academies` e o painel nas tabelas.
 
 ## Como rodar
 
@@ -90,7 +90,7 @@ ASAAS_ENV=sandbox
 ASAAS_WEBHOOK_TOKEN=
 ```
 
-Produção: chave `$aact_prod_` e `ASAAS_ENV=production`. Sem chave, o WhatsApp + Pix da casa continuam.
+Produção: chave `$aact_prod_` e `ASAAS_ENV=production`. Sem chave, o WhatsApp + Pix da academia continuam.
 
 Webhook no painel Asaas: URL `https://seu-dominio/api/asaas/webhook`, header `asaas-access-token`, eventos `PAYMENT_RECEIVED` e `PAYMENT_CONFIRMED`. Se o Supabase tiver `SUPABASE_SERVICE_ROLE_KEY`, o webhook grava `payments` direto.
 
@@ -112,7 +112,7 @@ Webhook: `POST /api/stripe/webhook`. Sem chaves, o checkout só troca o plano na
 
 Não precisa de domínio próprio no começo. O projeto na Vercel deve se chamar **tatamex** (`https://tatamex.vercel.app`). Se ainda estiver como jiupro: Settings → General → Project Name → `tatamex`.
 
-O app **sobe sem Asaas e sem Stripe**. Mensalidade do aluno: Pix da casa + WhatsApp. Assinatura do TatameX: você cobra no Pix e libera o plano; o checkout Stripe entra depois.
+O app **sobe sem Asaas e sem Stripe**. Mensalidade do aluno: Pix da academia + WhatsApp. Assinatura do TatameX: você cobra no Pix e libera o plano; o checkout Stripe entra depois.
 
 O único passo obrigatório para **não perder dados** é o **Supabase**. Sem ele o cadastro fica só no navegador de quem abriu.
 
@@ -185,7 +185,7 @@ Sem isso, cadastro e painel ficam só no `localStorage`.
 ### 4. Operar
 
 - Cadastre o primeiro aluno ou mande o link do app no grupo
-- O assistente pede o Pix da casa na primeira entrada
+- O assistente pede o Pix da academia na primeira entrada
 - Em Cobranças, use WhatsApp + Baixar Pix
 - Demo da Equipe Origem continua em `/demo` e nos atalhos de Entrar
 - Webhooks (quando ligar pagamentos): Configurações mostra as URLs `…/api/stripe/webhook` e `…/api/asaas/webhook`
@@ -210,7 +210,7 @@ Webhook Stripe: `https://tatamex.vercel.app/api/stripe/webhook`.
 
 ## PWA do aluno
 
-O aluno abre `/entrar`, busca o nome da academia, confirma a casa e cria a senha. Se a academia já tinha cadastrado a ficha, o mesmo e-mail ou WhatsApp puxa os dados. No celular, `/aluno` na tela inicial: um toque confirma a aula; o professor valida no tatame.
+O aluno abre `/entrar`, busca o nome da academia, confirma o nome e cria a senha. Se a academia já tinha cadastrado a ficha, o mesmo e-mail ou WhatsApp puxa os dados. No celular, `/aluno` na tela inicial: um toque confirma a aula; o professor valida no tatame.
 
 ## Stack
 

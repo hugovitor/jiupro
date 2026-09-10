@@ -20,7 +20,7 @@ export default function AlunoAgendaPage() {
       <div>
         <h1 className="font-display text-3xl">Agenda</h1>
         <p className="mt-1 text-sm text-muted-foreground">
-          O que a casa marcou. Confirma se você vai.
+          O que a academia marcou. Confirma se você vai.
         </p>
       </div>
 

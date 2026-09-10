@@ -139,7 +139,7 @@ export function EntrarAlunoForm({ initialCode = "" }: { initialCode?: string }) 
       setLookupError(
         nameData.needsSetup || codeData.needsSetup
           ? STUDENT_JOIN_SETUP_ERROR
-          : "Não achamos essa academia no app ainda. Peça para o professor abrir o painel da casa uma vez e tente de novo.",
+          : "Não achamos essa academia no app ainda. Peça para o professor abrir o painel da academia uma vez e tente de novo.",
       );
     } catch {
       const houses = isSupabaseConfigured()
@@ -168,7 +168,7 @@ export function EntrarAlunoForm({ initialCode = "" }: { initialCode?: string }) 
 
   useEffect(() => {
     if (initialCode) void lookup(initialCode);
-    // eslint-disable-next-line react-hooks/exhaustive-deps -- first land on the house link
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- first land on the academy link
   }, [initialCode]);
 
   const isDemo = house?.joinCode === "ORIGEM";
@@ -177,7 +177,7 @@ export function EntrarAlunoForm({ initialCode = "" }: { initialCode?: string }) 
     <AuthScreen
       kicker="App do aluno"
       title="Encontre a sua academia."
-      subtitle="Se a casa já te cadastrou, confirma o nome e cria a senha. Se ainda não te cadastrou, escolhe a academia — sua ficha entra na lista da casa."
+      subtitle="Se a academia já te cadastrou, confirma o nome e cria a senha. Se ainda não te cadastrou, escolhe a academia — sua ficha entra na lista."
       switchHref="/login"
       switchLabel="Já tenho senha"
     >
@@ -225,7 +225,7 @@ export function EntrarAlunoForm({ initialCode = "" }: { initialCode?: string }) 
       ) : !house && matches.length > 0 ? (
         <div className="space-y-4">
           <p className="text-[11px] font-black tracking-[0.18em] text-red-500 uppercase">
-            Escolha a sua casa
+            Escolha a sua academia
           </p>
           <ul className="space-y-2">
             {matches.map((item) => (
@@ -261,7 +261,7 @@ export function EntrarAlunoForm({ initialCode = "" }: { initialCode?: string }) 
       ) : house && !confirmed ? (
         <div className="space-y-4">
           <p className="text-[11px] font-black tracking-[0.18em] text-red-500 uppercase">
-            Confirme a casa
+            Confirme a academia
           </p>
           <div className="rounded-2xl border border-white/10 bg-white/[0.03] p-4">
             <p className="text-xl font-black tracking-tight">{house.name}</p>
@@ -284,7 +284,7 @@ export function EntrarAlunoForm({ initialCode = "" }: { initialCode?: string }) 
                 É essa a sua academia? Se o nome estiver errado, não continue.
               </p>
               <Button className="h-12 w-full" onClick={() => setConfirmed(true)}>
-                Sim, é a minha casa
+                Sim, é a minha academia
               </Button>
             </>
           )}
@@ -332,7 +332,7 @@ export function EntrarAlunoForm({ initialCode = "" }: { initialCode?: string }) 
           <p className="text-sm text-white/45">
             Acesso em <strong className="text-white">{house.name}</strong>. Se a academia já te
             cadastrou, use o mesmo e-mail ou WhatsApp — puxamos a ficha. Se ainda não, você entra
-            na lista da casa agora.
+            na lista da academia agora.
           </p>
           <div className="space-y-1.5">
             <Label>Seu nome</Label>

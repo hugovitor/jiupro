@@ -156,7 +156,7 @@ export default function AlunoDetalhePage() {
                 onClick={() => {
                   if (
                     !window.confirm(
-                      `Apagar a ficha de ${student.name}? Nome, WhatsApp, CPF e presença desta pessoa saem da casa. Isso atende o pedido de exclusão (LGPD).`,
+                      `Apagar a ficha de ${student.name}? Nome, WhatsApp, CPF e presença desta pessoa saem da academia. Isso atende o pedido de exclusão (LGPD).`,
                     )
                   ) {
                     return;

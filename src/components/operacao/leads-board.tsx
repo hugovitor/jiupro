@@ -269,7 +269,7 @@ export function OperatorLeadsBoard({ email }: { email?: string | null }) {
       <div className="surface p-5">
         <h3 className="text-sm font-black">Nova academia (Maps)</h3>
         <div className="mt-4 grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
-          <Field label="Nome da casa" value={form.academyName} onChange={(v) => setForm({ ...form, academyName: v })} placeholder="Equipe Origem" />
+          <Field label="Nome da academia" value={form.academyName} onChange={(v) => setForm({ ...form, academyName: v })} placeholder="Equipe Origem" />
           <Field label="Cidade" value={form.city} onChange={(v) => setForm({ ...form, city: v })} placeholder="Brasília" />
           <Field label="UF" value={form.state} onChange={(v) => setForm({ ...form, state: v })} placeholder="DF" />
           <Field label="WhatsApp" value={form.phone} onChange={(v) => setForm({ ...form, phone: v })} placeholder="61 98629-8327" />
@@ -297,7 +297,7 @@ export function OperatorLeadsBoard({ email }: { email?: string | null }) {
         <table className="w-full min-w-[860px] text-left text-sm">
           <thead className="bg-white/[0.03] text-[11px] tracking-wide text-white/40 uppercase">
             <tr>
-              <th className="px-4 py-3 font-bold">Casa</th>
+              <th className="px-4 py-3 font-bold">Academia</th>
               <th className="px-4 py-3 font-bold">Contato</th>
               <th className="px-4 py-3 font-bold">Status</th>
               <th className="px-4 py-3 font-bold">Retorno</th>
