@@ -1,5 +1,6 @@
 "use client";
 
+import { useEffect } from "react";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import {
@@ -15,6 +16,7 @@ import { Wordmark } from "@/components/brand";
 import { FirstLoginGuide } from "@/components/first-login-guide";
 import { Button } from "@/components/ui/button";
 import { isOperatorEmail } from "@/lib/operator";
+import { DEMO_ACADEMY_ID } from "@/lib/seed";
 import { useStore } from "@/lib/store";
 import { cn } from "@/lib/utils";
 
@@ -90,6 +92,15 @@ export function AcademiaShell({ children }: { children: React.ReactNode }) {
   const activeGroup = GROUPS.find((g) => groupIsActive(g, pathname)) ?? GROUPS[0];
   const pageTitle =
     activeGroup.items.find((i) => itemIsActive(i.href, pathname))?.label ?? "Início";
+
+  useEffect(() => {
+    if (!store.hydrated) return;
+    if (store.academy.id === DEMO_ACADEMY_ID) return;
+    if (!store.academy.joinCode) return;
+    void store.syncNow();
+    // Publish the house code the owner already shares (WhatsApp / HXSNXC) into Supabase.
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- once per academy load
+  }, [store.hydrated, store.academy.id, store.academy.joinCode]);
 
   function logout() {
     store.logout();

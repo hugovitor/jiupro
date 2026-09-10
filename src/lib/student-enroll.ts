@@ -32,8 +32,12 @@ function scoreHouse(row: AcademyHit, raw: string) {
   const cityKey = collapseAcademyKey(row.city ?? "");
   const code = (row.join_code ?? "").trim().toUpperCase();
   const needleCode = raw.trim().toUpperCase();
+  if (looksLikeHouseCode(raw)) {
+    if (code && code === needleCode) return 0;
+    if ((row.slug ?? "").toLowerCase() === raw.trim().toLowerCase()) return 1;
+    return 99;
+  }
   if (code && code === needleCode) return 0;
-  if (looksLikeHouseCode(raw) && code === needleCode) return 0;
   if ((row.slug ?? "").toLowerCase() === raw.trim().toLowerCase()) return 1;
   if (slugKey && slugKey === key) return 1;
   if ((row.name ?? "").trim().toLowerCase() === raw.trim().toLowerCase()) return 2;
@@ -44,13 +48,18 @@ function scoreHouse(row: AcademyHit, raw: string) {
 }
 
 async function loadHouses(admin: SupabaseClient) {
-  const { data, error } = await admin
+  const full = await admin.from("academies").select(HOUSE_COLUMNS).order("name").limit(400);
+  if (!full.error) return { rows: (full.data ?? []) as AcademyHit[] };
+  if (!/join_code|column/i.test(full.error.message)) {
+    return { error: full.error.message, rows: [] as AcademyHit[] };
+  }
+  const fallback = await admin
     .from("academies")
-    .select(HOUSE_COLUMNS)
+    .select("id, name, slug, city, state")
     .order("name")
     .limit(400);
-  if (error) return { error: error.message, rows: [] as AcademyHit[] };
-  return { rows: (data ?? []) as AcademyHit[] };
+  if (fallback.error) return { error: fallback.error.message, rows: [] as AcademyHit[] };
+  return { rows: (fallback.data ?? []) as AcademyHit[] };
 }
 
 export function rankHouses(rows: AcademyHit[], query: string): AcademyHit[] {
@@ -127,6 +136,17 @@ export async function enrollStudentInAcademy(
   }
   const academy = resolved.academy;
   await ensureJoinCode(admin, academy);
+  const offered = (input.house.code ?? "").trim().toUpperCase();
+  if (
+    looksLikeHouseCode(offered) &&
+    (academy.join_code ?? "").trim().toUpperCase() !== offered
+  ) {
+    const taken = await admin.from("academies").select("id").eq("join_code", offered).maybeSingle();
+    if (!taken.data) {
+      const { error } = await admin.from("academies").update({ join_code: offered }).eq("id", academy.id);
+      if (!error) academy.join_code = offered;
+    }
+  }
 
   const email = input.email.trim().toLowerCase();
   const label = input.studentName.trim() || email.split("@")[0] || "Aluno";

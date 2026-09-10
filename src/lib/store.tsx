@@ -418,6 +418,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
       state: academy.academy.state,
       plan: academy.academy.plan,
       ownerName: input.ownerName.trim(),
+      joinCode: academy.academy.joinCode,
     });
 
     if (remote.error && remote.error !== "offline") {

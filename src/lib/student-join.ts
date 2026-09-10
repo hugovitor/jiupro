@@ -93,7 +93,7 @@ set search_path = public
 as $$
   select a.name, a.city, a.state, a.slug, coalesce(nullif(a.join_code, ''), a.slug) as join_code
   from public.academies a
-  where a.join_code = upper(trim(p_code))
+  where upper(trim(coalesce(a.join_code, ''))) = upper(trim(p_code))
      or lower(a.slug) = lower(trim(p_code))
      or lower(trim(a.name)) = lower(trim(p_code))
      or (
@@ -108,7 +108,7 @@ as $$
      )
   order by
     case
-      when a.join_code = upper(trim(p_code)) then 0
+      when upper(trim(coalesce(a.join_code, ''))) = upper(trim(p_code)) then 0
       when lower(a.slug) = lower(trim(p_code)) then 1
       else 2
     end
@@ -136,7 +136,7 @@ begin
   return query
   select a.name, a.city, a.state, a.slug, coalesce(nullif(a.join_code, ''), a.slug)
   from public.academies a
-  where a.join_code = upper(v_q)
+  where upper(trim(coalesce(a.join_code, ''))) = upper(v_q)
      or lower(a.slug) = lower(v_q)
      or a.name ilike v_like
      or coalesce(a.city, '') ilike v_like
@@ -147,7 +147,7 @@ begin
      )
   order by
     case
-      when a.join_code = upper(v_q) then 0
+      when upper(trim(coalesce(a.join_code, ''))) = upper(v_q) then 0
       when lower(a.slug) = lower(v_q) then 1
       when lower(a.name) = lower(v_q) then 2
       when a.name ilike v_q || '%' then 3
@@ -192,7 +192,7 @@ begin
 
   select a.id into v_academy
   from public.academies a
-  where a.join_code = upper(v_q)
+  where upper(trim(coalesce(a.join_code, ''))) = upper(v_q)
      or lower(a.slug) = lower(v_q)
      or lower(trim(a.name)) = lower(v_q)
      or (
@@ -207,7 +207,7 @@ begin
      )
   order by
     case
-      when a.join_code = upper(v_q) then 0
+      when upper(trim(coalesce(a.join_code, ''))) = upper(v_q) then 0
       when lower(a.slug) = lower(v_q) then 1
       else 2
     end

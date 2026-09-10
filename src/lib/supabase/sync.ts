@@ -2,7 +2,8 @@ import type { SupabaseClient, User } from "@supabase/supabase-js";
 import { createSupabaseBrowserClient } from "./client";
 import { passwordResetUrl, isLocalOrigin, publicAppUrl } from "../app-url";
 import { mapAuthError } from "../auth-errors";
-import { STUDENT_JOIN_NOT_FOUND } from "../student-join";
+import { looksLikeHouseCode } from "../join-code";
+import { preferredJoinCode, STUDENT_JOIN_NOT_FOUND, type PublicAcademyJoin } from "../student-join";
 import { ensureUuidState, rehomeAcademy, stateToTables, tablesToState } from "./mapper";
 import { DEMO_ACADEMY_ID } from "../seed";
 import type { AppState, Role, Session } from "../types";
@@ -81,8 +82,12 @@ export async function pushAcademyState(state: AppState) {
     (profileRows ?? []).map((p: { id: string }) => String(p.id)),
   );
   const tables = stateToTables(ready, profileIds);
-  if (existing.join_code) {
-    tables.academy.join_code = existing.join_code;
+  const localCode = String(tables.academy.join_code ?? "").trim().toUpperCase();
+  const remoteCode = String(existing.join_code ?? "").trim().toUpperCase();
+  if (looksLikeHouseCode(localCode)) {
+    tables.academy.join_code = localCode;
+  } else if (remoteCode) {
+    tables.academy.join_code = remoteCode;
   }
 
   const { data: claimedRows } = await client
@@ -103,7 +108,16 @@ export async function pushAcademyState(state: AppState) {
     .from("academies")
     .update(tables.academy)
     .eq("id", ready.academy.id);
-  if (academyError) return { error: academyError.message, state: ready };
+  if (academyError && /join_code|duplicate|unique|23505/i.test(academyError.message) && remoteCode) {
+    tables.academy.join_code = remoteCode;
+    const retry = await client.from("academies").update(tables.academy).eq("id", ready.academy.id);
+    if (retry.error) return { error: retry.error.message, state: ready };
+    ready.academy.joinCode = remoteCode;
+  } else if (academyError) {
+    return { error: academyError.message, state: ready };
+  } else if (looksLikeHouseCode(localCode)) {
+    ready.academy.joinCode = localCode;
+  }
 
   try {
     await replaceRows(client, "students", ready.academy.id, tables.students);
@@ -290,6 +304,7 @@ export async function registerRemoteAcademy(input: {
   state: string;
   plan: string;
   ownerName: string;
+  joinCode?: string;
 }): Promise<{ academyId?: string; ownerId?: string; error?: string; pendingEmail?: boolean }> {
   const auth = await provisionAndSignIn(input.email, input.password);
   if ("error" in auth) {
@@ -306,7 +321,15 @@ export async function registerRemoteAcademy(input: {
     p_owner_name: input.ownerName,
   });
   if (rpcError) return { ownerId: auth.user.id, error: rpcError.message };
-  return { academyId: academyId as string, ownerId: auth.user.id };
+  const id = academyId as string;
+  const localCode = (input.joinCode ?? "").trim().toUpperCase();
+  if (id && looksLikeHouseCode(localCode)) {
+    const { error } = await auth.client.from("academies").update({ join_code: localCode }).eq("id", id);
+    if (error && !/join_code|duplicate|unique|23505/i.test(error.message)) {
+      return { academyId: id, ownerId: auth.user.id, error: error.message };
+    }
+  }
+  return { academyId: id, ownerId: auth.user.id };
 }
 
 export async function signInRemote(email: string, password: string) {
@@ -474,6 +497,31 @@ export async function confirmPasswordReset(password: string) {
   return { ok: true as const, email };
 }
 
+async function lookupRemoteJoinCode(input: {
+  code: string;
+  slug?: string;
+  houseName?: string;
+}) {
+  const queries = [input.houseName, input.slug, input.code].map((value) => value?.trim() ?? "").filter(Boolean);
+  for (const query of queries) {
+    const [byName, byCode] = await Promise.all([
+      fetch(`/api/aluno/casa?q=${encodeURIComponent(query)}`).catch(() => null),
+      fetch(`/api/aluno/casa?casa=${encodeURIComponent(query)}`).catch(() => null),
+    ]);
+    const nameData = byName
+      ? ((await byName.json().catch(() => ({}))) as { houses?: PublicAcademyJoin[] })
+      : {};
+    const codeData = byCode
+      ? ((await byCode.json().catch(() => ({}))) as { house?: PublicAcademyJoin })
+      : {};
+    const house = nameData.houses?.[0] ?? codeData.house;
+    if (!house) continue;
+    const code = preferredJoinCode(house);
+    if (code) return { house, code };
+  }
+  return null;
+}
+
 export async function joinStudentRemote(input: {
   code: string;
   slug?: string;
@@ -492,11 +540,16 @@ export async function joinStudentRemote(input: {
 
   const client = auth.client;
   const accessUser = auth.user;
-  const codes = [input.code, input.slug, input.houseName].map((value) => value?.trim() ?? "").filter(Boolean);
-
   const session = await client.auth.getSession();
   const token = session.data.session?.access_token;
-  if (token) {
+  const house = {
+    code: input.code,
+    slug: input.slug,
+    houseName: input.houseName,
+  };
+
+  async function enrollViaApi() {
+    if (!token) return null;
     const enrolled = await fetch("/api/aluno/entrar", {
       method: "POST",
       headers: {
@@ -504,99 +557,71 @@ export async function joinStudentRemote(input: {
         Authorization: `Bearer ${token}`,
       },
       body: JSON.stringify({
-        code: input.code,
-        slug: input.slug,
-        houseName: input.houseName,
+        ...house,
         name: input.name,
         phone: input.phone,
       }),
     }).catch(() => null);
-    const payload = enrolled
-      ? ((await enrolled.json().catch(() => ({}))) as { academyId?: string; error?: string })
-      : {};
-    if (enrolled?.ok && payload.academyId) {
+    if (!enrolled) return null;
+    const payload = (await enrolled.json().catch(() => ({}))) as {
+      academyId?: string;
+      error?: string;
+    };
+    return { status: enrolled.status, ...payload };
+  }
+
+  const first = await enrollViaApi();
+  if (first?.academyId) {
+    return {
+      session: {
+        userId: accessUser.id,
+        academyId: first.academyId,
+        role: "student" as const,
+      } satisfies Session,
+    };
+  }
+  if (first && first.status !== 503 && first.error && !/Casa não encontrada/i.test(first.error)) {
+    return { error: first.error };
+  }
+
+  const resolved = await lookupRemoteJoinCode(house);
+  if (resolved) {
+    house.code = resolved.code;
+    house.slug = resolved.house.slug;
+    house.houseName = resolved.house.name;
+    const retry = await enrollViaApi();
+    if (retry?.academyId) {
       return {
         session: {
           userId: accessUser.id,
-          academyId: payload.academyId,
+          academyId: retry.academyId,
           role: "student" as const,
         } satisfies Session,
       };
     }
-    if (enrolled && enrolled.status !== 503 && payload.error) {
-      return { error: payload.error };
+    if (retry && retry.status !== 503 && retry.error && !/Casa não encontrada/i.test(retry.error)) {
+      return { error: retry.error };
     }
-  }
 
-  let academyId: unknown = null;
-  let joinError: { message: string } | null = null;
-  for (const code of codes) {
-    const attempt = await client.rpc("join_academy_as_student", {
-      p_code: code,
+    const rpc = await client.rpc("join_academy_as_student", {
+      p_code: resolved.code,
       p_name: input.name,
       p_phone: input.phone,
     });
-    if (!attempt.error && attempt.data) {
-      academyId = attempt.data;
-      joinError = null;
-      break;
-    }
-    joinError = attempt.error ? { message: attempt.error.message } : null;
-    if (joinError && !/Casa não encontrada/i.test(joinError.message)) break;
-  }
-  if (
-    joinError &&
-    /Casa não encontrada|join_academy_as_student|PGRST202|does not exist|schema cache/i.test(
-      joinError.message,
-    )
-  ) {
-    await fetch("/api/aluno/casa", { method: "POST" }).catch(() => undefined);
-    for (const code of codes) {
-      const retry = await client.rpc("join_academy_as_student", {
-        p_code: code,
-        p_name: input.name,
-        p_phone: input.phone,
-      });
-      if (!retry.error && retry.data) {
-        academyId = retry.data;
-        joinError = null;
-        break;
-      }
-      joinError = retry.error ? { message: retry.error.message } : null;
-    }
-  }
-  if (joinError) {
-    if (/join_academy_as_student|PGRST202|does not exist|schema cache/i.test(joinError.message)) {
+    if (!rpc.error && rpc.data) {
       return {
-        error: "Não deu para entrar nesta academia agora. Busque o nome da casa de novo.",
+        session: {
+          userId: accessUser.id,
+          academyId: String(rpc.data),
+          role: "student" as const,
+        } satisfies Session,
       };
     }
-    return { error: joinError.message };
-  }
-  if (!academyId) {
-    return { error: STUDENT_JOIN_NOT_FOUND };
-  }
-
-  const { data: profile } = await client
-    .from("profiles")
-    .select("id, academy_id, role")
-    .eq("id", accessUser.id)
-    .maybeSingle();
-
-  if (!profile?.academy_id) {
-    return { error: "Não vinculou a academia. Confira o código da casa." };
-  }
-  if (profile.role !== "student") {
-    return {
-      error: "Este e-mail já é da equipe da academia. Use outro e-mail no app do aluno.",
-    };
+    if (rpc.error && !/Casa não encontrada/i.test(rpc.error.message)) {
+      return { error: rpc.error.message };
+    }
   }
 
-  return {
-    session: {
-      userId: String(profile.id),
-      academyId: String(academyId ?? profile.academy_id),
-      role: "student" as const,
-    } satisfies Session,
-  };
+  if (first?.error) return { error: first.error };
+  return { error: STUDENT_JOIN_NOT_FOUND };
 }
