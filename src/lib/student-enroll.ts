@@ -81,7 +81,35 @@ export async function searchAcademiesAdmin(admin: SupabaseClient, query: string)
   return { houses };
 }
 
+async function pickExact(admin: SupabaseClient, column: "slug" | "join_code" | "name", value: string) {
+  const query = admin.from("academies").select(HOUSE_COLUMNS).limit(5);
+  const { data, error } =
+    column === "join_code"
+      ? await query.eq("join_code", value.toUpperCase())
+      : await query.ilike(column, value);
+  if (error || !data?.length) return null;
+  const rows = data as AcademyHit[];
+  return rows.find((row) => scoreHouse(row, value) <= 2) ?? (rows.length === 1 ? rows[0] : null);
+}
+
 export async function resolveAcademy(admin: SupabaseClient, input: JoinHouseInput) {
+  const slug = input.slug?.trim() ?? "";
+  const code = input.code?.trim() ?? "";
+  const houseName = input.houseName?.trim() ?? "";
+
+  if (slug) {
+    const hit = await pickExact(admin, "slug", slug);
+    if (hit) return { academy: hit };
+  }
+  if (looksLikeHouseCode(code)) {
+    const hit = await pickExact(admin, "join_code", code);
+    if (hit) return { academy: hit };
+  }
+  if (houseName) {
+    const hit = await pickExact(admin, "name", houseName);
+    if (hit) return { academy: hit };
+  }
+
   const loaded = await loadHouses(admin);
   if (loaded.error) return { error: loaded.error };
   const rows = loaded.rows;
@@ -100,6 +128,36 @@ export async function resolveAcademy(admin: SupabaseClient, input: JoinHouseInpu
   }
 
   return { error: STUDENT_JOIN_NOT_FOUND };
+}
+
+function firstRow(data: unknown) {
+  if (Array.isArray(data)) return data[0] as Record<string, unknown> | undefined;
+  if (data && typeof data === "object") return data as Record<string, unknown>;
+  return undefined;
+}
+
+export async function resolveHouseViaJoinRpc(db: SupabaseClient, input: JoinHouseInput) {
+  const queries = [input.slug, input.houseName, input.code]
+    .map((value) => value?.trim() ?? "")
+    .filter(Boolean);
+  for (const query of queries) {
+    const lookup = await db.rpc("lookup_academy_join", { p_code: query });
+    const row = firstRow(lookup.data);
+    if (row) return mapPublicHouse(row);
+  }
+
+  const searchQuery = input.houseName || input.slug || input.code || "";
+  if (searchQuery.trim().length < 2) return null;
+  const search = await db.rpc("search_academy_join", { p_query: searchQuery.trim() });
+  const rows = Array.isArray(search.data) ? search.data : search.data ? [search.data] : [];
+  const houses = rows.map((row) => mapPublicHouse(row as Record<string, unknown>));
+  const nameKey = collapseAcademyKey(input.houseName || searchQuery);
+  const slugKey = collapseAcademyKey(input.slug || searchQuery);
+  const exact =
+    houses.find((house) => collapseAcademyKey(house.name) === nameKey) ||
+    houses.find((house) => collapseAcademyKey(house.slug) === slugKey) ||
+    (houses.length === 1 ? houses[0] : undefined);
+  return exact ?? null;
 }
 
 async function ensureJoinCode(admin: SupabaseClient, academy: AcademyHit) {

@@ -1,8 +1,8 @@
 import { NextResponse } from "next/server";
 import { createClient } from "@supabase/supabase-js";
 import { supabaseAdmin } from "@/lib/operator";
-import { enrollStudentInAcademy } from "@/lib/student-enroll";
-import { STUDENT_JOIN_NOT_FOUND, STUDENT_JOIN_SETUP_ERROR } from "@/lib/student-join";
+import { enrollStudentInAcademy, resolveHouseViaJoinRpc } from "@/lib/student-enroll";
+import { preferredJoinCode, STUDENT_JOIN_NOT_FOUND, STUDENT_JOIN_SETUP_ERROR } from "@/lib/student-join";
 import { ensureStudentJoinSchema } from "@/lib/supabase/ensure-student-join";
 
 export const runtime = "nodejs";
@@ -13,6 +13,22 @@ function bearerToken(request: Request) {
   return header.replace(/^Bearer\s+/i, "").trim();
 }
 
+function publicDb() {
+  const url = process.env.NEXT_PUBLIC_SUPABASE_URL?.trim();
+  const anon = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY?.trim();
+  return supabaseAdmin() ?? (url && anon ? createClient(url, anon, { auth: { persistSession: false } }) : null);
+}
+
+function userDb(token: string) {
+  const url = process.env.NEXT_PUBLIC_SUPABASE_URL?.trim();
+  const anon = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY?.trim();
+  if (!url || !anon) return null;
+  return createClient(url, anon, {
+    auth: { persistSession: false, autoRefreshToken: false },
+    global: { headers: { Authorization: `Bearer ${token}` } },
+  });
+}
+
 async function userFromToken(token: string) {
   const url = process.env.NEXT_PUBLIC_SUPABASE_URL?.trim();
   const anon = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY?.trim();
@@ -21,6 +37,30 @@ async function userFromToken(token: string) {
   const { data, error } = await client.auth.getUser(token);
   if (error || !data.user?.id) return null;
   return data.user;
+}
+
+async function joinWithUserToken(
+  token: string,
+  codes: string[],
+  name: string,
+  phone: string,
+) {
+  const client = userDb(token);
+  if (!client) return null;
+  let lastError = "";
+  for (const code of codes.filter(Boolean)) {
+    const { data, error } = await client.rpc("join_academy_as_student", {
+      p_code: code,
+      p_name: name,
+      p_phone: phone,
+    });
+    if (!error && data) return { academyId: String(data) };
+    lastError = error?.message ?? "";
+    if (lastError && !/Casa não encontrada/i.test(lastError)) {
+      return { error: lastError };
+    }
+  }
+  return lastError ? { error: lastError } : null;
 }
 
 export async function POST(request: Request) {
@@ -65,10 +105,31 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: "Entre de novo para criar o acesso." }, { status: 401 });
   }
 
+  const db = publicDb();
+  const remoteHouse = db ? await resolveHouseViaJoinRpc(db, house) : null;
+  const joinCodes = [
+    remoteHouse ? preferredJoinCode(remoteHouse) : "",
+    remoteHouse?.slug ?? "",
+    house.slug,
+    house.houseName,
+    house.code,
+  ].filter((value, index, all) => value && all.indexOf(value) === index);
+
+  const viaRpc = await joinWithUserToken(token, joinCodes, name, phone);
+  if (viaRpc && "academyId" in viaRpc && viaRpc.academyId) {
+    return NextResponse.json({ ok: true, academyId: viaRpc.academyId });
+  }
+  if (viaRpc && "error" in viaRpc && viaRpc.error && !/Casa não encontrada/i.test(viaRpc.error)) {
+    return NextResponse.json({ error: viaRpc.error }, { status: 400 });
+  }
+
   const admin = supabaseAdmin();
   if (!admin) {
     await ensureStudentJoinSchema().catch(() => undefined);
-    return NextResponse.json({ error: STUDENT_JOIN_SETUP_ERROR }, { status: 503 });
+    return NextResponse.json(
+      { error: viaRpc?.error || STUDENT_JOIN_SETUP_ERROR },
+      { status: viaRpc?.error ? 400 : 503 },
+    );
   }
 
   const result = await enrollStudentInAcademy(admin, {
@@ -76,7 +137,11 @@ export async function POST(request: Request) {
     email: user.email ?? "",
     studentName: name,
     phone,
-    house,
+    house: {
+      code: house.code,
+      slug: remoteHouse?.slug || house.slug,
+      houseName: remoteHouse?.name || house.houseName,
+    },
   });
 
   if ("error" in result) {

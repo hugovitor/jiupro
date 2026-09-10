@@ -23,65 +23,68 @@ function dbClient() {
 }
 
 async function lookupHouse(casa: string) {
+  const db = dbClient();
+  if (db) {
+    let { data, error } = await db.rpc("lookup_academy_join", { p_code: casa });
+    if (error && isMissingStudentJoinRpc(error.message)) {
+      const ensured = await ensureStudentJoinSchema();
+      if (ensured.ok) {
+        await new Promise((resolve) => setTimeout(resolve, 400));
+        ({ data, error } = await db.rpc("lookup_academy_join", { p_code: casa }));
+      }
+    }
+    if (!error) {
+      const row = Array.isArray(data) ? data[0] : data;
+      if (row) return { house: mapPublicHouse(row as Record<string, unknown>) };
+    } else if (!isMissingStudentJoinRpc(error.message)) {
+      return { error: error.message, status: 400 as const };
+    }
+  }
+
   const admin = supabaseAdmin();
   if (admin) {
     const found = await searchAcademiesAdmin(admin, casa);
-    if (found.error) return { error: found.error, status: 400 as const };
     if (found.houses[0]) return { house: found.houses[0] };
   }
 
-  const db = dbClient();
-  if (!db) return { error: STUDENT_JOIN_NOT_FOUND, status: 404 as const };
-
-  let { data, error } = await db.rpc("lookup_academy_join", { p_code: casa });
-  if (error && isMissingStudentJoinRpc(error.message)) {
-    const ensured = await ensureStudentJoinSchema();
-    if (ensured.ok) {
-      await new Promise((resolve) => setTimeout(resolve, 400));
-      ({ data, error } = await db.rpc("lookup_academy_join", { p_code: casa }));
-    }
-    if (error && isMissingStudentJoinRpc(error.message)) {
-      return { error: STUDENT_JOIN_SETUP_ERROR, status: 409 as const, needsSetup: true };
-    }
-  }
-
-  if (error) return { error: error.message, status: 400 as const };
-
-  const row = Array.isArray(data) ? data[0] : data;
-  if (!row) return { error: STUDENT_JOIN_NOT_FOUND, status: 404 as const };
-
-  return { house: mapPublicHouse(row as Record<string, unknown>) };
+  return { error: STUDENT_JOIN_NOT_FOUND, status: 404 as const };
 }
 
 async function searchHouses(query: string) {
+  const db = dbClient();
+  if (db) {
+    const viaRpc = await db.rpc("search_academy_join", { p_query: query });
+    if (!viaRpc.error) {
+      const rows = Array.isArray(viaRpc.data) ? viaRpc.data : viaRpc.data ? [viaRpc.data] : [];
+      if (rows.length) {
+        return {
+          houses: rows.map((row) => mapPublicHouse(row as Record<string, unknown>)),
+        };
+      }
+    } else if (isMissingStudentJoinRpc(viaRpc.error.message)) {
+      const ensured = await ensureStudentJoinSchema();
+      if (ensured.ok) {
+        await new Promise((resolve) => setTimeout(resolve, 400));
+        const retry = await db.rpc("search_academy_join", { p_query: query });
+        const rows = Array.isArray(retry.data) ? retry.data : retry.data ? [retry.data] : [];
+        if (rows.length) {
+          return {
+            houses: rows.map((row) => mapPublicHouse(row as Record<string, unknown>)),
+          };
+        }
+      }
+    }
+  }
+
   const admin = supabaseAdmin();
   if (admin) {
     const found = await searchAcademiesAdmin(admin, query);
-    if (!found.error) return { houses: found.houses };
+    if (!found.error && found.houses.length) return { houses: found.houses };
   }
 
-  const db = dbClient();
-  if (!db) return { houses: [] as PublicAcademyJoin[] };
-
-  let { data, error } = await db.rpc("search_academy_join", { p_query: query });
-  if (error && isMissingStudentJoinRpc(error.message)) {
-    const ensured = await ensureStudentJoinSchema();
-    if (ensured.ok) {
-      await new Promise((resolve) => setTimeout(resolve, 400));
-      ({ data, error } = await db.rpc("search_academy_join", { p_query: query }));
-    }
-    if (error && isMissingStudentJoinRpc(error.message)) {
-      const one = await lookupHouse(query);
-      if ("house" in one) return { houses: [one.house] };
-      return { houses: [] as PublicAcademyJoin[] };
-    }
-  }
-  if (error) return { error: error.message, status: 400 as const };
-
-  const rows = Array.isArray(data) ? data : data ? [data] : [];
-  return {
-    houses: rows.map((row) => mapPublicHouse(row as Record<string, unknown>)),
-  };
+  const one = await lookupHouse(query);
+  if ("house" in one) return { houses: [one.house] };
+  return { houses: [] as PublicAcademyJoin[] };
 }
 
 export async function GET(request: Request) {
@@ -91,9 +94,6 @@ export async function GET(request: Request) {
 
   if (q) {
     const result = await searchHouses(q);
-    if ("error" in result && result.error) {
-      return NextResponse.json({ error: result.error }, { status: result.status ?? 400 });
-    }
     return NextResponse.json({ ok: true, houses: result.houses });
   }
 
@@ -102,16 +102,10 @@ export async function GET(request: Request) {
   }
 
   const result = await lookupHouse(casa);
-  if ("house" in result) {
+  if ("house" in result && result.house) {
     return NextResponse.json({ ok: true, house: result.house });
   }
-  return NextResponse.json(
-    {
-      error: result.error,
-      ...(result.needsSetup ? { needsSetup: true } : {}),
-    },
-    { status: result.status },
-  );
+  return NextResponse.json({ error: result.error }, { status: result.status });
 }
 
 export async function POST() {

@@ -18,6 +18,7 @@ import { DEMO_ACADEMY_ID } from "@/lib/seed";
 import { normalizeJoinInput } from "@/lib/join-code";
 import { SUPPORT_PHONE_DISPLAY, supportWhatsAppHref } from "@/lib/support";
 import { PRODUCT_NAME } from "@/lib/brand";
+import { isSupabaseConfigured } from "@/lib/supabase/config";
 
 const fieldClass =
   "h-12 w-full rounded-xl border border-white/10 bg-white/[0.035] px-4 text-sm text-white outline-none transition placeholder:text-white/20 hover:border-white/20 focus:border-red-500 focus:bg-white/[0.05] focus:ring-4 focus:ring-red-600/10";
@@ -119,7 +120,13 @@ export function EntrarAlunoForm({ initialCode = "" }: { initialCode?: string }) 
         ...(localHouse(needle) ? [localHouse(needle)!] : []),
         ...(demoMatches(needle) ? [DEMO_HOUSE] : []),
       ]);
-      const houses = remote.length ? remote : local;
+      const houses = remote.length
+        ? remote
+        : isSupabaseConfigured()
+          ? demoMatches(needle)
+            ? [DEMO_HOUSE]
+            : []
+          : local;
       if (houses.length === 1) {
         setHouse(houses[0]);
         setQuery(houses[0].name || houses[0].joinCode || needle);
@@ -135,11 +142,15 @@ export function EntrarAlunoForm({ initialCode = "" }: { initialCode?: string }) 
           : STUDENT_JOIN_NOT_FOUND,
       );
     } catch {
-      const houses = mergeHouses([
-        ...searchAcademiesForJoin(needle),
-        ...(localHouse(needle) ? [localHouse(needle)!] : []),
-        ...(demoMatches(needle) ? [DEMO_HOUSE] : []),
-      ]);
+      const houses = isSupabaseConfigured()
+        ? demoMatches(needle)
+          ? [DEMO_HOUSE]
+          : []
+        : mergeHouses([
+            ...searchAcademiesForJoin(needle),
+            ...(localHouse(needle) ? [localHouse(needle)!] : []),
+            ...(demoMatches(needle) ? [DEMO_HOUSE] : []),
+          ]);
       if (houses.length === 1) {
         setHouse(houses[0]);
         setQuery(houses[0].name || houses[0].joinCode || needle);
