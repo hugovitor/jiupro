@@ -599,7 +599,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
     write(ready);
     const owner = ready.users.find((u) => u.role === "owner");
     const password = owner ? passwordFor(owner.email) : undefined;
-    const pushed = await pushAcademyState(ready);
+    const pushed = await pushAcademyState(ready, { refresh: true });
     if ("missingAcademy" in pushed && pushed.missingAcademy) {
       if (!owner?.email || !password) {
         return {

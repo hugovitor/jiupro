@@ -472,6 +472,36 @@ export function tablesToState(input: {
     asaasCustomerId: str(s.asaas_customer_id) || undefined,
   }));
 
+  const seenUser = new Set(students.map((s) => s.userId).filter(Boolean));
+  const seenEmail = new Set(students.map((s) => s.email.trim().toLowerCase()).filter(Boolean));
+  for (const profile of input.profiles) {
+    if (str(profile.role) !== "student") continue;
+    const userId = str(profile.id);
+    const email = str(profile.email).trim().toLowerCase();
+    if (userId && seenUser.has(userId)) continue;
+    if (email && seenEmail.has(email)) continue;
+    students.push({
+      id: userId || crypto.randomUUID(),
+      academyId,
+      userId,
+      name: str(profile.name) || email.split("@")[0] || "Aluno",
+      email: str(profile.email),
+      phone: str(profile.phone),
+      birthDate: "",
+      division: "adult",
+      belt: "white",
+      stripes: 0,
+      joinDate: dateCol(profile.created_at) || new Date().toISOString().slice(0, 10),
+      lastPromotionDate: new Date().toISOString().slice(0, 10),
+      status: "active",
+      monthlyFee: 0,
+      notes: "",
+      avatarHue: num(profile.avatar_hue, 40),
+    });
+    if (userId) seenUser.add(userId);
+    if (email) seenEmail.add(email);
+  }
+
   return {
     version: 7,
     academy,

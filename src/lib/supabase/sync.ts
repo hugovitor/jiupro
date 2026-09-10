@@ -62,6 +62,7 @@ async function replaceRows(
   academyId: string,
   rows: Record<string, unknown>[],
   academyColumn = "academy_id",
+  opts?: { keepClaimed?: boolean },
 ) {
   const { data: existing, error: readError } = await client
     .from(table)
@@ -69,10 +70,21 @@ async function replaceRows(
     .eq(academyColumn, academyId);
   if (readError) throw readError;
   const keep = new Set(rows.map((r) => String(r.id)));
+  const claimed = new Set<string>();
+  if (opts?.keepClaimed) {
+    const linked = await client.from(table).select("id, user_id").eq(academyColumn, academyId);
+    if (linked.error) throw linked.error;
+    for (const row of linked.data ?? []) {
+      const rec = row as { id?: string; user_id?: string | null };
+      if (rec.user_id && rec.id) claimed.add(String(rec.id));
+    }
+  }
   const extra = (existing ?? [])
-    .map((r: { id: string }) => String(r.id))
-    .filter((id: string) => !keep.has(id));
-  if (extra.length) {
+    .map((r) => String((r as { id: string }).id))
+    .filter((id: string) => !keep.has(id) && !claimed.has(id));
+  if (opts?.keepClaimed && !rows.length) {
+    /* A casa local vazia não pode apagar quem já entrou pelo app. */
+  } else if (extra.length) {
     const { error } = await client.from(table).delete().in("id", extra);
     if (error) throw error;
   }
@@ -96,13 +108,14 @@ async function replaceJoin(
   }
 }
 
-export async function pushAcademyState(state: AppState) {
+export async function pushAcademyState(state: AppState, opts?: { refresh?: boolean }) {
   const client = createSupabaseBrowserClient();
   if (!client) return { error: "Não foi possível gravar a academia." };
   if (state.academy.id === DEMO_ACADEMY_ID) {
     return { error: "A Equipe Origem é só demonstração." };
   }
   let ready = ensureUuidState(state);
+  const originalId = ready.academy.id;
 
   const { data: sessionUser } = await client.auth.getUser();
   let academyId = ready.academy.id;
@@ -114,7 +127,8 @@ export async function pushAcademyState(state: AppState) {
       .maybeSingle();
     if (profile?.academy_id) academyId = String(profile.academy_id);
   }
-  if (academyId !== ready.academy.id && sessionUser.user?.id) {
+  const rehomed = academyId !== originalId;
+  if (rehomed && sessionUser.user?.id) {
     ready = rehomeAcademy(ready, academyId, {
       id: sessionUser.user.id,
       email: sessionUser.user.email ?? "",
@@ -182,35 +196,50 @@ export async function pushAcademyState(state: AppState) {
   }
 
   try {
-    await replaceRows(client, "students", ready.academy.id, tables.students);
-    await replaceRows(client, "classes", ready.academy.id, tables.classes);
-    await replaceRows(client, "attendance", ready.academy.id, tables.attendance);
-    await replaceRows(client, "payments", ready.academy.id, tables.payments);
-    await replaceRows(client, "expenses", ready.academy.id, tables.expenses);
-    await replaceRows(client, "inventory", ready.academy.id, tables.inventory);
-    await replaceRows(client, "graduations", ready.academy.id, tables.graduations);
-    await replaceRows(client, "evaluations", ready.academy.id, tables.evaluations);
-    await replaceRows(client, "posts", ready.academy.id, tables.posts);
-    await replaceJoin(
-      client,
-      "post_likes",
-      "post_id",
-      tables.posts.map((p) => String(p.id)),
-      tables.postLikes,
-    );
-    await replaceRows(client, "events", ready.academy.id, tables.events);
-    await replaceJoin(
-      client,
-      "event_rsvps",
-      "event_id",
-      tables.events.map((e) => String(e.id)),
-      tables.eventRsvps,
-    );
-    await replaceRows(client, "sales", ready.academy.id, tables.sales);
-    await replaceRows(client, "drop_ins", ready.academy.id, tables.dropIns);
+    if (rehomed) {
+      await upsertRows(client, "students", tables.students);
+    } else {
+      await replaceRows(client, "students", ready.academy.id, tables.students, "academy_id", {
+        keepClaimed: true,
+      });
+      await replaceRows(client, "classes", ready.academy.id, tables.classes);
+      await replaceRows(client, "attendance", ready.academy.id, tables.attendance);
+      await replaceRows(client, "payments", ready.academy.id, tables.payments);
+      await replaceRows(client, "expenses", ready.academy.id, tables.expenses);
+      await replaceRows(client, "inventory", ready.academy.id, tables.inventory);
+      await replaceRows(client, "graduations", ready.academy.id, tables.graduations);
+      await replaceRows(client, "evaluations", ready.academy.id, tables.evaluations);
+      await replaceRows(client, "posts", ready.academy.id, tables.posts);
+      await replaceJoin(
+        client,
+        "post_likes",
+        "post_id",
+        tables.posts.map((p) => String(p.id)),
+        tables.postLikes,
+      );
+      await replaceRows(client, "events", ready.academy.id, tables.events);
+      await replaceJoin(
+        client,
+        "event_rsvps",
+        "event_id",
+        tables.events.map((e) => String(e.id)),
+        tables.eventRsvps,
+      );
+      await replaceRows(client, "sales", ready.academy.id, tables.sales);
+      await replaceRows(client, "drop_ins", ready.academy.id, tables.dropIns);
+    }
   } catch (err) {
     const message = err instanceof Error ? err.message : "Não foi possível salvar agora.";
     return { error: message, state: ready };
+  }
+
+  if ((rehomed || opts?.refresh) && sessionUser.user?.id) {
+    const pulled = await pullAcademyState({
+      userId: sessionUser.user.id,
+      academyId,
+      role: ready.session?.role ?? "owner",
+    });
+    if (!("error" in pulled)) return { state: pulled };
   }
   return { state: ready };
 }

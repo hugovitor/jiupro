@@ -395,13 +395,59 @@ as $$
 declare
   v_id uuid;
   v_slug text := p_slug;
+  v_name_key text := regexp_replace(lower(trim(coalesce(p_name, ''))), '[^a-z0-9]', '', 'g');
+  v_city_key text := regexp_replace(lower(trim(coalesce(p_city, ''))), '[^a-z0-9]', '', 'g');
+  v_profile_academy uuid;
+  v_profile_role text;
 begin
   if auth.uid() is null then
     raise exception 'not authenticated';
   end if;
-  if exists (select 1 from public.profiles where id = auth.uid()) then
-    return (select academy_id from public.profiles where id = auth.uid());
+
+  select p.academy_id, p.role into v_profile_academy, v_profile_role
+  from public.profiles p
+  where p.id = auth.uid();
+
+  if found then
+    if v_profile_academy is not null then
+      return v_profile_academy;
+    end if;
+    if v_profile_role = 'student' then
+      raise exception 'Este e-mail já é de um aluno. Use outro e-mail para a academia.';
+    end if;
   end if;
+
+  select a.id into v_id
+  from public.academies a
+  where lower(a.slug) = lower(trim(v_slug))
+     or (
+       v_name_key <> ''
+       and regexp_replace(lower(trim(a.name)), '[^a-z0-9]', '', 'g') = v_name_key
+       and (
+         v_city_key = ''
+         or regexp_replace(lower(trim(coalesce(a.city, ''))), '[^a-z0-9]', '', 'g') = v_city_key
+       )
+     )
+  order by a.created_at asc
+  limit 1;
+
+  if v_id is not null then
+    insert into public.profiles (id, academy_id, name, role, email)
+    values (
+      auth.uid(),
+      v_id,
+      p_owner_name,
+      'owner',
+      coalesce(auth.jwt()->>'email', '')
+    )
+    on conflict (id) do update
+      set academy_id = excluded.academy_id,
+          role = 'owner',
+          name = coalesce(nullif(public.profiles.name, ''), excluded.name),
+          email = coalesce(nullif(public.profiles.email, ''), excluded.email);
+    return v_id;
+  end if;
+
   if exists (select 1 from public.academies where slug = v_slug) then
     v_slug := v_slug || '-' || substr(replace(gen_random_uuid()::text, '-', ''), 1, 6);
   end if;
@@ -415,7 +461,12 @@ begin
     p_owner_name,
     'owner',
     coalesce(auth.jwt()->>'email', '')
-  );
+  )
+  on conflict (id) do update
+    set academy_id = excluded.academy_id,
+        role = 'owner',
+        name = coalesce(nullif(public.profiles.name, ''), excluded.name),
+        email = coalesce(nullif(public.profiles.email, ''), excluded.email);
   return v_id;
 end;
 $$;
@@ -490,7 +541,8 @@ as $$
       when upper(trim(coalesce(a.join_code, ''))) = upper(trim(p_code)) then 0
       when lower(a.slug) = lower(trim(p_code)) then 1
       else 2
-    end
+    end,
+    a.created_at asc
   limit 1;
 $$;
 
@@ -532,6 +584,7 @@ begin
       when a.name ilike v_q || '%' then 3
       else 4
     end,
+    a.created_at asc,
     a.name
   limit 8;
 end;
@@ -589,7 +642,8 @@ begin
       when upper(trim(coalesce(a.join_code, ''))) = upper(v_q) then 0
       when lower(a.slug) = lower(v_q) then 1
       else 2
-    end
+    end,
+    a.created_at asc
   limit 1;
 
   if v_academy is null then
@@ -608,10 +662,7 @@ begin
     if v_profile_role is distinct from 'student' then
       raise exception 'Este e-mail já é da equipe da academia. Use outro e-mail no app do aluno.';
     end if;
-    if v_profile_academy is not null then
-      if v_profile_academy = v_academy then
-        return v_academy;
-      end if;
+    if v_profile_academy is not null and v_profile_academy is distinct from v_academy then
       raise exception 'Este e-mail já pertence a outra academia. Use outro e-mail no app do aluno.';
     end if;
   end if;
@@ -619,7 +670,12 @@ begin
   v_phone := regexp_replace(coalesce(p_phone, ''), '\D', '', 'g');
   v_label := nullif(trim(p_name), '');
 
-  if v_email <> '' then
+  select s.id, s.user_id into v_student, v_claimed
+  from public.students s
+  where s.academy_id = v_academy and s.user_id = v_uid
+  limit 1;
+
+  if v_student is null and v_email <> '' then
     select s.id, s.user_id into v_student, v_claimed
     from public.students s
     where s.academy_id = v_academy

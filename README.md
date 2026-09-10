@@ -17,7 +17,7 @@ Feito para o dono que treina de manhã e administra de noite: mensalidades em at
 - **Retenção** — aluno que some ganha WhatsApp de volta no painel
 - **Agenda** — seminário, campeonato, open mat; confirmação no PWA e Zap para quem falta
 - **Loja** — venda no nome do aluno, baixa o estoque, entra no financeiro
-- **PWA do aluno** — o dono cadastra a ficha e manda o WhatsApp para criar a senha. Se ainda não tem ficha, o aluno busca o nome da academia, confirma a casa e se cadastra — a ficha aparece na lista da academia.
+- **PWA do aluno** — o dono cadastra a ficha e manda o WhatsApp para criar a senha. Se ainda não tem ficha, o aluno busca o nome da academia, confirma a casa e se cadastra — a ficha aparece na lista da academia. Cadastro de dono com o mesmo nome e cidade reaproveita a casa que já existe; não cria uma academia duplicada.
 - **LGPD** — termos e privacidade, consentimento no cadastro, aviso de armazenamento local, exportar dados, apagar ficha, responsável obrigatório no kids.
 - **Assistente na primeira entrada** — depois do cadastro o dono cai no assistente (Pix, convite, presença). Aluno vê como confirmar aula, faixa e mensalidade. Não aparece de novo depois de concluir ou pular.
 - **Planos mensais** — Essencial, Academia e Equipe. Cadastro começa no Academia; cupom fica escondido até quem tiver código. Stripe cobra o TatameX depois

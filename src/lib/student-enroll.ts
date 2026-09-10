@@ -1,17 +1,11 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
+import { pickCanonicalHouse, type HouseRow } from "@/lib/academy-canonical";
 import { collapseAcademyKey, generateJoinCode, looksLikeHouseCode } from "@/lib/join-code";
 import { mapPublicHouse, STUDENT_JOIN_NOT_FOUND, type PublicAcademyJoin } from "@/lib/student-join";
 
-const HOUSE_COLUMNS = "id, name, slug, city, state, join_code";
+const HOUSE_COLUMNS = "id, name, slug, city, state, join_code, created_at";
 
-export type AcademyHit = {
-  id: string;
-  name: string | null;
-  slug: string | null;
-  city: string | null;
-  state: string | null;
-  join_code: string | null;
-};
+export type AcademyHit = HouseRow;
 
 export type JoinHouseInput = {
   code?: string;
@@ -48,18 +42,25 @@ function scoreHouse(row: AcademyHit, raw: string) {
 }
 
 async function loadHouses(admin: SupabaseClient) {
-  const full = await admin.from("academies").select(HOUSE_COLUMNS).order("name").limit(400);
+  const full = await admin.from("academies").select(HOUSE_COLUMNS).order("created_at").limit(400);
   if (!full.error) return { rows: (full.data ?? []) as AcademyHit[] };
-  if (!/join_code|column/i.test(full.error.message)) {
+  if (!/join_code|created_at|column/i.test(full.error.message)) {
     return { error: full.error.message, rows: [] as AcademyHit[] };
   }
   const fallback = await admin
     .from("academies")
-    .select("id, name, slug, city, state")
+    .select("id, name, slug, city, state, created_at")
     .order("name")
     .limit(400);
-  if (fallback.error) return { error: fallback.error.message, rows: [] as AcademyHit[] };
-  return { rows: (fallback.data ?? []) as AcademyHit[] };
+  if (!fallback.error) return { rows: (fallback.data ?? []) as AcademyHit[] };
+  const minimal = await admin.from("academies").select("id, name, slug, city, state").order("name").limit(400);
+  if (minimal.error) return { error: minimal.error.message, rows: [] as AcademyHit[] };
+  return { rows: (minimal.data ?? []) as AcademyHit[] };
+}
+
+function createdMs(row: AcademyHit) {
+  const raw = row.created_at ? Date.parse(row.created_at) : NaN;
+  return Number.isFinite(raw) ? raw : Number.MAX_SAFE_INTEGER;
 }
 
 export function rankHouses(rows: AcademyHit[], query: string): AcademyHit[] {
@@ -68,7 +69,12 @@ export function rankHouses(rows: AcademyHit[], query: string): AcademyHit[] {
   return rows
     .map((row) => ({ row, score: scoreHouse(row, needle) }))
     .filter((item) => item.score < 99)
-    .sort((a, b) => a.score - b.score || (a.row.name ?? "").localeCompare(b.row.name ?? ""))
+    .sort(
+      (a, b) =>
+        a.score - b.score ||
+        createdMs(a.row) - createdMs(b.row) ||
+        (a.row.slug ?? "").length - (b.row.slug ?? "").length,
+    )
     .map((item) => item.row);
 }
 
@@ -127,7 +133,9 @@ async function pickExact(admin: SupabaseClient, column: "slug" | "join_code" | "
       : await query.ilike(column, value);
   if (error || !data?.length) return null;
   const rows = data as AcademyHit[];
-  return rows.find((row) => scoreHouse(row, value) <= 2) ?? (rows.length === 1 ? rows[0] : null);
+  const exact = rows.filter((row) => scoreHouse(row, value) <= 2);
+  if (exact.length) return pickCanonicalHouse(exact);
+  return rows.length === 1 ? rows[0] : null;
 }
 
 export async function resolveAcademy(admin: SupabaseClient, input: JoinHouseInput) {
@@ -155,8 +163,9 @@ export async function resolveAcademy(admin: SupabaseClient, input: JoinHouseInpu
 
   for (const needle of needles(input)) {
     const ranked = rankHouses(rows, needle);
-    const exact = ranked.find((row) => scoreHouse(row, needle) <= 2) ?? (ranked.length === 1 ? ranked[0] : undefined);
-    if (exact) return { academy: exact };
+    const exact = ranked.filter((row) => scoreHouse(row, needle) <= 2);
+    const hit = pickCanonicalHouse(exact) ?? (ranked.length === 1 ? ranked[0] : undefined);
+    if (hit) return { academy: hit };
   }
 
   const combined = needles(input).join(" ");
@@ -247,7 +256,6 @@ export async function enrollStudentInAcademy(
   const email = input.email.trim().toLowerCase();
   const label = input.studentName.trim() || email.split("@")[0] || "Aluno";
   const phone = input.phone.trim();
-  const digits = phoneDigits(phone);
 
   const { data: profile, error: profileError } = await admin
     .from("profiles")
@@ -269,49 +277,6 @@ export async function enrollStudentInAcademy(
         status: 400,
       };
     }
-    if (profile.academy_id === academy.id) {
-      return { academyId: academy.id };
-    }
-  }
-
-  let studentId: string | null = null;
-  let claimed: string | null = null;
-
-  const { data: roster } = await admin
-    .from("students")
-    .select("id, user_id, email, phone, created_at")
-    .eq("academy_id", academy.id)
-    .order("created_at", { ascending: true })
-    .limit(500);
-
-  const emailHit = email
-    ? (roster ?? []).find((row) => String(row.email ?? "").trim().toLowerCase() === email)
-    : undefined;
-  if (emailHit?.id) {
-    studentId = String(emailHit.id);
-    claimed = emailHit.user_id ? String(emailHit.user_id) : null;
-  }
-
-  if (!studentId && digits.length >= 10) {
-    const hit = (roster ?? []).find((row) => {
-      const phoneKey = phoneDigits(String(row.phone ?? ""));
-      if (phoneKey.length < 10) return false;
-      return phoneKey === digits || phoneKey === `55${digits}` || `55${phoneKey}` === digits;
-    });
-    if (hit?.id) {
-      studentId = String(hit.id);
-      claimed = hit.user_id ? String(hit.user_id) : null;
-    }
-  }
-
-  if (claimed && claimed !== input.userId) {
-    return {
-      error: "Essa ficha já tem acesso. Entre com o e-mail e a senha que você criou.",
-      status: 400,
-    };
-  }
-
-  if (profile) {
     const { error } = await admin
       .from("profiles")
       .update({
@@ -335,6 +300,76 @@ export async function enrollStudentInAcademy(
     if (error) return { error: error.message, status: 400 };
   }
 
+  const roster = await ensureStudentRosterRow(admin, {
+    academyId: academy.id,
+    userId: input.userId,
+    email,
+    name: label,
+    phone,
+  });
+  if ("error" in roster) return { error: roster.error, status: 400 };
+
+  return { academyId: academy.id };
+}
+
+export async function ensureStudentRosterRow(
+  admin: SupabaseClient,
+  input: {
+    academyId: string;
+    userId: string;
+    email: string;
+    name: string;
+    phone: string;
+  },
+): Promise<{ studentId: string } | { error: string }> {
+  const email = input.email.trim().toLowerCase();
+  const phone = input.phone.trim();
+  const digits = phoneDigits(phone);
+  const label = input.name.trim() || email.split("@")[0] || "Aluno";
+
+  const { data: roster, error: rosterError } = await admin
+    .from("students")
+    .select("id, user_id, email, phone, created_at")
+    .eq("academy_id", input.academyId)
+    .order("created_at", { ascending: true })
+    .limit(500);
+  if (rosterError) return { error: rosterError.message };
+
+  let studentId: string | null = null;
+  let claimed: string | null = null;
+
+  const byUser = (roster ?? []).find((row) => String(row.user_id ?? "") === input.userId);
+  if (byUser?.id) {
+    studentId = String(byUser.id);
+    claimed = byUser.user_id ? String(byUser.user_id) : null;
+  }
+
+  if (!studentId && email) {
+    const emailHit = (roster ?? []).find(
+      (row) => String(row.email ?? "").trim().toLowerCase() === email,
+    );
+    if (emailHit?.id) {
+      studentId = String(emailHit.id);
+      claimed = emailHit.user_id ? String(emailHit.user_id) : null;
+    }
+  }
+
+  if (!studentId && digits.length >= 10) {
+    const hit = (roster ?? []).find((row) => {
+      const phoneKey = phoneDigits(String(row.phone ?? ""));
+      if (phoneKey.length < 10) return false;
+      return phoneKey === digits || phoneKey === `55${digits}` || `55${phoneKey}` === digits;
+    });
+    if (hit?.id) {
+      studentId = String(hit.id);
+      claimed = hit.user_id ? String(hit.user_id) : null;
+    }
+  }
+
+  if (claimed && claimed !== input.userId) {
+    return { error: "Essa ficha já tem acesso. Entre com o e-mail e a senha que você criou." };
+  }
+
   if (studentId) {
     const { error } = await admin
       .from("students")
@@ -342,12 +377,17 @@ export async function enrollStudentInAcademy(
         user_id: input.userId,
         email: email || undefined,
         phone: phone || undefined,
+        name: label,
       })
       .eq("id", studentId);
-    if (error) return { error: error.message, status: 400 };
-  } else {
-    const { error } = await admin.from("students").insert({
-      academy_id: academy.id,
+    if (error) return { error: error.message };
+    return { studentId };
+  }
+
+  const { data: inserted, error } = await admin
+    .from("students")
+    .insert({
+      academy_id: input.academyId,
       user_id: input.userId,
       name: label,
       email: email || null,
@@ -356,9 +396,11 @@ export async function enrollStudentInAcademy(
       belt: "white",
       status: "active",
       monthly_fee: 0,
-    });
-    if (error) return { error: error.message, status: 400 };
+    })
+    .select("id")
+    .single();
+  if (error || !inserted?.id) {
+    return { error: error?.message ?? "Não deu para gravar a ficha do aluno." };
   }
-
-  return { academyId: academy.id };
+  return { studentId: String(inserted.id) };
 }

@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { createClient } from "@supabase/supabase-js";
 import { supabaseAdmin } from "@/lib/operator";
-import { enrollStudentInAcademy, resolveHouseViaJoinRpc } from "@/lib/student-enroll";
+import { enrollStudentInAcademy, ensureStudentRosterRow, resolveHouseViaJoinRpc } from "@/lib/student-enroll";
 import { preferredJoinCode, STUDENT_JOIN_NOT_FOUND, STUDENT_JOIN_SETUP_ERROR } from "@/lib/student-join";
 import { ensureStudentJoinSchema } from "@/lib/supabase/ensure-student-join";
 
@@ -117,6 +117,16 @@ export async function POST(request: Request) {
 
   const viaRpc = await joinWithUserToken(token, joinCodes, name, phone);
   if (viaRpc && "academyId" in viaRpc && viaRpc.academyId) {
+    const admin = supabaseAdmin();
+    if (admin) {
+      await ensureStudentRosterRow(admin, {
+        academyId: viaRpc.academyId,
+        userId: user.id,
+        email: user.email ?? "",
+        name,
+        phone,
+      });
+    }
     return NextResponse.json({ ok: true, academyId: viaRpc.academyId });
   }
   if (viaRpc && "error" in viaRpc && viaRpc.error && !/Casa não encontrada/i.test(viaRpc.error)) {

@@ -53,6 +53,15 @@ export async function POST(request: Request) {
     });
   }
 
+  if (existing.data?.role === "student") {
+    return NextResponse.json({
+      ok: true,
+      profile: existing.data,
+      created: false,
+      missing: true,
+    });
+  }
+
   const { data: owners } = await db
     .from("profiles")
     .select("id, academy_id, name, email, role")

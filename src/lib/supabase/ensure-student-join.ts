@@ -17,7 +17,8 @@ export function postgresUriFromEnv() {
   return "";
 }
 
-let applied = false;
+const SCHEMA_VERSION = "2026-09-10-canonical-house";
+let appliedVersion = "";
 let inFlight: Promise<boolean> | null = null;
 
 export async function ensureStudentJoinSchema(): Promise<{
@@ -25,14 +26,14 @@ export async function ensureStudentJoinSchema(): Promise<{
   applied: boolean;
   reason?: "missing-uri" | "apply-failed";
 }> {
-  if (applied) return { ok: true, applied: false };
+  if (appliedVersion === SCHEMA_VERSION) return { ok: true, applied: false };
   const uri = postgresUriFromEnv();
   if (!uri) return { ok: false, applied: false, reason: "missing-uri" };
 
   if (!inFlight) {
     inFlight = applyJiuProSchema(uri, STUDENT_JOIN_SQL)
       .then(() => {
-        applied = true;
+        appliedVersion = SCHEMA_VERSION;
         return true;
       })
       .catch(() => false)
