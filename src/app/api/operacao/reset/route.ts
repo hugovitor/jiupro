@@ -7,14 +7,9 @@ export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
 export async function POST(request: Request) {
-  const oneShot = request.headers.get("x-tatamex-reset")?.trim() ?? "";
-  const allowedOnce =
-    oneShot === "3abc4803d9018d8ff0375545aeea5126840fcc55156339de083b13ea9d604ce4";
-  if (!allowedOnce) {
-    const auth = await requireOperator(request);
-    if ("error" in auth) {
-      return NextResponse.json({ error: auth.error }, { status: auth.status });
-    }
+  const auth = await requireOperator(request);
+  if ("error" in auth) {
+    return NextResponse.json({ error: auth.error }, { status: auth.status });
   }
 
   const admin = supabaseAdmin();
