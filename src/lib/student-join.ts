@@ -73,10 +73,17 @@ stable
 security definer
 set search_path = public
 as $$
-  select a.name, a.city, a.state, a.slug, a.join_code
+  select a.name, a.city, a.state, a.slug, coalesce(nullif(a.join_code, ''), a.slug) as join_code
   from public.academies a
   where a.join_code = upper(trim(p_code))
      or lower(a.slug) = lower(trim(p_code))
+     or lower(trim(a.name)) = lower(trim(p_code))
+  order by
+    case
+      when a.join_code = upper(trim(p_code)) then 0
+      when lower(a.slug) = lower(trim(p_code)) then 1
+      else 2
+    end
   limit 1;
 $$;
 
@@ -99,7 +106,7 @@ begin
   end if;
   v_like := '%' || replace(replace(v_q, '%', ''), '_', '') || '%';
   return query
-  select a.name, a.city, a.state, a.slug, a.join_code
+  select a.name, a.city, a.state, a.slug, coalesce(nullif(a.join_code, ''), a.slug)
   from public.academies a
   where a.join_code = upper(v_q)
      or lower(a.slug) = lower(v_q)
@@ -133,6 +140,7 @@ as $$
 declare
   v_uid uuid := auth.uid();
   v_email text := lower(trim(coalesce(auth.jwt()->>'email', '')));
+  v_q text := trim(p_code);
   v_academy uuid;
   v_student uuid;
   v_phone text;
@@ -145,15 +153,30 @@ begin
     raise exception 'Entre de novo para criar o acesso.';
   end if;
 
+  if v_q is null or v_q = '' then
+    raise exception 'Casa não encontrada. Busque o nome da sua academia.';
+  end if;
+
   select a.id into v_academy
   from public.academies a
-  where a.join_code = upper(trim(p_code))
-     or lower(a.slug) = lower(trim(p_code))
+  where a.join_code = upper(v_q)
+     or lower(a.slug) = lower(v_q)
+     or lower(trim(a.name)) = lower(v_q)
+  order by
+    case
+      when a.join_code = upper(v_q) then 0
+      when lower(a.slug) = lower(v_q) then 1
+      else 2
+    end
   limit 1;
 
   if v_academy is null then
     raise exception 'Casa não encontrada. Busque o nome da sua academia.';
   end if;
+
+  update public.academies
+    set join_code = public.jiupro_join_code()
+    where id = v_academy and (join_code is null or join_code = '');
 
   select p.academy_id, p.role into v_profile_academy, v_profile_role
   from public.profiles p

@@ -111,11 +111,11 @@ export function EntrarAlunoForm({ initialCode = "" }: { initialCode?: string }) 
         needsSetup?: boolean;
       };
       const local = [
+        ...(nameData.houses ?? []),
+        ...(codeData.house ? [codeData.house] : []),
         ...searchAcademiesForJoin(needle),
         ...(localHouse(needle) ? [localHouse(needle)!] : []),
         ...(demoMatches(needle) ? [DEMO_HOUSE] : []),
-        ...(codeData.house ? [codeData.house] : []),
-        ...(nameData.houses ?? []),
       ];
       const houses = mergeHouses(local);
       if (houses.length === 1) {
@@ -299,7 +299,7 @@ export function EntrarAlunoForm({ initialCode = "" }: { initialCode?: string }) 
             }
             setBusy(true);
             const result = await store.registerStudent({
-              code: house.joinCode,
+              code: house.joinCode || house.slug,
               name,
               phone,
               email,

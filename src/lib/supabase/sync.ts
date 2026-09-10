@@ -495,7 +495,12 @@ export async function joinStudentRemote(input: {
     p_name: input.name,
     p_phone: input.phone,
   });
-  if (joinError && /join_academy_as_student|PGRST202|does not exist|schema cache/i.test(joinError.message)) {
+  if (
+    joinError &&
+    /Casa não encontrada|join_academy_as_student|PGRST202|does not exist|schema cache/i.test(
+      joinError.message,
+    )
+  ) {
     await fetch("/api/aluno/casa", { method: "POST" }).catch(() => undefined);
     const retry = await client.rpc("join_academy_as_student", {
       p_code: input.code,

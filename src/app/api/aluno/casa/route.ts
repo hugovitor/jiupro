@@ -21,12 +21,14 @@ function dbClient() {
 }
 
 function mapHouse(row: Record<string, unknown>, fallbackCode: string): PublicAcademyJoin {
+  const slug = String(row.slug ?? "").trim();
+  const join = String(row.join_code ?? "").trim();
   return {
     name: String(row.name ?? ""),
     city: String(row.city ?? ""),
     state: String(row.state ?? ""),
-    slug: String(row.slug ?? ""),
-    joinCode: String(row.join_code ?? fallbackCode).toUpperCase(),
+    slug,
+    joinCode: (join || slug || fallbackCode).toUpperCase(),
   };
 }
 
