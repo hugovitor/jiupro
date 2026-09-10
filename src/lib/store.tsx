@@ -456,7 +456,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
     const code = input.code.trim();
     const name = input.name.trim();
     if (!code || !name || !email.includes("@") || input.password.length < 6) {
-      return { ok: false, error: "Preencha código da casa, nome, e-mail e senha (mínimo 6)." };
+      return { ok: false, error: "Preencha nome da academia, seu nome, e-mail e senha (mínimo 6)." };
     }
 
     if (isSupabaseConfigured()) {
@@ -484,7 +484,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
 
     const house = findAcademyByJoinCode(code);
     if (!house || house.academy.id === DEMO_ACADEMY_ID) {
-      return { ok: false, error: "Casa não encontrada. Use o link que a sua academia mandou." };
+      return { ok: false, error: "Casa não encontrada. Busque o nome da sua academia." };
     }
     const across = findUserAcrossAcademies(email);
     if (across && across.state.academy.id !== house.academy.id) {

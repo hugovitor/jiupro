@@ -480,6 +480,44 @@ $$;
 revoke all on function public.lookup_academy_join(text) from public;
 grant execute on function public.lookup_academy_join(text) to anon, authenticated;
 
+create or replace function public.search_academy_join(p_query text)
+returns table (name text, city text, state text, slug text, join_code text)
+language plpgsql
+stable
+security definer
+set search_path = public
+as $$
+declare
+  v_q text := trim(p_query);
+  v_like text;
+begin
+  if v_q is null or length(v_q) < 2 then
+    return;
+  end if;
+  v_like := '%' || replace(replace(v_q, '%', ''), '_', '') || '%';
+  return query
+  select a.name, a.city, a.state, a.slug, a.join_code
+  from public.academies a
+  where a.join_code = upper(v_q)
+     or lower(a.slug) = lower(v_q)
+     or a.name ilike v_like
+     or coalesce(a.city, '') ilike v_like
+  order by
+    case
+      when a.join_code = upper(v_q) then 0
+      when lower(a.slug) = lower(v_q) then 1
+      when lower(a.name) = lower(v_q) then 2
+      when a.name ilike v_q || '%' then 3
+      else 4
+    end,
+    a.name
+  limit 8;
+end;
+$$;
+
+revoke all on function public.search_academy_join(text) from public;
+grant execute on function public.search_academy_join(text) to anon, authenticated;
+
 create or replace function public.join_academy_as_student(
   p_code text,
   p_name text,
@@ -511,7 +549,7 @@ begin
   limit 1;
 
   if v_academy is null then
-    raise exception 'Casa não encontrada. Use o link ou o código que a sua academia mandou.';
+    raise exception 'Casa não encontrada. Busque o nome da sua academia.';
   end if;
 
   select p.academy_id, p.role into v_profile_academy, v_profile_role

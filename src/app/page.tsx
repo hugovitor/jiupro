@@ -122,8 +122,8 @@ function Hero() {
             <div className="hidden w-1 shrink-0 bg-gradient-to-b from-red-600 via-red-600 to-transparent sm:block" />
             <p className="text-base leading-8 text-white/58 sm:text-lg">
               Pix da casa na mensalidade. Presença em dois toques. Faixa com
-              tempo e treino. Só entra quem você convidar — não tem lista de
-              academias.
+              tempo e treino. Você cadastra a turma, ou o aluno encontra a
+              academia pelo nome e entra na lista.
             </p>
           </div>
 
@@ -191,7 +191,7 @@ function TrustBar() {
         {[
           ["Pix da casa", "mensalidade do aluno"],
           ["Dois toques", "presença no tatame"],
-          ["Só o seu código", "ninguém cai na casa errada"],
+          ["Pelo nome", "o aluno acha a academia"],
         ].map(([value, label]) => (
           <div key={value} className="flex items-center justify-center gap-4 py-7">
             <strong className="text-2xl font-black tracking-tight text-red-500">
@@ -270,8 +270,8 @@ function AppSection() {
                 "O aluno confirma a aula sem códigos ou filas na recepção.",
               ],
               [
-                "Equipe conectada",
-                "Todos visualizam quem estará no treino antes da aula começar.",
+                "Cadastro pelo nome",
+                "O aluno busca a academia, confirma a casa e cria a senha. Se a ficha já existia, o mesmo e-mail puxa os dados.",
               ],
               [
                 "Evolução visível",

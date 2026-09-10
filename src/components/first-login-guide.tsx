@@ -321,7 +321,7 @@ const OWNER_STEPS: Step[] = [
   {
     id: "ola",
     title: "Três coisas e a casa roda.",
-    body: "Pix para a mensalidade, convite para a turma, presença na aula. Sem lista pública: só entra quem você chamar.",
+    body: "Pix para a mensalidade, o primeiro aluno e a presença na aula. Você cadastra a turma ou o aluno encontra a academia pelo nome.",
     tips: [
       "Este painel é só da sua academia.",
       "Alunos pagam no Pix da casa. O cartão é da assinatura do TatameX.",
@@ -335,7 +335,7 @@ const OWNER_STEPS: Step[] = [
   {
     id: "alunos",
     title: "Chame o primeiro aluno.",
-    body: "Copie o link e mande no grupo, ou cadastre a ficha aqui. O aluno confirma o nome da academia e cria a senha.",
+    body: "Cadastre a ficha e mande o WhatsApp para criar a senha. Quem ainda não está na lista busca o nome da academia no app e entra sozinho.",
   },
   {
     id: "pronto",
@@ -370,7 +370,7 @@ const STUDENT_STEPS: Step[] = [
   {
     id: "casa",
     title: "Você entrou na sua casa.",
-    body: "Não tem lista de academias. Este app só mostra os dados da academia que mandou o código.",
+    body: "Este app é da academia que você escolheu. Presença, faixa e Pix da casa ficam aqui.",
   },
   {
     id: "aula",

@@ -1,4 +1,5 @@
 import { firstName, waHref } from "@/lib/whatsapp";
+import { publicAppUrl } from "@/lib/app-url";
 import { studentJoinUrl } from "@/lib/join-code";
 import type { Academy, Student } from "@/lib/types";
 
@@ -11,7 +12,7 @@ export type PublicAcademyJoin = {
 };
 
 export const STUDENT_JOIN_NOT_FOUND =
-  "Não achamos essa academia. Peça o código no WhatsApp da sua casa.";
+  "Não achamos essa academia. Confira o nome ou peça o WhatsApp da casa.";
 
 export const STUDENT_JOIN_SETUP_ERROR =
   "O app da casa ainda está sendo preparado. Fale com o professor ou no WhatsApp de suporte.";
@@ -82,6 +83,44 @@ $$;
 revoke all on function public.lookup_academy_join(text) from public;
 grant execute on function public.lookup_academy_join(text) to anon, authenticated;
 
+create or replace function public.search_academy_join(p_query text)
+returns table (name text, city text, state text, slug text, join_code text)
+language plpgsql
+stable
+security definer
+set search_path = public
+as $$
+declare
+  v_q text := trim(p_query);
+  v_like text;
+begin
+  if v_q is null or length(v_q) < 2 then
+    return;
+  end if;
+  v_like := '%' || replace(replace(v_q, '%', ''), '_', '') || '%';
+  return query
+  select a.name, a.city, a.state, a.slug, a.join_code
+  from public.academies a
+  where a.join_code = upper(v_q)
+     or lower(a.slug) = lower(v_q)
+     or a.name ilike v_like
+     or coalesce(a.city, '') ilike v_like
+  order by
+    case
+      when a.join_code = upper(v_q) then 0
+      when lower(a.slug) = lower(v_q) then 1
+      when lower(a.name) = lower(v_q) then 2
+      when a.name ilike v_q || '%' then 3
+      else 4
+    end,
+    a.name
+  limit 8;
+end;
+$$;
+
+revoke all on function public.search_academy_join(text) from public;
+grant execute on function public.search_academy_join(text) to anon, authenticated;
+
 create or replace function public.join_academy_as_student(
   p_code text,
   p_name text,
@@ -113,7 +152,7 @@ begin
   limit 1;
 
   if v_academy is null then
-    raise exception 'Casa não encontrada. Use o link ou o código que a sua academia mandou.';
+    raise exception 'Casa não encontrada. Busque o nome da sua academia.';
   end if;
 
   select p.academy_id, p.role into v_profile_academy, v_profile_role
@@ -211,17 +250,40 @@ grant execute on function public.join_academy_as_student(text, text, text) to au
 notify pgrst, 'reload schema';
 `;
 
-export function studentAppInviteMessage(academy: Academy, student?: Pick<Student, "name">) {
+export function studentAppInviteMessage(academy: Academy, student?: Pick<Student, "name" | "email">) {
   const who = student ? firstName(student.name) : "professor";
   const link = studentJoinUrl(academy.joinCode || academy.slug);
-  const greeting = student ? `Fala, ${who}.` : "Fala.";
-  return `${greeting} App da ${academy.name}:
+  if (student) {
+    const emailHint = student.email?.trim()
+      ? `Usa o e-mail ${student.email.trim()} (o mesmo da ficha) e cria a senha.`
+      : "Usa o mesmo e-mail ou WhatsApp da ficha e cria a senha.";
+    return `Fala, ${who}.
+
+Sua ficha já está na ${academy.name}.
+
+Abre este link, confirma o nome da academia e cria tua senha:
 
 ${link}
 
-Confirma o nome da casa na tela. Depois cria teu e-mail e senha. Se a academia já te cadastrou, usa o mesmo e-mail ou WhatsApp da ficha.`;
+${emailHint}
+
+Já criou senha? Entra em ${publicAppUrl()}/login.`;
+  }
+  return `Fala.
+
+App da ${academy.name}:
+
+${link}
+
+Se a academia já te cadastrou, confirma o nome da casa e cria a senha com o mesmo e-mail ou WhatsApp da ficha.
+
+Se ainda não te cadastrou, busca o nome da academia nessa tela e se cadastra — sua ficha aparece na lista da casa.`;
 }
 
-export function studentAppInviteHref(academy: Academy, phone: string, student?: Pick<Student, "name">) {
+export function studentAppInviteHref(
+  academy: Academy,
+  phone: string,
+  student?: Pick<Student, "name" | "email">,
+) {
   return waHref(phone, studentAppInviteMessage(academy, student));
 }

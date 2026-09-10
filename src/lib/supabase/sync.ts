@@ -512,7 +512,7 @@ export async function joinStudentRemote(input: {
   if (joinError) {
     if (/join_academy_as_student|PGRST202|does not exist|schema cache/i.test(joinError.message)) {
       return {
-        error: "Não deu para entrar nesta academia agora. Peça o código de novo no WhatsApp da casa.",
+        error: "Não deu para entrar nesta academia agora. Busque o nome da casa de novo.",
       };
     }
     return { error: joinError.message };

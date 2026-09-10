@@ -186,6 +186,41 @@ export function findAcademyByJoinCode(code: string) {
   return null;
 }
 
+export function searchAcademiesForJoin(query: string) {
+  const needle = query.trim().toLowerCase();
+  if (needle.length < 2) return [];
+  const v = getVault();
+  const hits: {
+    name: string;
+    city: string;
+    state: string;
+    slug: string;
+    joinCode: string;
+  }[] = [];
+  for (const state of Object.values(v.academies)) {
+    if (state.academy.id === DEMO_ACADEMY_ID) continue;
+    const hay = [
+      state.academy.name,
+      state.academy.city,
+      state.academy.state,
+      state.academy.slug,
+      state.academy.joinCode,
+    ]
+      .join(" ")
+      .toLowerCase();
+    if (!hay.includes(needle)) continue;
+    hits.push({
+      name: state.academy.name,
+      city: state.academy.city,
+      state: state.academy.state,
+      slug: state.academy.slug,
+      joinCode: (state.academy.joinCode || state.academy.slug).toUpperCase(),
+    });
+    if (hits.length >= 8) break;
+  }
+  return hits;
+}
+
 export function eraseAcademy(academyId: string) {
   const v = getVault();
   if (academyId === DEMO_ACADEMY_ID) {

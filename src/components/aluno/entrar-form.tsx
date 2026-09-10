@@ -10,7 +10,7 @@ import { LgpdConsent } from "@/components/lgpd-consent";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { findAcademyByJoinCode } from "@/lib/vault";
+import { findAcademyByJoinCode, searchAcademiesForJoin } from "@/lib/vault";
 import { useStore } from "@/lib/store";
 import type { PublicAcademyJoin } from "@/lib/student-join";
 import { STUDENT_JOIN_NOT_FOUND, STUDENT_JOIN_SETUP_ERROR } from "@/lib/student-join";
@@ -22,18 +22,22 @@ import { PRODUCT_NAME } from "@/lib/brand";
 const fieldClass =
   "h-12 w-full rounded-xl border border-white/10 bg-white/[0.035] px-4 text-sm text-white outline-none transition placeholder:text-white/20 hover:border-white/20 focus:border-red-500 focus:bg-white/[0.05] focus:ring-4 focus:ring-red-600/10";
 
-function demoHouse(code: string): PublicAcademyJoin | null {
-  const raw = normalizeJoinInput(code);
-  if (raw.toUpperCase() === "ORIGEM" || raw.toLowerCase() === "origem-campinas") {
-    return {
-      name: "Equipe Origem Jiu-Jitsu",
-      city: "Campinas",
-      state: "SP",
-      slug: "origem-campinas",
-      joinCode: "ORIGEM",
-    };
-  }
-  return null;
+const DEMO_HOUSE: PublicAcademyJoin = {
+  name: "Equipe Origem Jiu-Jitsu",
+  city: "Campinas",
+  state: "SP",
+  slug: "origem-campinas",
+  joinCode: "ORIGEM",
+};
+
+function demoMatches(query: string) {
+  const raw = normalizeJoinInput(query).toLowerCase();
+  return (
+    raw.includes("origem") ||
+    raw.includes("campinas") ||
+    raw === "origem-campinas" ||
+    raw.toUpperCase() === "ORIGEM"
+  );
 }
 
 function localHouse(code: string): PublicAcademyJoin | null {
@@ -48,10 +52,23 @@ function localHouse(code: string): PublicAcademyJoin | null {
   };
 }
 
+function mergeHouses(list: PublicAcademyJoin[]) {
+  const seen = new Set<string>();
+  const out: PublicAcademyJoin[] = [];
+  for (const house of list) {
+    const key = (house.joinCode || house.slug).toUpperCase();
+    if (!key || seen.has(key)) continue;
+    seen.add(key);
+    out.push(house);
+  }
+  return out;
+}
+
 export function EntrarAlunoForm({ initialCode = "" }: { initialCode?: string }) {
   const store = useStore();
   const router = useRouter();
-  const [code, setCode] = useState(normalizeJoinInput(initialCode));
+  const [query, setQuery] = useState(normalizeJoinInput(initialCode));
+  const [matches, setMatches] = useState<PublicAcademyJoin[]>([]);
   const [house, setHouse] = useState<PublicAcademyJoin | null>(null);
   const [confirmed, setConfirmed] = useState(false);
   const [lookupError, setLookupError] = useState<string | null>(null);
@@ -63,40 +80,71 @@ export function EntrarAlunoForm({ initialCode = "" }: { initialCode?: string }) 
   const [password, setPassword] = useState("");
   const [accepted, setAccepted] = useState(false);
 
-  async function lookup(nextCode: string) {
-    const needle = normalizeJoinInput(nextCode);
-    if (!needle) {
-      toast.error("Informe o código da sua academia.");
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    const fromEmail = params.get("email");
+    if (fromEmail) setEmail(fromEmail);
+  }, []);
+
+  async function lookup(nextQuery: string) {
+    const needle = normalizeJoinInput(nextQuery);
+    if (needle.length < 2) {
+      toast.error("Digite o nome da sua academia.");
       return;
     }
     setLooking(true);
     setLookupError(null);
     setHouse(null);
+    setMatches([]);
     setConfirmed(false);
     try {
-      const res = await fetch(`/api/aluno/casa?casa=${encodeURIComponent(needle)}`);
-      const data = (await res.json()) as {
-        house?: PublicAcademyJoin;
-        error?: string;
+      const [byName, byCode] = await Promise.all([
+        fetch(`/api/aluno/casa?q=${encodeURIComponent(needle)}`),
+        fetch(`/api/aluno/casa?casa=${encodeURIComponent(needle)}`),
+      ]);
+      const nameData = (await byName.json()) as {
+        houses?: PublicAcademyJoin[];
         needsSetup?: boolean;
       };
-      if (data.house) {
-        setHouse(data.house);
-        setCode(data.house.joinCode || needle);
+      const codeData = (await byCode.json()) as {
+        house?: PublicAcademyJoin;
+        needsSetup?: boolean;
+      };
+      const local = [
+        ...searchAcademiesForJoin(needle),
+        ...(localHouse(needle) ? [localHouse(needle)!] : []),
+        ...(demoMatches(needle) ? [DEMO_HOUSE] : []),
+        ...(codeData.house ? [codeData.house] : []),
+        ...(nameData.houses ?? []),
+      ];
+      const houses = mergeHouses(local);
+      if (houses.length === 1) {
+        setHouse(houses[0]);
+        setQuery(houses[0].joinCode || needle);
         return;
       }
-      const local = localHouse(needle) ?? demoHouse(needle);
-      if (local) {
-        setHouse(local);
-        setCode(local.joinCode);
+      if (houses.length > 1) {
+        setMatches(houses);
         return;
       }
-      setLookupError(data.needsSetup ? STUDENT_JOIN_SETUP_ERROR : STUDENT_JOIN_NOT_FOUND);
+      setLookupError(
+        nameData.needsSetup || codeData.needsSetup
+          ? STUDENT_JOIN_SETUP_ERROR
+          : STUDENT_JOIN_NOT_FOUND,
+      );
     } catch {
-      const local = localHouse(needle) ?? demoHouse(needle);
-      if (local) {
-        setHouse(local);
-        setCode(local.joinCode);
+      const houses = mergeHouses([
+        ...searchAcademiesForJoin(needle),
+        ...(localHouse(needle) ? [localHouse(needle)!] : []),
+        ...(demoMatches(needle) ? [DEMO_HOUSE] : []),
+      ]);
+      if (houses.length === 1) {
+        setHouse(houses[0]);
+        setQuery(houses[0].joinCode || needle);
+        return;
+      }
+      if (houses.length > 1) {
+        setMatches(houses);
         return;
       }
       setLookupError(STUDENT_JOIN_NOT_FOUND);
@@ -115,28 +163,31 @@ export function EntrarAlunoForm({ initialCode = "" }: { initialCode?: string }) 
   return (
     <AuthScreen
       kicker="App do aluno"
-      title="Entrar na sua academia."
-      subtitle="Não tem lista de casas. Só entra quem tem o link ou o código que a academia mandou."
+      title="Encontre a sua academia."
+      subtitle="Se a casa já te cadastrou, confirma o nome e cria a senha. Se ainda não te cadastrou, escolhe a academia — sua ficha entra na lista da casa."
       switchHref="/login"
       switchLabel="Já tenho senha"
     >
-      {!house ? (
+      {!house && matches.length === 0 ? (
         <form
           className="space-y-4"
           onSubmit={(e) => {
             e.preventDefault();
-            void lookup(code);
+            void lookup(query);
           }}
         >
           <div className="space-y-1.5">
-            <Label>Código da casa</Label>
+            <Label>Nome da academia</Label>
             <Input
-              value={code}
-              onChange={(e) => setCode(e.target.value.toUpperCase())}
-              placeholder="Ex: K7M2PQ"
+              value={query}
+              onChange={(e) => setQuery(e.target.value)}
+              placeholder="Ex: Origem Campinas"
               className={fieldClass}
-              autoCapitalize="characters"
+              autoCapitalize="words"
             />
+            <p className="text-[11px] text-white/35">
+              Pode ser o nome, a cidade ou o código que a academia mandou.
+            </p>
           </div>
           {lookupError ? (
             <div className="space-y-2">
@@ -154,11 +205,47 @@ export function EntrarAlunoForm({ initialCode = "" }: { initialCode?: string }) 
             </div>
           ) : null}
           <Button className="h-12 w-full" disabled={looking} type="submit">
-            {looking ? "Procurando…" : "Continuar"}
+            {looking ? "Procurando…" : "Buscar academia"}
             <ArrowRight className="h-4 w-4" />
           </Button>
         </form>
-      ) : !confirmed ? (
+      ) : !house && matches.length > 0 ? (
+        <div className="space-y-4">
+          <p className="text-[11px] font-black tracking-[0.18em] text-red-500 uppercase">
+            Escolha a sua casa
+          </p>
+          <ul className="space-y-2">
+            {matches.map((item) => (
+              <li key={item.joinCode || item.slug}>
+                <button
+                  type="button"
+                  className="w-full rounded-2xl border border-white/10 bg-white/[0.03] p-4 text-left transition hover:border-red-500/40 hover:bg-red-500/[0.06]"
+                  onClick={() => {
+                    setHouse(item);
+                    setQuery(item.joinCode);
+                    setMatches([]);
+                  }}
+                >
+                  <p className="text-base font-black tracking-tight">{item.name}</p>
+                  <p className="mt-1 text-sm text-white/45">
+                    {[item.city, item.state].filter(Boolean).join("/")}
+                  </p>
+                </button>
+              </li>
+            ))}
+          </ul>
+          <button
+            type="button"
+            className="w-full text-center text-sm font-bold text-white/40 hover:text-white"
+            onClick={() => {
+              setMatches([]);
+              setQuery("");
+            }}
+          >
+            Não é nenhuma. Buscar de novo
+          </button>
+        </div>
+      ) : house && !confirmed ? (
         <div className="space-y-4">
           <p className="text-[11px] font-black tracking-[0.18em] text-red-500 uppercase">
             Confirme a casa
@@ -167,9 +254,6 @@ export function EntrarAlunoForm({ initialCode = "" }: { initialCode?: string }) 
             <p className="text-xl font-black tracking-tight">{house.name}</p>
             <p className="mt-1 text-sm text-white/45">
               {[house.city, house.state].filter(Boolean).join("/")}
-            </p>
-            <p className="mt-3 font-mono text-sm font-bold tracking-[0.2em] text-white/70">
-              {house.joinCode}
             </p>
           </div>
           {isDemo ? (
@@ -184,8 +268,7 @@ export function EntrarAlunoForm({ initialCode = "" }: { initialCode?: string }) 
           ) : (
             <>
               <p className="text-sm text-white/50">
-                É essa a sua academia? Se o nome estiver errado, não continue — peça o link certo
-                no WhatsApp da casa.
+                É essa a sua academia? Se o nome estiver errado, não continue.
               </p>
               <Button className="h-12 w-full" onClick={() => setConfirmed(true)}>
                 Sim, é a minha casa
@@ -198,13 +281,14 @@ export function EntrarAlunoForm({ initialCode = "" }: { initialCode?: string }) 
             onClick={() => {
               setHouse(null);
               setConfirmed(false);
-              setCode("");
+              setMatches([]);
+              setQuery("");
             }}
           >
-            Não é essa. Trocar código
+            Não é essa. Buscar de novo
           </button>
         </div>
-      ) : (
+      ) : house ? (
         <form
           className="space-y-4"
           onSubmit={async (e) => {
@@ -231,8 +315,9 @@ export function EntrarAlunoForm({ initialCode = "" }: { initialCode?: string }) 
           }}
         >
           <p className="text-sm text-white/45">
-            Criando acesso em <strong className="text-white">{house.name}</strong>. Se a academia
-            já te cadastrou, use o mesmo e-mail ou WhatsApp da ficha.
+            Acesso em <strong className="text-white">{house.name}</strong>. Se a academia já te
+            cadastrou, use o mesmo e-mail ou WhatsApp — puxamos a ficha. Se ainda não, você entra
+            na lista da casa agora.
           </p>
           <div className="space-y-1.5">
             <Label>Seu nome</Label>
@@ -280,7 +365,7 @@ export function EntrarAlunoForm({ initialCode = "" }: { initialCode?: string }) 
             )}
           </Button>
         </form>
-      )}
+      ) : null}
     </AuthScreen>
   );
 }

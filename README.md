@@ -17,7 +17,7 @@ Feito para o dono que treina de manhã e administra de noite: mensalidades em at
 - **Retenção** — aluno que some ganha WhatsApp de volta no painel
 - **Agenda** — seminário, campeonato, open mat; confirmação no PWA e Zap para quem falta
 - **Loja** — venda no nome do aluno, baixa o estoque, entra no financeiro
-- **PWA do aluno** — o dono manda o link/código da casa; o aluno confirma o nome e cria e-mail e senha. Se a ficha já existe, o mesmo e-mail ou WhatsApp vincula. Não há lista de academias.
+- **PWA do aluno** — o dono cadastra a ficha e manda o WhatsApp para criar a senha. Se ainda não tem ficha, o aluno busca o nome da academia, confirma a casa e se cadastra — a ficha aparece na lista da academia.
 - **LGPD** — termos e privacidade, consentimento no cadastro, aviso de armazenamento local, exportar dados, apagar ficha, responsável obrigatório no kids.
 - **Assistente na primeira entrada** — depois do cadastro o dono cai no assistente (Pix, convite, presença). Aluno vê como confirmar aula, faixa e mensalidade. Não aparece de novo depois de concluir ou pular.
 - **Planos mensais** — Essencial, Academia e Equipe. Cadastro começa no Academia; cupom fica escondido até quem tiver código. Stripe cobra o TatameX depois
@@ -58,7 +58,7 @@ Projeto **novo e vazio** é o esperado. O Dashboard não cria as tabelas do Tata
 5. Authentication → Providers → Email: desligue **Confirm email** para entrar na hora
 6. Authentication → URL Configuration: Redirect URLs deve incluir `https://tatamex.vercel.app/atualizar-senha` (senha esquecida)
 7. Na sua academia (não na demo): **Enviar esta academia**
-8. App do aluno: o dono manda o link `/entrar/CÓDIGO` no grupo. O aluno confirma o nome da casa e cria a senha. **O dono não vê SQL.** Se `DATABASE_URL` (ou `SUPABASE_DB_URL`) estiver no servidor, o app aplica o SQL do convite sozinho. Senão, o operador cola o trecho uma vez no SQL Editor.
+8. App do aluno: o dono cadastra a ficha e manda o WhatsApp, ou o aluno busca o nome da academia em `/entrar`. **O dono não vê SQL.** Se `DATABASE_URL` (ou `SUPABASE_DB_URL`) estiver no servidor, o app aplica o SQL do convite sozinho.
 
 Também dá para colocar no `.env.local`:
 
@@ -209,7 +209,7 @@ Webhook Stripe: `https://tatamex.vercel.app/api/stripe/webhook`.
 
 ## PWA do aluno
 
-No celular, abra `/aluno` e adicione à tela inicial. Um toque confirma a aula; o professor valida no tatame.
+O aluno abre `/entrar`, busca o nome da academia, confirma a casa e cria a senha. Se a academia já tinha cadastrado a ficha, o mesmo e-mail ou WhatsApp puxa os dados. No celular, `/aluno` na tela inicial: um toque confirma a aula; o professor valida no tatame.
 
 ## Stack
 

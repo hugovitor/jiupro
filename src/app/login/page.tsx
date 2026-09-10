@@ -275,7 +275,7 @@ export default function LoginPage() {
               <p className="mt-8 text-center text-xs text-white/35">
                 Sou aluno da casa?{" "}
                 <Link href="/entrar" className="font-extrabold text-white underline decoration-red-600 decoration-2 underline-offset-4 transition hover:text-red-400">
-                  Entrar no app
+                  Encontre sua academia
                 </Link>
               </p>
               <p className="mt-3 text-center text-xs text-white/35">

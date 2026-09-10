@@ -47,7 +47,7 @@ export async function ensureStudentJoinSchema(): Promise<{
 }
 
 export function isMissingStudentJoinRpc(message?: string) {
-  return /lookup_academy_join|join_academy_as_student|PGRST202|does not exist|schema cache/i.test(
+  return /lookup_academy_join|search_academy_join|join_academy_as_student|PGRST202|does not exist|schema cache/i.test(
     message ?? "",
   );
 }

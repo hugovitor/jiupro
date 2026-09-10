@@ -19,14 +19,13 @@ export function FirstHouseCard() {
       <p className="text-[10px] font-black tracking-[0.18em] text-red-500 uppercase">
         Casa nova
       </p>
-      <h2 className="mt-2 text-xl font-black tracking-tight">Chame o primeiro aluno</h2>
+      <h2 className="mt-2 text-xl font-black tracking-tight">Primeiro aluno</h2>
       <p className="mt-2 text-sm leading-6 text-muted-foreground">
-        Cadastre a ficha ou mande o link no grupo. O aluno confirma o nome da {store.academy.name}{" "}
-        e cria a senha. Ninguém entra sem esse código.
+        Cadastre a ficha e mande o WhatsApp para criar a senha. Ou deixe o aluno buscar{" "}
+        {store.academy.name} no app — a ficha aparece aqui.
       </p>
-      <p className="mt-4 font-mono text-2xl font-black tracking-[0.18em]">{code}</p>
       <div className="mt-4 flex flex-wrap gap-2">
-        <Button size="sm" render={<Link href="/academia/alunos" />}>
+        <Button size="sm" render={<Link href="/academia/alunos?novo=1" />}>
           <UserPlus className="size-3.5" />
           Cadastrar aluno
         </Button>

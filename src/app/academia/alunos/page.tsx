@@ -1,9 +1,10 @@
 "use client";
 
 import Link from "next/link";
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { toast } from "sonner";
 import { AlunoAppCard } from "@/components/academia/aluno-app-card";
+import { SendStudentAccessButton } from "@/components/academia/send-student-access";
 import { BeltBadge, PersonAvatar } from "@/components/belt-badge";
 import { FormDialog } from "@/components/form-dialog";
 import { Button } from "@/components/ui/button";
@@ -101,6 +102,7 @@ export default function AlunosPage() {
               <TableHead>Faixa</TableHead>
               <TableHead>Mensalidade</TableHead>
               <TableHead>Mês</TableHead>
+              <TableHead>App</TableHead>
               <TableHead>Status</TableHead>
             </TableRow>
           </TableHeader>
@@ -133,6 +135,14 @@ export default function AlunosPage() {
                   <TableCell>
                     <PayPill status={pay?.status} />
                   </TableCell>
+                  <TableCell>
+                    <div className="flex flex-col items-start gap-1">
+                      <span className="text-xs text-muted-foreground">
+                        {s.userId ? "Já criou senha" : "Ainda sem senha"}
+                      </span>
+                      <SendStudentAccessButton student={s} />
+                    </div>
+                  </TableCell>
                   <TableCell className="capitalize">
                     {s.status === "active"
                       ? "Ativo"
@@ -164,6 +174,9 @@ function PayPill({ status }: { status?: string }) {
 function NovoAluno() {
   const store = useStore();
   const [open, setOpen] = useState(false);
+  const [saved, setSaved] = useState<{ name: string; phone: string; email: string } | null>(
+    null,
+  );
   const [form, setForm] = useState({
     name: "",
     email: "",
@@ -177,152 +190,194 @@ function NovoAluno() {
 
   const belts = beltsForDivision(form.division);
 
+  useEffect(() => {
+    if (new URLSearchParams(window.location.search).get("novo") === "1") setOpen(true);
+  }, []);
+
+  function close() {
+    setOpen(false);
+    setSaved(null);
+  }
+
   return (
     <>
       <Button type="button" onClick={() => setOpen(true)}>
         Novo aluno
       </Button>
-      <FormDialog
-        open={open}
-        onClose={() => setOpen(false)}
-        title="Cadastrar aluno"
-      >
-        <p className="text-sm text-muted-foreground">
-          A ficha fica nesta academia. Depois o aluno cria e-mail e senha no link do app da casa.
-          Use o mesmo WhatsApp ou e-mail para o vínculo bater.
-        </p>
-        <form
-          className="grid gap-3"
-          onSubmit={(e) => {
-            e.preventDefault();
-            if (!form.name.trim()) {
-              toast.error("Nome é obrigatório.");
-              return;
-            }
-            if (form.division === "kids" && !form.guardianName.trim()) {
-              toast.error("No kids, informe o responsável (LGPD, art. 14).");
-              return;
-            }
-            store.addStudent({
-              name: form.name.trim(),
-              email: form.email,
-              phone: form.phone,
-              guardianName: form.guardianName.trim() || undefined,
-              birthDate: "2000-01-01",
-              division: form.division,
-              belt: form.belt as Student["belt"],
-              stripes: 0,
-              joinDate: isoDate(0),
-              lastPromotionDate: isoDate(0),
-              status: "active",
-              monthlyFee: Number(form.monthlyFee) || 0,
-              notes: "",
-              cpf: form.cpf.replace(/\D/g, ""),
-            });
-            toast.success(`${form.name} entrou na academia.`);
-            setOpen(false);
-            setForm({
-              name: "",
-              email: "",
-              phone: "",
-              guardianName: "",
-              division: "adult",
-              belt: "white",
-              monthlyFee: "180",
-              cpf: "",
-            });
-          }}
-        >
-          <div className="space-y-1.5">
-            <Label>Nome</Label>
-            <Input
-              value={form.name}
-              onChange={(e) => setForm({ ...form, name: e.target.value })}
-            />
-          </div>
-          <div className="grid grid-cols-2 gap-2">
-            <div className="space-y-1.5">
-              <Label>E-mail</Label>
-              <Input
-                value={form.email}
-                onChange={(e) => setForm({ ...form, email: e.target.value })}
-              />
-            </div>
-            <div className="space-y-1.5">
-              <Label>WhatsApp</Label>
-              <Input
-                value={form.phone}
-                onChange={(e) => setForm({ ...form, phone: e.target.value })}
-              />
-            </div>
-          </div>
-          <div className="grid grid-cols-2 gap-2">
-            <div className="space-y-1.5">
-              <Label>Turma</Label>
-              <select
-                className="h-8 w-full rounded-lg border border-input bg-transparent px-2 text-sm"
-                value={form.division}
-                onChange={(e) =>
-                  setForm({
-                    ...form,
-                    division: e.target.value as Student["division"],
-                    belt: "white",
-                  })
-                }
-              >
-                <option value="adult">Adulto</option>
-                <option value="kids">Kids</option>
-              </select>
-            </div>
-            <div className="space-y-1.5">
-              <Label>Faixa</Label>
-              <select
-                className="h-8 w-full rounded-lg border border-input bg-transparent px-2 text-sm"
-                value={form.belt}
-                onChange={(e) => setForm({ ...form, belt: e.target.value })}
-              >
-                {belts.map((b) => (
-                  <option key={b.id} value={b.id}>
-                    {b.label}
-                  </option>
-                ))}
-              </select>
-            </div>
-          </div>
-          {form.division === "kids" ? (
-            <div className="space-y-1.5">
-              <Label>Responsável</Label>
-              <Input
-                value={form.guardianName}
-                onChange={(e) => setForm({ ...form, guardianName: e.target.value })}
-                placeholder="Nome de quem autoriza o cadastro"
-              />
-              <p className="text-[11px] text-muted-foreground">
-                Dado de menor só com consentimento do responsável.
-              </p>
-            </div>
-          ) : null}
-          <div className="space-y-1.5">
-            <Label>CPF do pagador</Label>
-            <Input
-              value={formatCpf(form.cpf)}
-              onChange={(e) => setForm({ ...form, cpf: e.target.value })}
-              placeholder="000.000.000-00"
-            />
-            <p className="text-[11px] text-muted-foreground">
-              Opcional. No kids, use o CPF do responsável, não o da criança.
+      <FormDialog open={open} onClose={close} title={saved ? "Mandar o acesso" : "Cadastrar aluno"}>
+        {saved ? (
+          <div className="space-y-4">
+            <p className="text-sm text-muted-foreground">
+              A ficha de {saved.name} já está nesta academia. Manda o WhatsApp para ele confirmar
+              o nome da casa e criar a senha. Se ainda não tiver WhatsApp, o aluno busca o nome da
+              academia no app e se cadastra sozinho.
             </p>
+            {saved.phone.trim() ? (
+              <SendStudentAccessButton
+                student={{
+                  name: saved.name,
+                  phone: saved.phone,
+                  email: saved.email,
+                  userId: "",
+                }}
+                size="default"
+                className="w-full"
+              />
+            ) : (
+              <p className="text-sm text-muted-foreground">
+                Sem WhatsApp nesta ficha. Peça para {saved.name} abrir o app e buscar{" "}
+                {store.academy.name}.
+              </p>
+            )}
+            <Button type="button" variant="outline" className="w-full" onClick={close}>
+              Pronto
+            </Button>
           </div>
-          <div className="space-y-1.5">
-            <Label>Mensalidade (R$)</Label>
-            <Input
-              type="number"
-              value={form.monthlyFee}
-              onChange={(e) => setForm({ ...form, monthlyFee: e.target.value })}
-            />
-          </div>
-          <Button type="submit">Salvar</Button>
-        </form>
+        ) : (
+          <>
+            <p className="text-sm text-muted-foreground">
+              A ficha fica nesta academia. Com WhatsApp, você manda o acesso na hora. Sem ficha, o
+              aluno busca o nome da casa no app e entra na lista sozinho.
+            </p>
+            <form
+              className="grid gap-3"
+              onSubmit={(e) => {
+                e.preventDefault();
+                if (!form.name.trim()) {
+                  toast.error("Nome é obrigatório.");
+                  return;
+                }
+                if (form.division === "kids" && !form.guardianName.trim()) {
+                  toast.error("No kids, informe o responsável (LGPD, art. 14).");
+                  return;
+                }
+                store.addStudent({
+                  name: form.name.trim(),
+                  email: form.email,
+                  phone: form.phone,
+                  guardianName: form.guardianName.trim() || undefined,
+                  birthDate: "2000-01-01",
+                  division: form.division,
+                  belt: form.belt as Student["belt"],
+                  stripes: 0,
+                  joinDate: isoDate(0),
+                  lastPromotionDate: isoDate(0),
+                  status: "active",
+                  monthlyFee: Number(form.monthlyFee) || 0,
+                  notes: "",
+                  cpf: form.cpf.replace(/\D/g, ""),
+                });
+                toast.success(`${form.name.trim()} entrou na academia.`);
+                setSaved({
+                  name: form.name.trim(),
+                  phone: form.phone,
+                  email: form.email,
+                });
+                setForm({
+                  name: "",
+                  email: "",
+                  phone: "",
+                  guardianName: "",
+                  division: "adult",
+                  belt: "white",
+                  monthlyFee: "180",
+                  cpf: "",
+                });
+              }}
+            >
+              <div className="space-y-1.5">
+                <Label>Nome</Label>
+                <Input
+                  value={form.name}
+                  onChange={(e) => setForm({ ...form, name: e.target.value })}
+                />
+              </div>
+              <div className="grid grid-cols-2 gap-2">
+                <div className="space-y-1.5">
+                  <Label>WhatsApp</Label>
+                  <Input
+                    value={form.phone}
+                    onChange={(e) => setForm({ ...form, phone: e.target.value })}
+                    placeholder="Para mandar o acesso"
+                  />
+                </div>
+                <div className="space-y-1.5">
+                  <Label>E-mail</Label>
+                  <Input
+                    value={form.email}
+                    onChange={(e) => setForm({ ...form, email: e.target.value })}
+                  />
+                </div>
+              </div>
+              <div className="grid grid-cols-2 gap-2">
+                <div className="space-y-1.5">
+                  <Label>Turma</Label>
+                  <select
+                    className="h-8 w-full rounded-lg border border-input bg-transparent px-2 text-sm"
+                    value={form.division}
+                    onChange={(e) =>
+                      setForm({
+                        ...form,
+                        division: e.target.value as Student["division"],
+                        belt: "white",
+                      })
+                    }
+                  >
+                    <option value="adult">Adulto</option>
+                    <option value="kids">Kids</option>
+                  </select>
+                </div>
+                <div className="space-y-1.5">
+                  <Label>Faixa</Label>
+                  <select
+                    className="h-8 w-full rounded-lg border border-input bg-transparent px-2 text-sm"
+                    value={form.belt}
+                    onChange={(e) => setForm({ ...form, belt: e.target.value })}
+                  >
+                    {belts.map((b) => (
+                      <option key={b.id} value={b.id}>
+                        {b.label}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+              </div>
+              {form.division === "kids" ? (
+                <div className="space-y-1.5">
+                  <Label>Responsável</Label>
+                  <Input
+                    value={form.guardianName}
+                    onChange={(e) => setForm({ ...form, guardianName: e.target.value })}
+                    placeholder="Nome de quem autoriza o cadastro"
+                  />
+                  <p className="text-[11px] text-muted-foreground">
+                    Dado de menor só com consentimento do responsável.
+                  </p>
+                </div>
+              ) : null}
+              <div className="space-y-1.5">
+                <Label>CPF do pagador</Label>
+                <Input
+                  value={formatCpf(form.cpf)}
+                  onChange={(e) => setForm({ ...form, cpf: e.target.value })}
+                  placeholder="000.000.000-00"
+                />
+                <p className="text-[11px] text-muted-foreground">
+                  Opcional. No kids, use o CPF do responsável, não o da criança.
+                </p>
+              </div>
+              <div className="space-y-1.5">
+                <Label>Mensalidade (R$)</Label>
+                <Input
+                  type="number"
+                  value={form.monthlyFee}
+                  onChange={(e) => setForm({ ...form, monthlyFee: e.target.value })}
+                />
+              </div>
+              <Button type="submit">Salvar ficha</Button>
+            </form>
+          </>
+        )}
       </FormDialog>
     </>
   );

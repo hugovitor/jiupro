@@ -20,7 +20,7 @@ import {
 import { formatCpf } from "@/lib/cpf";
 import { attendanceInDays } from "@/lib/insights";
 import { useStore } from "@/lib/store";
-import { studentAppInviteHref } from "@/lib/student-join";
+import { SendStudentAccessButton } from "@/components/academia/send-student-access";
 import { overdueMessage, waHref } from "@/lib/whatsapp";
 import { useState } from "react";
 
@@ -60,20 +60,7 @@ export default function AlunoDetalhePage() {
           </div>
         </div>
         <div className="flex flex-wrap gap-2">
-          {student.phone ? (
-            <Button
-              variant="outline"
-              render={
-                <a
-                  href={studentAppInviteHref(store.academy, student.phone, student)}
-                  target="_blank"
-                  rel="noreferrer"
-                />
-              }
-            >
-              {student.userId ? "Mandar login do app" : "Enviar app"}
-            </Button>
-          ) : null}
+          <SendStudentAccessButton student={student} size="default" />
           <Button
             variant="outline"
             render={
