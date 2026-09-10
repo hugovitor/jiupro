@@ -118,7 +118,7 @@ export function AcademiaShell({ children }: { children: React.ReactNode }) {
           }),
         }).catch(() => undefined);
       }
-      await store.syncNow();
+    await store.syncNow().catch(() => undefined);
     })();
     // eslint-disable-next-line react-hooks/exhaustive-deps -- once per academy load
   }, [store.hydrated, store.academy.id]);

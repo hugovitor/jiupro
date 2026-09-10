@@ -180,7 +180,15 @@ function str(v: unknown, fallback = "") {
 }
 
 function time(v: string) {
-  return v.length === 5 ? `${v}:00` : v;
+  const raw = String(v ?? "").trim();
+  const hm = raw.match(/^(\d{1,2}):(\d{2})/);
+  if (!hm) return "19:30:00";
+  return `${hm[1].padStart(2, "0")}:${hm[2]}:00`;
+}
+
+function dateCol(value: unknown) {
+  const raw = String(value ?? "").trim().slice(0, 10);
+  return /^\d{4}-\d{2}-\d{2}$/.test(raw) ? raw : null;
 }
 
 export function academyToRow(a: Academy): Row {
@@ -219,13 +227,13 @@ export function stateToTables(state: AppState, allowedProfiles?: Set<string>) {
       name: s.name,
       email: s.email || null,
       phone: s.phone || null,
-      birth_date: s.birthDate || null,
+      birth_date: dateCol(s.birthDate),
       guardian_name: s.guardianName || null,
-      division: s.division,
-      belt: s.belt,
+      division: s.division === "kids" ? "kids" : "adult",
+      belt: s.belt || "white",
       stripes: s.stripes,
-      join_date: s.joinDate,
-      last_promotion_date: s.lastPromotionDate || null,
+      join_date: dateCol(s.joinDate) || new Date().toISOString().slice(0, 10),
+      last_promotion_date: dateCol(s.lastPromotionDate),
       status: s.status,
       monthly_fee: s.monthlyFee,
       notes: s.notes || null,
@@ -454,8 +462,8 @@ export function tablesToState(input: {
     division: str(s.division, "adult") === "kids" ? "kids" : "adult",
     belt: str(s.belt, "white") as Student["belt"],
     stripes: num(s.stripes),
-    joinDate: str(s.join_date),
-    lastPromotionDate: str(s.last_promotion_date),
+    joinDate: dateCol(s.join_date) || new Date().toISOString().slice(0, 10),
+    lastPromotionDate: dateCol(s.last_promotion_date) || dateCol(s.join_date) || new Date().toISOString().slice(0, 10),
     status: (str(s.status, "active") as Student["status"]) || "active",
     monthlyFee: num(s.monthly_fee),
     notes: str(s.notes),

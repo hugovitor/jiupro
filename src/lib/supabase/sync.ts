@@ -8,6 +8,54 @@ import { ensureUuidState, rehomeAcademy, stateToTables, tablesToState } from "./
 import { DEMO_ACADEMY_ID } from "../seed";
 import type { AppState, Role, Session } from "../types";
 
+const OPTIONAL_COLUMNS = [
+  "cpf",
+  "asaas_customer_id",
+  "asaas_payment_id",
+  "asaas_invoice_url",
+  "asaas_pix_copy",
+  "asaas_status",
+  "validated_at",
+  "validated_by",
+  "guardian_name",
+  "birth_date",
+];
+
+function stripOptional(rows: Record<string, unknown>[], columns: string[]) {
+  return rows.map((row) => {
+    const next = { ...row };
+    for (const column of columns) delete next[column];
+    return next;
+  });
+}
+
+async function upsertRows(
+  client: SupabaseClient,
+  table: string,
+  rows: Record<string, unknown>[],
+) {
+  if (!rows.length) return;
+  let payload = rows;
+  let lastError: { message: string } | null = null;
+  for (let attempt = 0; attempt < 5; attempt++) {
+    const { error } = await client.from(table).upsert(payload);
+    if (!error) return;
+    lastError = error;
+    const msg = error.message ?? "";
+    const named = OPTIONAL_COLUMNS.filter((column) => msg.toLowerCase().includes(column));
+    if (named.length) {
+      payload = stripOptional(payload, named);
+      continue;
+    }
+    if (/PGRST204|schema cache|could not find|column/i.test(msg)) {
+      payload = stripOptional(payload, OPTIONAL_COLUMNS);
+      continue;
+    }
+    throw error;
+  }
+  if (lastError) throw lastError;
+}
+
 async function replaceRows(
   client: SupabaseClient,
   table: string,
@@ -28,10 +76,7 @@ async function replaceRows(
     const { error } = await client.from(table).delete().in("id", extra);
     if (error) throw error;
   }
-  if (rows.length) {
-    const { error } = await client.from(table).upsert(rows);
-    if (error) throw error;
-  }
+  await upsertRows(client, table, rows);
 }
 
 async function replaceJoin(

@@ -1,19 +1,30 @@
 const TZ = "America/Sao_Paulo";
 const DATE_ONLY = /^\d{4}-\d{2}-\d{2}$/;
 
+export function isValidDate(date: Date) {
+  return date instanceof Date && !Number.isNaN(date.getTime());
+}
+
 /** Date-only values are calendar days, not UTC midnights. */
 export function parseDate(iso: string) {
-  if (DATE_ONLY.test(iso)) return new Date(`${iso}T12:00:00.000Z`);
-  return new Date(iso);
+  const raw = String(iso ?? "").trim();
+  if (!raw) return new Date();
+  if (DATE_ONLY.test(raw.slice(0, 10))) {
+    const d = new Date(`${raw.slice(0, 10)}T12:00:00.000Z`);
+    if (isValidDate(d)) return d;
+  }
+  const d = new Date(raw);
+  return isValidDate(d) ? d : new Date();
 }
 
 function civilParts(date: Date) {
+  const safe = isValidDate(date) ? date : new Date();
   const parts = new Intl.DateTimeFormat("en-US", {
     timeZone: TZ,
     year: "numeric",
     month: "numeric",
     day: "numeric",
-  }).formatToParts(date);
+  }).formatToParts(safe);
   const n = (type: Intl.DateTimeFormatPartTypes) =>
     Number(parts.find((p) => p.type === type)?.value);
   return { year: n("year"), month: n("month"), day: n("day") };
@@ -27,20 +38,24 @@ export function brl(value: number) {
 }
 
 export function formatDate(iso: string) {
+  const d = parseDate(iso);
+  if (!iso?.trim() || !isValidDate(d)) return "—";
   return new Intl.DateTimeFormat("pt-BR", {
     day: "2-digit",
     month: "short",
     year: "numeric",
     timeZone: TZ,
-  }).format(parseDate(iso));
+  }).format(d);
 }
 
 export function formatDay(iso: string) {
+  const d = parseDate(iso);
+  if (!iso?.trim()) return "—";
   return new Intl.DateTimeFormat("pt-BR", {
     day: "2-digit",
     month: "short",
     timeZone: TZ,
-  }).format(parseDate(iso));
+  }).format(d);
 }
 
 export function formatTime(iso: string) {
@@ -109,11 +124,12 @@ export function isoDate(offsetDays = 0) {
 
 /** Minutos desde meia-noite em America/Sao_Paulo, ou a partir de "HH:MM". */
 export function minutes(input: Date | string) {
-  if (typeof input === "string" && /^\d{1,2}:\d{2}$/.test(input.trim())) {
-    const [h, m] = input.trim().split(":").map(Number);
-    return (h ?? 0) * 60 + (m ?? 0);
+  if (typeof input === "string") {
+    const hm = input.trim().match(/^(\d{1,2}):(\d{2})/);
+    if (hm) return Number(hm[1]) * 60 + Number(hm[2]);
   }
   const d = typeof input === "string" ? new Date(input) : input;
+  if (!isValidDate(d)) return 0;
   const parts = new Intl.DateTimeFormat("en-US", {
     timeZone: TZ,
     hour: "numeric",

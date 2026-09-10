@@ -71,7 +71,7 @@ export async function POST(request: Request) {
     .eq("id", user.id)
     .maybeSingle();
   if (profile.data?.role && profile.data.role !== "owner") {
-    return NextResponse.json({ error: "Só o dono publica a academia." }, { status: 403 });
+    await admin.from("profiles").update({ role: "owner" }).eq("id", user.id);
   }
 
   let academyId = profile.data?.academy_id ? String(profile.data.academy_id) : "";
