@@ -16,11 +16,16 @@ function ReturnInner() {
     if (done.current) return;
     const paid =
       params.get("assinatura") === "ok" || params.get("checkout") === "success";
+    const demoSignup = params.get("checkout") === "demo" && params.get("guia") === "1";
     const plan = params.get("plan");
-    if (!paid || !plan || !PLANS.some((p) => p.id === plan)) return;
+    if ((!paid && !demoSignup) || !plan || !PLANS.some((p) => p.id === plan)) return;
     done.current = true;
     store.changePlan(plan as PlanId);
-    toast.success("Pagamento confirmado. Assinatura do TatameX ativa.");
+    toast.success(
+      demoSignup
+        ? "Academia aberta. Vamos deixar a casa pronta."
+        : "Pagamento confirmado. Assinatura do TatameX ativa.",
+    );
   }, [params, store]);
 
   return null;

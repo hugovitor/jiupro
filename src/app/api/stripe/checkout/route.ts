@@ -34,9 +34,13 @@ export async function POST(request: Request) {
   const plan = planById(planId);
 
   if (!stripe) {
+    const next =
+      offer === "signup"
+        ? `${origin}/academia?guia=1&plan=${planId}&checkout=demo`
+        : `${origin}/academia/configuracoes?checkout=demo&plan=${planId}`;
     return NextResponse.json({
       demo: true,
-      url: `${origin}/academia/configuracoes?checkout=demo&plan=${planId}`,
+      url: next,
     });
   }
 
@@ -77,7 +81,7 @@ export async function POST(request: Request) {
       mode: "subscription",
       locale: "pt-BR",
       line_items: [{ price, quantity: 1 }],
-      success_url: `${origin}/academia?assinatura=ok&plan=${planId}`,
+      success_url: `${origin}/academia?assinatura=ok&plan=${planId}&guia=1`,
       cancel_url: `${origin}/planos?assinatura=cancelada`,
       ...(discount.discounts
         ? { discounts: discount.discounts }

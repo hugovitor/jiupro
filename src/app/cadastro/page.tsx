@@ -24,45 +24,44 @@ function CadastroForm() {
   const router = useRouter();
   const params = useSearchParams();
   const preset = (params.get("plano") as PlanId | null) ?? "academia";
+  const presetCoupon = params.get("cupom")?.trim() ?? "";
   const [name, setName] = useState("");
   const [academy, setAcademy] = useState("");
   const [city, setCity] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [busy, setBusy] = useState(false);
-  const [promoCode, setPromoCode] = useState("");
+  const [promoCode, setPromoCode] = useState(presetCoupon);
+  const [showCoupon, setShowCoupon] = useState(Boolean(presetCoupon));
   const [accepted, setAccepted] = useState(false);
   const [plan, setPlan] = useState<PlanId>(
     PLANS.some((p) => p.id === preset) ? preset : "academia",
   );
+  const [showPlans, setShowPlans] = useState(
+    Boolean(preset && preset !== "academia" && PLANS.some((p) => p.id === preset)),
+  );
   const trialDays = signupTrialDays();
   const trialLabel = signupTrialLabel(trialDays);
+  const selected = planById(plan);
 
   return (
     <AuthScreen
-      kicker="Conta da academia"
-      title="Abra a sua academia."
+      kicker="Abrir academia"
+      title="Cadastre a casa e o dono."
       subtitle={
         trialLabel
-          ? `${trialLabel}. O cartão fica cadastrado; a cobrança do plano começa depois. Alunos no Pix da casa.`
-          : `Cria a sua casa, vazia. Em seguida você assina o ${PRODUCT_NAME} no cartão.`
+          ? `${trialLabel}. Você informa o cartão agora; a cobrança do ${PRODUCT_NAME} começa depois. Alunos pagam no Pix da casa.`
+          : `Cria a academia vazia. Em seguida você assina o ${PRODUCT_NAME} no cartão. Alunos pagam no Pix da casa.`
       }
       switchHref="/login"
       switchLabel="Já tenho conta"
     >
-      <p className="text-[11px] font-black tracking-[0.2em] text-red-500 uppercase">
-        Abrir academia
-      </p>
-      <p className="mt-3 text-sm leading-6 text-white/45">
-        A assinatura do {PRODUCT_NAME} é da academia. Os alunos continuam pagando a
-        mensalidade no Pix da casa.
-      </p>
       <form
-        className="mt-8 space-y-4"
+        className="mt-2 space-y-4"
         onSubmit={async (e) => {
           e.preventDefault();
-          if (!name.trim() || !academy.trim() || !email.trim() || !password) {
-            toast.error("Preencha nome, academia, e-mail e senha.");
+          if (!name.trim() || !academy.trim() || !city.trim() || !email.trim() || !password) {
+            toast.error("Preencha nome, academia, cidade, e-mail e senha.");
             return;
           }
           if (!accepted) {
@@ -70,6 +69,7 @@ function CadastroForm() {
             return;
           }
           setBusy(true);
+          void fetch("/api/aluno/casa", { method: "POST" }).catch(() => undefined);
           const result = await store.registerAcademy({
             ownerName: name,
             academyName: academy,
@@ -85,7 +85,7 @@ function CadastroForm() {
           }
           try {
             if (result.resumed) {
-              toast.message("Academia já existia. Abrindo o pagamento para o cupom.");
+              toast.message("Academia já existia. Abrindo o pagamento.");
             }
             const pay = await startPlanCheckout(plan, {
               email,
@@ -95,8 +95,8 @@ function CadastroForm() {
               offer: "signup",
             });
             if (pay === "demo") {
-              toast.success(`${academy.trim()} aberta. Vamos ao pagamento da assinatura.`);
-              router.push("/academia");
+              toast.success(`${academy.trim()} aberta. Vamos deixar a casa pronta.`);
+              router.push("/academia?guia=1");
             }
           } catch (error) {
             toast.error(
@@ -104,7 +104,7 @@ function CadastroForm() {
                 ? error.message
                 : "Casa criada. Não deu para abrir o pagamento da assinatura.",
             );
-            router.push("/academia");
+            router.push("/academia?guia=1");
           } finally {
             setBusy(false);
           }
@@ -179,50 +179,79 @@ function CadastroForm() {
             disabled={busy}
           />
         </div>
-        <div className="space-y-2">
-          <p className="text-xs font-bold text-white/70">Plano</p>
-          <div className="grid gap-2">
-            {PLANS.map((p) => (
-              <button
-                key={p.id}
-                type="button"
-                onClick={() => setPlan(p.id)}
-                className={`rounded-xl border px-3 py-3 text-left text-sm transition ${
-                  plan === p.id
-                    ? "border-red-500 bg-red-500/10"
-                    : "border-white/10 bg-white/[0.025] hover:border-white/20"
-                }`}
-              >
-                <span className="flex items-center justify-between gap-3">
-                  <span className="font-extrabold">{p.name}</span>
-                  <span className="text-xs text-white/45">{brl(p.price)}/mês</span>
-                </span>
-                <span className="mt-1 block text-[11px] text-white/35">
-                  {planCapacityLabel(p)}
-                </span>
-              </button>
-            ))}
+
+        <div className="rounded-xl border border-white/10 bg-white/[0.025] px-3 py-3">
+          <div className="flex items-center justify-between gap-3">
+            <div>
+              <p className="text-sm font-extrabold">{selected.name}</p>
+              <p className="mt-0.5 text-[11px] text-white/40">
+                {brl(selected.price)}/mês · {planCapacityLabel(selected)}
+              </p>
+            </div>
+            <button
+              type="button"
+              className="text-xs font-bold text-white/50 underline-offset-4 hover:text-white hover:underline"
+              onClick={() => setShowPlans((v) => !v)}
+            >
+              {showPlans ? "Fechar" : "Trocar plano"}
+            </button>
           </div>
+          {showPlans ? (
+            <div className="mt-3 grid gap-2">
+              {PLANS.map((p) => (
+                <button
+                  key={p.id}
+                  type="button"
+                  onClick={() => setPlan(p.id)}
+                  className={`rounded-xl border px-3 py-3 text-left text-sm transition ${
+                    plan === p.id
+                      ? "border-red-500 bg-red-500/10"
+                      : "border-white/10 bg-white/[0.025] hover:border-white/20"
+                  }`}
+                >
+                  <span className="flex items-center justify-between gap-3">
+                    <span className="font-extrabold">{p.name}</span>
+                    <span className="text-xs text-white/45">{brl(p.price)}/mês</span>
+                  </span>
+                  <span className="mt-1 block text-[11px] text-white/35">
+                    {planCapacityLabel(p)}
+                  </span>
+                </button>
+              ))}
+            </div>
+          ) : null}
         </div>
-        <div className="space-y-2">
-          <label htmlFor="promo" className="text-xs font-bold text-white/70">
-            Código promocional
-          </label>
-          <input
-            id="promo"
-            className={fieldClass}
-            value={promoCode}
-            onChange={(e) => setPromoCode(e.target.value)}
-            placeholder="Opcional"
-            autoComplete="off"
-            disabled={busy}
-          />
-          <p className="text-[11px] leading-5 text-white/30">
-            {trialLabel
-              ? "Opcional. Se preencher, vale o cupom no lugar do mês grátis."
-              : "Opcional. Código promocional do Stripe, modo Ao vivo."}
-          </p>
-        </div>
+
+        {showCoupon ? (
+          <div className="space-y-2">
+            <label htmlFor="promo" className="text-xs font-bold text-white/70">
+              Código promocional
+            </label>
+            <input
+              id="promo"
+              className={fieldClass}
+              value={promoCode}
+              onChange={(e) => setPromoCode(e.target.value)}
+              placeholder="Opcional"
+              autoComplete="off"
+              disabled={busy}
+            />
+            <p className="text-[11px] leading-5 text-white/30">
+              {trialLabel
+                ? "Se preencher, vale o cupom no lugar do mês grátis."
+                : "Opcional."}
+            </p>
+          </div>
+        ) : (
+          <button
+            type="button"
+            className="text-xs font-bold text-white/40 hover:text-white"
+            onClick={() => setShowCoupon(true)}
+          >
+            Tenho cupom
+          </button>
+        )}
+
         <LgpdConsent checked={accepted} onChange={setAccepted} />
         <button
           type="submit"
@@ -232,11 +261,11 @@ function CadastroForm() {
           {busy ? (
             <>
               <LoaderCircle className="h-4 w-4 animate-spin" />
-              Abrindo o pagamento…
+              Abrindo sua academia…
             </>
           ) : (
             <>
-              Pagar {planById(plan).name} e abrir
+              {trialLabel ? "Começar grátis" : "Abrir academia"}
               <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-1" />
             </>
           )}

@@ -19,9 +19,9 @@ Feito para o dono que treina de manhã e administra de noite: mensalidades em at
 - **Loja** — venda no nome do aluno, baixa o estoque, entra no financeiro
 - **PWA do aluno** — o dono manda o link/código da casa; o aluno confirma o nome e cria e-mail e senha. Se a ficha já existe, o mesmo e-mail ou WhatsApp vincula. Não há lista de academias.
 - **LGPD** — termos e privacidade, consentimento no cadastro, aviso de armazenamento local, exportar dados, apagar ficha, responsável obrigatório no kids.
-- **Assistente na primeira entrada** — dono configura Pix e convite; aluno vê como confirmar aula, faixa e mensalidade. Não aparece de novo depois de concluir ou pular.
-- **Planos mensais** — Essencial, Academia e Equipe. Escolhe no cadastro; Stripe cobra o TatameX depois
-- **Cadastro real** — abre a sua academia, vazia, isolada da Equipe Origem
+- **Assistente na primeira entrada** — depois do cadastro o dono cai no assistente (Pix, convite, presença). Aluno vê como confirmar aula, faixa e mensalidade. Não aparece de novo depois de concluir ou pular.
+- **Planos mensais** — Essencial, Academia e Equipe. Cadastro começa no Academia; cupom fica escondido até quem tiver código. Stripe cobra o TatameX depois
+- **Cadastro real** — nome, academia, cidade, e-mail e senha. Abre a casa vazia, isolada da Equipe Origem
 - **Demo completa** — Equipe Origem (Campinas) nos atalhos de Entrar ou em `/demo`
 - **Supabase** — schema multi-tenant com RLS. Cada entidade é uma tabela, não um JSON único
 
@@ -58,13 +58,15 @@ Projeto **novo e vazio** é o esperado. O Dashboard não cria as tabelas do Tata
 5. Authentication → Providers → Email: desligue **Confirm email** para entrar na hora
 6. Authentication → URL Configuration: Redirect URLs deve incluir `https://tatamex.vercel.app/atualizar-senha` (senha esquecida)
 7. Na sua academia (não na demo): **Enviar esta academia**
-8. App do aluno: em **Alunos**, **Copiar SQL do app** → SQL Editor → Run (uma vez). Depois manda o link `/entrar/CÓDIGO` no grupo. O aluno confirma o nome da casa antes de criar a senha.
+8. App do aluno: o dono manda o link `/entrar/CÓDIGO` no grupo. O aluno confirma o nome da casa e cria a senha. **O dono não vê SQL.** Se `DATABASE_URL` (ou `SUPABASE_DB_URL`) estiver no servidor, o app aplica o SQL do convite sozinho. Senão, o operador cola o trecho uma vez no SQL Editor.
 
 Também dá para colocar no `.env.local`:
 
 ```
 NEXT_PUBLIC_SUPABASE_URL=
 NEXT_PUBLIC_SUPABASE_ANON_KEY=
+# Opcional — operador: URI Postgres para o app do aluno aplicar sozinho (sem o dono ver SQL)
+DATABASE_URL=
 ```
 
 O schema isola dados por `academy_id` (RLS). O cadastro chama `register_academy` e o painel grava em tabelas. A Equipe Origem não sincroniza. A URI do banco não fica salva no navegador.
@@ -174,14 +176,15 @@ Asaas e Stripe podem ficar vazios.
 4. SQL Editor → no TatameX, **Copiar SQL** → Run
 5. Authentication → Providers → Email: desligue **Confirm email**
 6. Authentication → URL Configuration: Site URL `https://tatamex.vercel.app` e Redirect URLs `https://tatamex.vercel.app/atualizar-senha` (e `http://127.0.0.1:43123/atualizar-senha` se for testar local). Sem isso o e-mail de senha esquecida não volta para o app.
-7. Abra a academia em `/cadastro` (não a demo) → Configurações → **Enviar esta academia**
+7. Abra a academia em `/cadastro` (não a demo). Depois do cartão o dono cai no assistente (Pix, convite, presença).
+8. Opcional: `DATABASE_URL` na Vercel (URI Direct ou pooler) para o convite do aluno aplicar sozinho. Sem isso, cole o SQL do schema uma vez no Editor — o dono nunca vê SQL.
 
 Sem isso, cadastro e painel ficam só no `localStorage`.
 
 ### 4. Operar
 
-- Cadastre alunos, turmas, mensalidades
-- Em Configurações, cole a **chave Pix da academia**
+- Cadastre o primeiro aluno ou mande o link do app no grupo
+- O assistente pede o Pix da casa na primeira entrada
 - Em Cobranças, use WhatsApp + Baixar Pix
 - Demo da Equipe Origem continua em `/demo` e nos atalhos de Entrar
 - Webhooks (quando ligar pagamentos): Configurações mostra as URLs `…/api/stripe/webhook` e `…/api/asaas/webhook`

@@ -114,16 +114,16 @@ function Hero() {
           <Eyebrow className="mb-7 text-xs">Gestão completa para sua academia</Eyebrow>
 
           <h1 className="text-5xl leading-[0.98] font-black tracking-[-0.055em] sm:text-6xl lg:text-[78px]">
-            Sua academia.
-            <span className="mt-2 block text-white/45">No próximo nível.</span>
+            Abra a academia.
+            <span className="mt-2 block text-white/45">Chame a turma.</span>
           </h1>
 
           <div className="mt-8 flex max-w-2xl gap-5">
             <div className="hidden w-1 shrink-0 bg-gradient-to-b from-red-600 via-red-600 to-transparent sm:block" />
             <p className="text-base leading-8 text-white/58 sm:text-lg">
-              Alunos, mensalidades, presença, graduações e estoque em uma
-              plataforma criada para quem vive o Jiu-Jitsu dentro e fora do
-              tatame.
+              Pix da casa na mensalidade. Presença em dois toques. Faixa com
+              tempo e treino. Só entra quem você convidar — não tem lista de
+              academias.
             </p>
           </div>
 
@@ -145,9 +145,9 @@ function Hero() {
 
           <div className="mt-10 flex flex-wrap gap-x-7 gap-y-3 text-xs font-medium text-white/45">
             {[
-              "Configuração rápida",
+              "Cadastro em minutos",
               signupTrialLabel() ?? "Sem taxa de implantação",
-              "Suporte especializado",
+              "Suporte no WhatsApp",
             ].map(
               (item) => (
                 <span key={item} className="flex items-center gap-2">
@@ -189,15 +189,15 @@ function TrustBar() {
     <section className="border-y border-white/10 bg-white/[0.025]">
       <div className="mx-auto grid max-w-7xl divide-y divide-white/10 px-5 sm:grid-cols-3 sm:divide-x sm:divide-y-0 lg:px-8">
         {[
-          ["100%", "da operação centralizada"],
-          ["1 toque", "para confirmar presença"],
-          ["24 horas", "de acesso à gestão"],
+          ["Pix da casa", "mensalidade do aluno"],
+          ["Dois toques", "presença no tatame"],
+          ["Só o seu código", "ninguém cai na casa errada"],
         ].map(([value, label]) => (
           <div key={value} className="flex items-center justify-center gap-4 py-7">
             <strong className="text-2xl font-black tracking-tight text-red-500">
               {value}
             </strong>
-            <span className="max-w-[120px] text-xs leading-5 text-white/40">{label}</span>
+            <span className="max-w-[160px] text-xs leading-5 text-white/40">{label}</span>
           </div>
         ))}
       </div>

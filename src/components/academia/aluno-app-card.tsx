@@ -5,9 +5,11 @@ import { toast } from "sonner";
 import { Copy, MessageCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { generateJoinCode, studentJoinUrl } from "@/lib/join-code";
-import { STUDENT_JOIN_SQL, studentAppInviteHref } from "@/lib/student-join";
+import { studentAppInviteHref } from "@/lib/student-join";
 import { DEMO_ACADEMY_ID } from "@/lib/seed";
 import { useStore } from "@/lib/store";
+import { SUPPORT_PHONE_DISPLAY, supportWhatsAppHref } from "@/lib/support";
+import { PRODUCT_NAME } from "@/lib/brand";
 
 export function AlunoAppCard() {
   const store = useStore();
@@ -64,17 +66,22 @@ export function AlunoAppCard() {
         <Button
           size="sm"
           variant="ghost"
-          onClick={async () => {
-            await navigator.clipboard.writeText(STUDENT_JOIN_SQL);
-            toast.success("SQL copiado. Cole no SQL Editor se o aluno não achar a casa.");
-          }}
+          render={
+            <a
+              href={supportWhatsAppHref(
+                `Olá, um aluno não está achando a ${store.academy.name} no app do ${PRODUCT_NAME}.`,
+              )}
+              target="_blank"
+              rel="noreferrer"
+            />
+          }
         >
-          Copiar SQL do app
+          Aluno não achou a casa
         </Button>
       </div>
       <p className="mt-3 text-xs text-muted-foreground">
         Se você já cadastrou a ficha, o aluno usa o mesmo e-mail ou WhatsApp e puxa os dados
-        dele. Senão, a ficha nasce nesta academia na hora.
+        dele. Senão, a ficha nasce nesta academia na hora. Dúvida? WhatsApp {SUPPORT_PHONE_DISPLAY}.
       </p>
     </section>
   );

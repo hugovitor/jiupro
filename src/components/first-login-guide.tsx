@@ -320,30 +320,30 @@ type Step = {
 const OWNER_STEPS: Step[] = [
   {
     id: "ola",
-    title: "Sua academia já está no ar.",
-    body: "Em quatro passos você cobra no Pix, traz o aluno e manda o app. Ninguém de fora entra sem o código da casa.",
+    title: "Três coisas e a casa roda.",
+    body: "Pix para a mensalidade, convite para a turma, presença na aula. Sem lista pública: só entra quem você chamar.",
     tips: [
-      "O painel é só desta academia.",
-      "A Equipe Origem é demonstração — a sua casa já está isolada.",
+      "Este painel é só da sua academia.",
+      "Alunos pagam no Pix da casa. O cartão é da assinatura do TatameX.",
     ],
   },
   {
     id: "pix",
-    title: "Pix da casa.",
-    body: "É esta chave que o aluno vê na mensalidade. Sem isso o app não tem para onde pagar.",
+    title: "Cole o Pix da academia.",
+    body: "É a chave que o aluno copia na mensalidade. CPF, e-mail, celular ou aleatória.",
   },
   {
     id: "alunos",
-    title: "Chama a turma.",
-    body: "Manda o link no grupo. Quem abre confirma o nome da academia antes de criar a senha. Se você já cadastrou a ficha, o mesmo e-mail ou WhatsApp puxa os dados.",
+    title: "Chame o primeiro aluno.",
+    body: "Copie o link e mande no grupo, ou cadastre a ficha aqui. O aluno confirma o nome da academia e cria a senha.",
   },
   {
     id: "pronto",
-    title: "Dois toques no treino.",
-    body: "A grade já tem Adultos Gi e Kids — ajuste em Turmas. Na hora da aula o aluno confirma no celular; você aceita quem treinou.",
+    title: "Na aula: dois toques.",
+    body: "O aluno toca em Confirmar que vou. No tatame você aceita quem treinou. Adultos Gi e Kids já vêm na grade — mude em Turmas se quiser.",
     tips: [
-      "Cobranças: WhatsApp + Pix da casa.",
-      "Graduações usam tempo e presença, não chute.",
+      "Cobrança: WhatsApp + Pix da casa.",
+      "Faixa usa tempo e presença, não chute.",
     ],
   },
 ];
@@ -387,7 +387,6 @@ const STUDENT_STEPS: Step[] = [
     id: "pix",
     title: "Mensalidade no Pix da casa.",
     body: "Em Perfil está o valor do mês. Copia o Pix da academia — não é pagamento do TatameX.",
-    tips: ["Se a academia gerou fatura Asaas, o código da fatura aparece aí."],
   },
 ];
 

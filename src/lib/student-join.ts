@@ -10,6 +10,12 @@ export type PublicAcademyJoin = {
   joinCode: string;
 };
 
+export const STUDENT_JOIN_NOT_FOUND =
+  "Não achamos essa academia. Peça o código no WhatsApp da sua casa.";
+
+export const STUDENT_JOIN_SETUP_ERROR =
+  "O app da casa ainda está sendo preparado. Fale com o professor ou no WhatsApp de suporte.";
+
 export const STUDENT_JOIN_SQL = `-- App do aluno: código da casa + vínculo da ficha.
 create or replace function public.jiupro_join_code()
 returns text

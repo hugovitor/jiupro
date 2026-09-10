@@ -13,8 +13,11 @@ import { Label } from "@/components/ui/label";
 import { findAcademyByJoinCode } from "@/lib/vault";
 import { useStore } from "@/lib/store";
 import type { PublicAcademyJoin } from "@/lib/student-join";
+import { STUDENT_JOIN_NOT_FOUND, STUDENT_JOIN_SETUP_ERROR } from "@/lib/student-join";
 import { DEMO_ACADEMY_ID } from "@/lib/seed";
 import { normalizeJoinInput } from "@/lib/join-code";
+import { SUPPORT_PHONE_DISPLAY, supportWhatsAppHref } from "@/lib/support";
+import { PRODUCT_NAME } from "@/lib/brand";
 
 const fieldClass =
   "h-12 w-full rounded-xl border border-white/10 bg-white/[0.035] px-4 text-sm text-white outline-none transition placeholder:text-white/20 hover:border-white/20 focus:border-red-500 focus:bg-white/[0.05] focus:ring-4 focus:ring-red-600/10";
@@ -52,7 +55,6 @@ export function EntrarAlunoForm({ initialCode = "" }: { initialCode?: string }) 
   const [house, setHouse] = useState<PublicAcademyJoin | null>(null);
   const [confirmed, setConfirmed] = useState(false);
   const [lookupError, setLookupError] = useState<string | null>(null);
-  const [sql, setSql] = useState("");
   const [looking, setLooking] = useState(Boolean(initialCode));
   const [busy, setBusy] = useState(false);
   const [name, setName] = useState("");
@@ -76,7 +78,6 @@ export function EntrarAlunoForm({ initialCode = "" }: { initialCode?: string }) 
       const data = (await res.json()) as {
         house?: PublicAcademyJoin;
         error?: string;
-        sql?: string;
         needsSetup?: boolean;
       };
       if (data.house) {
@@ -84,14 +85,17 @@ export function EntrarAlunoForm({ initialCode = "" }: { initialCode?: string }) 
         setCode(data.house.joinCode || needle);
         return;
       }
-      if (data.needsSetup && data.sql) setSql(data.sql);
       const local = localHouse(needle) ?? demoHouse(needle);
       if (local) {
         setHouse(local);
         setCode(local.joinCode);
         return;
       }
-      setLookupError(data.error ?? "Casa não encontrada. Peça o link para a sua academia.");
+      setLookupError(
+        data.needsSetup
+          ? STUDENT_JOIN_SETUP_ERROR
+          : (data.error ?? STUDENT_JOIN_NOT_FOUND),
+      );
     } catch {
       const local = localHouse(needle) ?? demoHouse(needle);
       if (local) {
@@ -138,12 +142,20 @@ export function EntrarAlunoForm({ initialCode = "" }: { initialCode?: string }) 
               autoCapitalize="characters"
             />
           </div>
-          {lookupError ? <p className="text-sm text-red-400">{lookupError}</p> : null}
-          {sql ? (
-            <p className="text-xs text-white/40">
-              A academia ainda precisa rodar o SQL do app do aluno no projeto. Peça para o dono
-              copiar em Configurações.
-            </p>
+          {lookupError ? (
+            <div className="space-y-2">
+              <p className="text-sm text-red-400">{lookupError}</p>
+              <a
+                href={supportWhatsAppHref(
+                  `Olá, não estou achando minha academia no app do ${PRODUCT_NAME}.`,
+                )}
+                target="_blank"
+                rel="noreferrer"
+                className="text-xs font-bold text-white/50 underline hover:text-white"
+              >
+                WhatsApp de suporte · {SUPPORT_PHONE_DISPLAY}
+              </a>
+            </div>
           ) : null}
           <Button className="h-12 w-full" disabled={looking} type="submit">
             {looking ? "Procurando…" : "Continuar"}

@@ -34,7 +34,7 @@ import {
   monthRevenue,
   overdueTotal,
 } from "@/lib/insights";
-import { FirstLoginHint } from "@/components/first-login-guide";
+import { FirstHouseCard } from "@/components/academia/first-house-card";
 import { useStore } from "@/lib/store";
 import { useNow } from "@/lib/use-now";
 import { birthdayMessage, comebackMessage, waHref } from "@/lib/whatsapp";
@@ -90,10 +90,9 @@ export default function AcademiaDashboard() {
               .
             </p>
           ) : store.students.length === 0 ? (
-            <div className="mt-3 flex flex-wrap items-center gap-3">
-              <p className="text-sm text-muted-foreground">Casa nova. Cadastre o primeiro aluno.</p>
-              <FirstLoginHint label="Começar com o assistente" />
-            </div>
+            <p className="mt-2 text-sm text-muted-foreground">
+              Casa nova. Cadastre o primeiro aluno ou mande o link do app.
+            </p>
           ) : (
             <p className="mt-2 text-sm text-muted-foreground">
               Confirmados na aula, atraso no caixa.
@@ -101,6 +100,8 @@ export default function AcademiaDashboard() {
           )}
         </div>
       </div>
+
+      {!store.isDemo && store.students.length === 0 ? <FirstHouseCard /> : null}
 
       <div className="mt-6 grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
         <StatCard icon={Users} k="Alunos ativos" v={String(active.length)} hint={`${trials.length} experimental`} />

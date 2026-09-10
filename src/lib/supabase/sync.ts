@@ -494,15 +494,25 @@ export async function joinStudentRemote(input: {
 
   if (!accessUser) return { error: "Não criou a conta do aluno." };
 
-  const { data: academyId, error: joinError } = await client.rpc("join_academy_as_student", {
+  let { data: academyId, error: joinError } = await client.rpc("join_academy_as_student", {
     p_code: input.code,
     p_name: input.name,
     p_phone: input.phone,
   });
+  if (joinError && /join_academy_as_student|PGRST202|does not exist|schema cache/i.test(joinError.message)) {
+    await fetch("/api/aluno/casa", { method: "POST" }).catch(() => undefined);
+    const retry = await client.rpc("join_academy_as_student", {
+      p_code: input.code,
+      p_name: input.name,
+      p_phone: input.phone,
+    });
+    academyId = retry.data;
+    joinError = retry.error;
+  }
   if (joinError) {
     if (/join_academy_as_student|PGRST202|does not exist|schema cache/i.test(joinError.message)) {
       return {
-        error: "A academia ainda precisa rodar o SQL do app do aluno. No painel: Alunos → Copiar SQL do app.",
+        error: "Não deu para entrar nesta academia agora. Peça o código de novo no WhatsApp da casa.",
       };
     }
     return { error: joinError.message };
