@@ -23,6 +23,12 @@ function dbClient() {
 }
 
 async function lookupHouse(casa: string) {
+  const admin = supabaseAdmin();
+  if (admin) {
+    const found = await searchAcademiesAdmin(admin, casa);
+    if (found.houses[0]) return { house: found.houses[0] };
+  }
+
   const db = dbClient();
   if (db) {
     let { data, error } = await db.rpc("lookup_academy_join", { p_code: casa });
@@ -41,16 +47,18 @@ async function lookupHouse(casa: string) {
     }
   }
 
-  const admin = supabaseAdmin();
-  if (admin) {
-    const found = await searchAcademiesAdmin(admin, casa);
-    if (found.houses[0]) return { house: found.houses[0] };
-  }
-
   return { error: STUDENT_JOIN_NOT_FOUND, status: 404 as const };
 }
 
 async function searchHouses(query: string) {
+  await ensureStudentJoinSchema().catch(() => undefined);
+
+  const admin = supabaseAdmin();
+  if (admin) {
+    const found = await searchAcademiesAdmin(admin, query);
+    if (!found.error && found.houses.length) return { houses: found.houses };
+  }
+
   const db = dbClient();
   if (db) {
     const viaRpc = await db.rpc("search_academy_join", { p_query: query });
@@ -76,14 +84,8 @@ async function searchHouses(query: string) {
     }
   }
 
-  const admin = supabaseAdmin();
-  if (admin) {
-    const found = await searchAcademiesAdmin(admin, query);
-    if (!found.error && found.houses.length) return { houses: found.houses };
-  }
-
   const one = await lookupHouse(query);
-  if ("house" in one) return { houses: [one.house] };
+  if ("house" in one && one.house) return { houses: [one.house] };
   return { houses: [] as PublicAcademyJoin[] };
 }
 

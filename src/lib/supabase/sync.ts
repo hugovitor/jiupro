@@ -57,12 +57,29 @@ export async function pushAcademyState(state: AppState) {
   if (state.academy.id === DEMO_ACADEMY_ID) {
     return { error: "A Equipe Origem é só demonstração." };
   }
-  const ready = ensureUuidState(state);
+  let ready = ensureUuidState(state);
+
+  const { data: sessionUser } = await client.auth.getUser();
+  let academyId = ready.academy.id;
+  if (sessionUser.user?.id) {
+    const { data: profile } = await client
+      .from("profiles")
+      .select("academy_id")
+      .eq("id", sessionUser.user.id)
+      .maybeSingle();
+    if (profile?.academy_id) academyId = String(profile.academy_id);
+  }
+  if (academyId !== ready.academy.id && sessionUser.user?.id) {
+    ready = rehomeAcademy(ready, academyId, {
+      id: sessionUser.user.id,
+      email: sessionUser.user.email ?? "",
+    });
+  }
 
   const { data: existing, error: lookupError } = await client
     .from("academies")
     .select("id, join_code")
-    .eq("id", ready.academy.id)
+    .eq("id", academyId)
     .maybeSingle();
   if (lookupError) return { error: lookupError.message, state: ready };
   if (!existing) {

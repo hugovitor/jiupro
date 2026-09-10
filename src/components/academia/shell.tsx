@@ -18,6 +18,7 @@ import { Button } from "@/components/ui/button";
 import { isOperatorEmail } from "@/lib/operator";
 import { DEMO_ACADEMY_ID } from "@/lib/seed";
 import { useStore } from "@/lib/store";
+import { createSupabaseBrowserClient } from "@/lib/supabase/client";
 import { cn } from "@/lib/utils";
 
 type NavItem = { href: string; label: string };
@@ -96,11 +97,31 @@ export function AcademiaShell({ children }: { children: React.ReactNode }) {
   useEffect(() => {
     if (!store.hydrated) return;
     if (store.academy.id === DEMO_ACADEMY_ID) return;
-    if (!store.academy.joinCode) return;
-    void store.syncNow();
-    // Publish the house code the owner already shares (WhatsApp / HXSNXC) into Supabase.
+    const academy = store.academy;
+    void (async () => {
+      const token = (await createSupabaseBrowserClient()?.auth.getSession())?.data.session?.access_token;
+      if (token) {
+        await fetch("/api/academia/publicar", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${token}`,
+          },
+          body: JSON.stringify({
+            name: academy.name,
+            slug: academy.slug,
+            city: academy.city,
+            state: academy.state,
+            plan: academy.plan,
+            joinCode: academy.joinCode,
+            phone: academy.phone,
+          }),
+        }).catch(() => undefined);
+      }
+      await store.syncNow();
+    })();
     // eslint-disable-next-line react-hooks/exhaustive-deps -- once per academy load
-  }, [store.hydrated, store.academy.id, store.academy.joinCode]);
+  }, [store.hydrated, store.academy.id]);
 
   function logout() {
     store.logout();

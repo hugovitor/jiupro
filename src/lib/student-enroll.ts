@@ -72,13 +72,51 @@ export function rankHouses(rows: AcademyHit[], query: string): AcademyHit[] {
     .map((item) => item.row);
 }
 
+function safeIlike(value: string) {
+  return `%${value.trim().replace(/\\/g, "").replace(/[%_]/g, "")}%`;
+}
+
 export async function searchAcademiesAdmin(admin: SupabaseClient, query: string) {
-  const loaded = await loadHouses(admin);
-  if (loaded.error) return { error: loaded.error, houses: [] as PublicAcademyJoin[] };
-  const houses = rankHouses(loaded.rows, query)
-    .slice(0, 8)
-    .map((row) => mapPublicHouse(row as unknown as Record<string, unknown>));
-  return { houses };
+  const needle = query.trim();
+  if (needle.length < 2) return { houses: [] as PublicAcademyJoin[] };
+
+  const hits = new Map<string, AcademyHit>();
+  const add = (rows: AcademyHit[] | null | undefined) => {
+    for (const row of rows ?? []) {
+      if (row?.id) hits.set(String(row.id), row);
+    }
+  };
+
+  const pattern = safeIlike(needle);
+  const spaced = safeIlike(needle.replace(/\s+/g, "%"));
+  const columns = ["name", "slug", "city"] as const;
+  for (const column of columns) {
+    const direct = await admin.from("academies").select(HOUSE_COLUMNS).ilike(column, pattern).limit(20);
+    if (!direct.error) add(direct.data as AcademyHit[]);
+    if (spaced !== pattern) {
+      const loose = await admin.from("academies").select(HOUSE_COLUMNS).ilike(column, spaced).limit(20);
+      if (!loose.error) add(loose.data as AcademyHit[]);
+    }
+  }
+  if (looksLikeHouseCode(needle)) {
+    const byCode = await admin.from("academies").select(HOUSE_COLUMNS).eq("join_code", needle.toUpperCase()).limit(5);
+    if (!byCode.error) add(byCode.data as AcademyHit[]);
+  }
+  for (const token of needle.split(/\s+/).filter((part) => part.length >= 2)) {
+    const byToken = await admin.from("academies").select(HOUSE_COLUMNS).ilike("name", safeIlike(token)).limit(20);
+    if (!byToken.error) add(byToken.data as AcademyHit[]);
+  }
+
+  if (!hits.size) {
+    const loaded = await loadHouses(admin);
+    if (loaded.error) return { error: loaded.error, houses: [] as PublicAcademyJoin[] };
+    add(loaded.rows);
+  }
+
+  const ranked = rankHouses([...hits.values()], needle).slice(0, 8);
+  return {
+    houses: ranked.map((row) => mapPublicHouse(row as unknown as Record<string, unknown>)),
+  };
 }
 
 async function pickExact(admin: SupabaseClient, column: "slug" | "join_code" | "name", value: string) {

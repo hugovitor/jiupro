@@ -139,7 +139,7 @@ export function EntrarAlunoForm({ initialCode = "" }: { initialCode?: string }) 
       setLookupError(
         nameData.needsSetup || codeData.needsSetup
           ? STUDENT_JOIN_SETUP_ERROR
-          : STUDENT_JOIN_NOT_FOUND,
+          : "Não achamos essa academia no app ainda. Peça para o professor abrir o painel da casa uma vez e tente de novo.",
       );
     } catch {
       const houses = isSupabaseConfigured()
