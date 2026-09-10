@@ -91,11 +91,7 @@ export function EntrarAlunoForm({ initialCode = "" }: { initialCode?: string }) 
         setCode(local.joinCode);
         return;
       }
-      setLookupError(
-        data.needsSetup
-          ? STUDENT_JOIN_SETUP_ERROR
-          : (data.error ?? STUDENT_JOIN_NOT_FOUND),
-      );
+      setLookupError(data.needsSetup ? STUDENT_JOIN_SETUP_ERROR : STUDENT_JOIN_NOT_FOUND);
     } catch {
       const local = localHouse(needle) ?? demoHouse(needle);
       if (local) {
@@ -103,7 +99,7 @@ export function EntrarAlunoForm({ initialCode = "" }: { initialCode?: string }) 
         setCode(local.joinCode);
         return;
       }
-      setLookupError("Não achou a casa. Confira o código.");
+      setLookupError(STUDENT_JOIN_NOT_FOUND);
     } finally {
       setLooking(false);
     }

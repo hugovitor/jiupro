@@ -21,7 +21,7 @@ function dbClient() {
 
 async function lookupHouse(casa: string) {
   const db = dbClient();
-  if (!db) return { error: "Casa online não está neste deploy.", status: 503 as const };
+  if (!db) return { error: STUDENT_JOIN_NOT_FOUND, status: 404 as const };
 
   let { data, error } = await db.rpc("lookup_academy_join", { p_code: casa });
   if (error && isMissingStudentJoinRpc(error.message)) {
