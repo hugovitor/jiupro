@@ -1,6 +1,7 @@
-import type { SupabaseClient } from "@supabase/supabase-js";
+import type { SupabaseClient, User } from "@supabase/supabase-js";
 import { createSupabaseBrowserClient } from "./client";
 import { passwordResetUrl, isLocalOrigin, publicAppUrl } from "../app-url";
+import { mapAuthError } from "../auth-errors";
 import { ensureUuidState, rehomeAcademy, stateToTables, tablesToState } from "./mapper";
 import { DEMO_ACADEMY_ID } from "../seed";
 import type { AppState, Role, Session } from "../types";
@@ -242,6 +243,43 @@ export async function testSupabaseConnection() {
   return { ok: false as const, error: msg };
 }
 
+async function provisionAndSignIn(email: string, password: string) {
+  const client = createSupabaseBrowserClient();
+  if (!client) return { error: "offline" as const };
+
+  const provisioned = await fetch("/api/auth/signup", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ email, password }),
+  }).catch(() => null);
+  const payload = provisioned
+    ? ((await provisioned.json().catch(() => ({}))) as { error?: string })
+    : {};
+
+  if (provisioned && provisioned.status === 400 && payload.error) {
+    return { error: mapAuthError(payload.error) };
+  }
+
+  if (!provisioned || provisioned.status === 503) {
+    const signedUp = await client.auth.signUp({ email, password });
+    if (signedUp.error && !/already|registered|exists/i.test(signedUp.error.message)) {
+      return { error: mapAuthError(signedUp.error.message) };
+    }
+    if (signedUp.data.session?.user) {
+      return { client, user: signedUp.data.session.user as User };
+    }
+  }
+
+  const signedIn = await client.auth.signInWithPassword({ email, password });
+  if (signedIn.data.session?.user) {
+    return { client, user: signedIn.data.session.user as User };
+  }
+  if (/invalid login|invalid credentials/i.test(signedIn.error?.message ?? "")) {
+    return { error: "Este e-mail já tem senha. Entre no login com a senha desta conta." };
+  }
+  return { error: mapAuthError(signedIn.error?.message ?? payload.error) };
+}
+
 export async function registerRemoteAcademy(input: {
   email: string;
   password: string;
@@ -252,21 +290,13 @@ export async function registerRemoteAcademy(input: {
   plan: string;
   ownerName: string;
 }): Promise<{ academyId?: string; ownerId?: string; error?: string; pendingEmail?: boolean }> {
-  const client = createSupabaseBrowserClient();
-  if (!client) return {};
-
-  const { data, error } = await client.auth.signUp({
-    email: input.email,
-    password: input.password,
-  });
-  if (error) return { error: error.message };
-
-  const ownerId = data.user?.id;
-  if (!data.session) {
-    return { ownerId, pendingEmail: true };
+  const auth = await provisionAndSignIn(input.email, input.password);
+  if ("error" in auth) {
+    if (auth.error === "offline") return {};
+    return { error: auth.error };
   }
 
-  const { data: academyId, error: rpcError } = await client.rpc("register_academy", {
+  const { data: academyId, error: rpcError } = await auth.client.rpc("register_academy", {
     p_name: input.name,
     p_slug: input.slug,
     p_city: input.city,
@@ -274,8 +304,8 @@ export async function registerRemoteAcademy(input: {
     p_plan: input.plan,
     p_owner_name: input.ownerName,
   });
-  if (rpcError) return { ownerId, error: rpcError.message };
-  return { academyId: academyId as string, ownerId };
+  if (rpcError) return { ownerId: auth.user.id, error: rpcError.message };
+  return { academyId: academyId as string, ownerId: auth.user.id };
 }
 
 export async function signInRemote(email: string, password: string) {
@@ -283,7 +313,7 @@ export async function signInRemote(email: string, password: string) {
   if (!client) return { error: "offline" as const };
 
   const { data, error } = await client.auth.signInWithPassword({ email, password });
-  if (error || !data.user) return { error: error?.message ?? "login" };
+  if (error || !data.user) return { error: mapAuthError(error?.message ?? "login") };
 
   let { data: profile } = await client
     .from("profiles")
@@ -362,15 +392,9 @@ export async function attachLocalAcademy(input: {
   if (signedIn.data.session?.user) {
     ownerId = signedIn.data.user.id;
   } else {
-    const created = await client.auth.signUp({
-      email: input.email,
-      password: input.password,
-    });
-    if (created.error) return { error: created.error.message };
-    if (!created.data.session) {
-      return { error: "Confirme o e-mail e tente entrar de novo." };
-    }
-    ownerId = created.data.user?.id;
+    const created = await provisionAndSignIn(input.email, input.password);
+    if ("error" in created) return { error: created.error === "offline" ? "Cole a URL e a anon key do projeto." : created.error };
+    ownerId = created.user.id;
   }
   if (!ownerId) return { error: "Não foi possível autenticar." };
 
@@ -407,7 +431,7 @@ export async function requestPasswordReset(email: string) {
     redirectTo,
   });
   if (error && !/not found|unable to find|user not found/i.test(error.message)) {
-    return { error: error.message };
+    return { error: mapAuthError(error.message) };
   }
   return { ok: true as const };
 }
@@ -456,43 +480,15 @@ export async function joinStudentRemote(input: {
   email: string;
   password: string;
 }) {
-  const client = createSupabaseBrowserClient();
-  if (!client) return { error: "offline" as const };
-
   const email = input.email.trim().toLowerCase();
-  const signedUp = await client.auth.signUp({
-    email,
-    password: input.password,
-  });
-
-  if (signedUp.error && !/already|registered|exists/i.test(signedUp.error.message)) {
-    return { error: signedUp.error.message };
+  const auth = await provisionAndSignIn(email, input.password);
+  if ("error" in auth) {
+    if (auth.error === "offline") return { error: "offline" as const };
+    return { error: auth.error };
   }
 
-  let accessUser = signedUp.data.session?.user ?? signedUp.data.user;
-  if (!signedUp.data.session) {
-    const signedIn = await client.auth.signInWithPassword({
-      email,
-      password: input.password,
-    });
-    if (signedIn.error || !signedIn.data.user) {
-      if (/invalid login|invalid credentials/i.test(signedIn.error?.message ?? "")) {
-        return {
-          error: "Este e-mail já tem senha. Entre no login com a senha desta conta.",
-        };
-      }
-      if (!signedUp.data.session && signedUp.data.user && !signedIn.data.session) {
-        return {
-          error: "Confirme o e-mail e abra de novo o link da sua academia.",
-          pendingEmail: true as const,
-        };
-      }
-      return { error: signedIn.error?.message ?? "Não entrou na conta." };
-    }
-    accessUser = signedIn.data.user;
-  }
-
-  if (!accessUser) return { error: "Não criou a conta do aluno." };
+  const client = auth.client;
+  const accessUser = auth.user;
 
   let { data: academyId, error: joinError } = await client.rpc("join_academy_as_student", {
     p_code: input.code,
