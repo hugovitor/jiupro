@@ -1,5 +1,4 @@
 import Link from "next/link";
-import { ChatFooterButton } from "@/components/chatbot/footer-button";
 import { PRODUCT_MARK, PRODUCT_NAME } from "@/lib/brand";
 import { BeltMark } from "./belt-mark";
 import { SUPPORT_PHONE_DISPLAY, supportWhatsAppHref } from "@/lib/support";
@@ -45,7 +44,6 @@ export function SiteFooter({
           </a>
         </div>
         <div className="flex flex-wrap gap-4 text-[11px] text-white/25">
-          <ChatFooterButton />
           <Link href="/termos" className="hover:text-white">
             Termos
           </Link>
