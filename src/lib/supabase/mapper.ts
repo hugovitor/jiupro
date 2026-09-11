@@ -196,9 +196,10 @@ function dateCol(value: unknown) {
 }
 
 function attendanceStatusFromRow(x: Row): Attendance["status"] {
-  const raw = str(x.status);
-  if (raw === "pending" || raw === "validated" || raw === "no_show") return raw;
+  if (str(x.status) === "no_show") return "no_show";
   if (str(x.method, "app") === "app" && !str(x.validated_at)) return "pending";
+  const raw = str(x.status);
+  if (raw === "pending" || raw === "validated") return raw;
   return "validated";
 }
 

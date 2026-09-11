@@ -2,13 +2,21 @@ import { applyJiuProSchema } from "@/lib/supabase/apply-schema";
 import { postgresUriFromEnv } from "@/lib/supabase/ensure-student-join";
 
 export const ATTENDANCE_STATUS_SQL = `
-alter table public.attendance add column if not exists status text not null default 'validated';
+alter table public.attendance add column if not exists status text;
 alter table public.attendance add column if not exists validated_at timestamptz;
 alter table public.attendance add column if not exists validated_by uuid;
+update public.attendance
+  set status = 'pending'
+  where coalesce(method, 'app') = 'app'
+    and validated_at is null
+    and coalesce(status, 'pending') <> 'no_show';
+update public.attendance set status = 'pending' where status is null;
+alter table public.attendance alter column status set default 'pending';
+alter table public.attendance alter column status set not null;
 notify pgrst, 'reload schema';
 `;
 
-const SCHEMA_VERSION = "2026-09-11-attendance-status";
+const SCHEMA_VERSION = "2026-09-11-attendance-pending-default";
 let appliedVersion = "";
 let inFlight: Promise<boolean> | null = null;
 

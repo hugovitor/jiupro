@@ -146,7 +146,10 @@ export function methodLabel(method: Attendance["method"]) {
 }
 
 export function attendanceStatus(row: Attendance): AttendanceStatus {
-  return row.status ?? "validated";
+  if (row.status === "no_show") return "no_show";
+  if (row.method === "app" && !row.validatedAt) return "pending";
+  if (row.status === "pending" || row.status === "validated") return row.status;
+  return "validated";
 }
 
 export function isValidated(row: Attendance) {

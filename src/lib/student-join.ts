@@ -416,9 +416,17 @@ $$;
 revoke all on function public.register_academy(text, text, text, text, text, text) from public;
 grant execute on function public.register_academy(text, text, text, text, text, text) to authenticated;
 
-alter table public.attendance add column if not exists status text not null default 'validated';
+alter table public.attendance add column if not exists status text;
 alter table public.attendance add column if not exists validated_at timestamptz;
 alter table public.attendance add column if not exists validated_by uuid;
+update public.attendance
+  set status = 'pending'
+  where coalesce(method, 'app') = 'app'
+    and validated_at is null
+    and coalesce(status, 'pending') <> 'no_show';
+update public.attendance set status = 'pending' where status is null;
+alter table public.attendance alter column status set default 'pending';
+alter table public.attendance alter column status set not null;
 
 notify pgrst, 'reload schema';
 `;

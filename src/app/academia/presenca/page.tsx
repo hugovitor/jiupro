@@ -207,8 +207,9 @@ export default function PresencaPage() {
           </p>
           <h1 className="mt-2 text-3xl font-black tracking-[-0.04em]">Presença</h1>
           <p className="mt-1 max-w-xl text-sm text-muted-foreground">
-            O aluno confirma no celular. Você aceita quem treinou e marca quem
-            confirmou e não veio — sem código no quadro.
+            O aluno confirma no celular. Isso só avisa que vem — não fecha o
+            treino. Você aceita quem pisou no tatame. Se não fizer nada, fica
+            em aguardando: não conta presença sozinho.
           </p>
         </div>
         <Visitante classId={classId} disabled={!classId} />
@@ -397,7 +398,7 @@ export default function PresencaPage() {
           <Group
             title="Aguardando aceite"
             count={waiting.length}
-            empty="Ninguém confirmou no app ainda. Quem marcar aparece aqui para você validar."
+            empty="Ninguém confirmou no app ainda. Quem marcar aparece aqui. Sem o seu aceite, não conta treino."
           >
             {waiting.map((s) => {
               const row = presentByStudent.get(s.id)!;
@@ -437,7 +438,7 @@ export default function PresencaPage() {
             })}
           </Group>
 
-          <Group title="Validados no tatame" count={validated.length} empty="Ninguém validado nesta aula ainda.">
+          <Group title="Validados no tatame" count={validated.length} empty="Ninguém validado nesta aula ainda. Só entram aqui quando você aceita — ou valida na porta.">
             {validated.map((s) => {
               const row = presentByStudent.get(s.id)!;
               return (
