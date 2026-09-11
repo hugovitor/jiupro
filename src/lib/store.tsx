@@ -122,7 +122,7 @@ type Store = AppState & {
   validateCheckIn: (studentId: string, classId: string) => boolean;
   markNoShow: (studentId: string, classId: string) => boolean;
   validatePending: (classId: string) => number;
-  cancelCheckIn: (studentId: string, classId: string) => boolean;
+  cancelCheckIn: (studentId: string, classId: string) => Promise<{ ok: boolean; error?: string }>;
   promote: (studentId: string, notes: string) => void;
   addStripe: (studentId: string) => void;
   adjustStock: (id: string, delta: number) => void;
@@ -139,6 +139,7 @@ type Store = AppState & {
   eraseAcademyLocally: () => void;
   removeStudent: (id: string) => void;
   addClass: (input: Omit<ClassSession, "id" | "academyId">) => void;
+  updateClass: (id: string, patch: Partial<Omit<ClassSession, "id" | "academyId">>) => void;
   removeClass: (id: string) => void;
   addEvaluation: (input: Omit<Evaluation, "id" | "academyId">) => void;
   confirmClass: (studentId: string, classId: string) => Promise<{ ok: boolean; error?: string }>;
@@ -204,6 +205,40 @@ function flushRemotePush() {
   const state = cached;
   if (!state || state.academy.id === DEMO_ACADEMY_ID) return;
   void pushAcademyState(state);
+}
+
+async function retractStudentCheckIn(session: ClassSession): Promise<{ ok: boolean; error?: string }> {
+  const client = createSupabaseBrowserClient();
+  if (!client) {
+    return { ok: false, error: "O banco da academia não está ligado." };
+  }
+  const token = await ensureBrowserAuthSession(client);
+  if (!token) {
+    return { ok: false, error: "Entre de novo para sair da lista." };
+  }
+  try {
+    const res = await fetch("/api/aluno/presenca", {
+      method: "DELETE",
+      headers: {
+        Authorization: `Bearer ${token}`,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        classId: session.id,
+        weekday: session.weekday,
+        startTime: session.startTime,
+        name: session.name,
+        division: session.division,
+      }),
+    });
+    const data = (await res.json().catch(() => ({}))) as { ok?: boolean; error?: string };
+    if (!res.ok) {
+      return { ok: false, error: data.error || "Não deu para sair da lista agora." };
+    }
+    return { ok: true };
+  } catch {
+    return { ok: false, error: "Sem conexão. Tente de novo." };
+  }
 }
 
 function classAliasIds(classes: ClassSession[], classId: string) {
@@ -987,17 +1022,36 @@ export function StoreProvider({ children }: { children: ReactNode }) {
     return n;
   }, []);
 
-  const cancelCheckIn: Store["cancelCheckIn"] = useCallback((studentId, classId) => {
-    const today = isoDate(0);
-    const current = getSnapshot();
-    const row = current.attendance.find(
-      (a) =>
-        a.studentId === studentId && a.classId === classId && attendanceDay(a.date) === today,
-    );
-    if (!row || attendanceStatus(row) !== "pending") return false;
-    checkOut(studentId, classId);
-    return true;
-  }, [checkOut]);
+  const cancelCheckIn: Store["cancelCheckIn"] = useCallback(
+    async (studentId, classId) => {
+      const current = getSnapshot();
+      const session = current.classes.find((c) => c.id === classId);
+      const who = current.students.find((item) => item.id === studentId);
+      const aliases = who ? studentAliasIds(who, current.students) : new Set([studentId]);
+      const classIds = classAliasIds(current.classes, classId);
+      const today = isoDate(0);
+      const row = current.attendance.find(
+        (a) =>
+          aliases.has(a.studentId) &&
+          classIds.has(a.classId) &&
+          attendanceDay(a.date) === today,
+      );
+      if (!row) return { ok: false, error: "Você não estava nesta lista." };
+      if (attendanceStatus(row) !== "pending") {
+        return { ok: false, error: "O professor já validou — peça na recepção." };
+      }
+      if (isSupabaseConfigured() && current.academy.id !== DEMO_ACADEMY_ID) {
+        if (!session) return { ok: false, error: "Não achamos essa turma." };
+        const retracted = await retractStudentCheckIn(session);
+        if (!retracted.ok) {
+          return { ok: false, error: retracted.error ?? "Não deu para sair da lista." };
+        }
+      }
+      checkOut(studentId, classId);
+      return { ok: true };
+    },
+    [checkOut],
+  );
 
   const promote: Store["promote"] = useCallback((studentId, notes) => {
     commit((prev) => {
@@ -1181,11 +1235,20 @@ export function StoreProvider({ children }: { children: ReactNode }) {
     flushRemotePush();
   }, []);
 
+  const updateClass: Store["updateClass"] = useCallback((id, patch) => {
+    commit((prev) => ({
+      ...prev,
+      classes: prev.classes.map((item) => (item.id === id ? { ...item, ...patch } : item)),
+    }));
+    flushRemotePush();
+  }, []);
+
   const removeClass: Store["removeClass"] = useCallback((id) => {
     commit((prev) => ({
       ...prev,
       classes: prev.classes.filter((c) => c.id !== id),
     }));
+    flushRemotePush();
   }, []);
 
   const addEvaluation: Store["addEvaluation"] = useCallback((input) => {
@@ -1497,6 +1560,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
       eraseAcademyLocally,
       removeStudent,
       addClass,
+      updateClass,
       removeClass,
       addEvaluation,
       confirmClass,
@@ -1548,6 +1612,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
       eraseAcademyLocally,
       removeStudent,
       addClass,
+      updateClass,
       removeClass,
       addEvaluation,
       confirmClass,

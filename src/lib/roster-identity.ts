@@ -128,10 +128,23 @@ export function mergeStudents(local: Student[], remote: Student[]) {
 }
 
 export function mergeClasses(local: ClassSession[], remote: ClassSession[]) {
-  const merged: ClassSession[] = remote.map((row) => ({ ...row }));
+  const merged: ClassSession[] = remote.map((row) => {
+    const loc = local.find((item) => item.id === row.id || classesAreSame(item, row));
+    if (!loc) return { ...row };
+    return {
+      ...row,
+      name: loc.name || row.name,
+      weekday: loc.weekday,
+      startTime: loc.startTime || row.startTime,
+      durationMin: loc.durationMin || row.durationMin,
+      instructorId: loc.instructorId || row.instructorId,
+      division: loc.division || row.division,
+      gi: loc.gi,
+      capacity: loc.capacity,
+    };
+  });
   for (const row of local) {
-    const hit = merged.find((item) => classesAreSame(item, row));
-    if (hit) continue;
+    if (merged.some((item) => item.id === row.id || classesAreSame(item, row))) continue;
     merged.push(row);
   }
   return merged;
@@ -151,7 +164,7 @@ export function mergeAttendance(
   const byKey = new Map<string, Attendance>();
   const put = (raw: Attendance) => {
     const row = remap(raw);
-    const key = `${row.studentId}|${row.classId}|${row.date}`;
+    const key = `${row.studentId}|${row.classId}|${attendanceDay(row.date)}`;
     const prev = byKey.get(key);
     if (!prev) {
       byKey.set(key, row);
@@ -161,7 +174,15 @@ export function mergeAttendance(
     byKey.set(key, { ...next, id: prev.id || next.id });
   };
   remote.forEach(put);
-  local.forEach(put);
+  local.forEach((raw) => {
+    const row = remap(raw);
+    const key = `${row.studentId}|${row.classId}|${attendanceDay(row.date)}`;
+    if (!byKey.has(key) && row.method === "app") {
+      /* Confirmou no app e o servidor já não tem a linha: o aluno desistiu. */
+      return;
+    }
+    put(raw);
+  });
   return [...byKey.values()];
 }
 

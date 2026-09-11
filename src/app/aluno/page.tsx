@@ -140,11 +140,16 @@ export default function AlunoHome() {
                 setBusyId(null);
               }
             }}
-            onCancel={() => {
-              if (!student) return;
-              const ok = store.cancelCheckIn(student.id, featured.id);
-              if (ok) toast.message("Você saiu da lista desta aula.");
-              else toast.error("O professor já validou — peça na recepção.");
+            onCancel={async () => {
+              if (!student || busyId) return;
+              setBusyId(featured.id);
+              try {
+                const result = await store.cancelCheckIn(student.id, featured.id);
+                if (result.ok) toast.message("Você saiu da lista desta aula.");
+                else toast.error(result.error ?? "O professor já validou — peça na recepção.");
+              } finally {
+                setBusyId(null);
+              }
             }}
           />
         )}
@@ -171,7 +176,24 @@ export default function AlunoHome() {
                       </p>
                     </div>
                     {already ? (
-                      <span className="text-[11px] text-muted-foreground">Na lista</span>
+                      <Button
+                        size="sm"
+                        variant="ghost"
+                        disabled={busyId === c.id}
+                        onClick={async () => {
+                          if (!student || busyId) return;
+                          setBusyId(c.id);
+                          try {
+                            const result = await store.cancelCheckIn(student.id, c.id);
+                            if (result.ok) toast.message("Você saiu da lista desta aula.");
+                            else toast.error(result.error ?? "Não deu para sair da lista.");
+                          } finally {
+                            setBusyId(null);
+                          }
+                        }}
+                      >
+                        Desistir
+                      </Button>
                     ) : (
                       <Button
                         size="sm"
@@ -253,7 +275,7 @@ function FeaturedClass({
   lockHint: string;
   full: boolean;
   onConfirm: () => void | Promise<void>;
-  onCancel: () => void;
+  onCancel: () => void | Promise<void>;
   classmates: { student: Student; row: Attendance }[];
 }) {
   const pending = mine ? attendanceStatus(mine) === "pending" : false;
