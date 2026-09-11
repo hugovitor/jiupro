@@ -21,7 +21,7 @@ Feito para o dono que treina de manhã e administra de noite: mensalidades em at
 - **LGPD** — termos e privacidade, consentimento no cadastro, aviso de armazenamento local, exportar dados, apagar ficha, responsável obrigatório no kids.
 - **Assistente na primeira entrada** — depois do cadastro o dono cai no assistente (Pix, convite, presença). Aluno vê como confirmar aula, faixa e mensalidade. Não aparece de novo depois de concluir ou pular.
 - **Assistente no site** — botão vermelho no canto: responde sozinho sobre planos, presença, Pix e o app. Se não souber, manda o WhatsApp. Sem chave de IA também funciona.
-- **Planos mensais** — Essencial (50 alunos: cadastro, mensalidades, presença, faixas), Academia (200: financeiro, estoque, candidatos, mural, PWA) e Equipe (ilimitado: relatórios, suporte prioritário, marca no app). O painel esconde o que o plano não inclui. Primeiro mês grátis no cadastro.
+- **Planos mensais** — Essencial (50 alunos: cadastro, mensalidades, presença, faixas), Academia (200: financeiro, estoque, candidatos, mural, PWA) e Equipe (ilimitado: relatórios, suporte prioritário, marca no app do aluno com logo e nome da casa). O painel esconde o que o plano não inclui. Primeiro mês grátis no cadastro.
 - **Cadastro real** — nome, academia, cidade, e-mail e senha. Abre a academia vazia, isolada da Equipe Origem
 - **Demo completa** — Equipe Origem (Campinas) nos atalhos de Entrar ou em `/demo`
 - **Supabase** — schema multi-tenant com RLS. Cada entidade é uma tabela, não um JSON único
