@@ -61,6 +61,8 @@ export type Academy = {
   dropInFee: number;
   createdAt: string;
   joinCode: string;
+  brandLogo: string;
+  brandTagline: string;
 };
 
 export type User = {

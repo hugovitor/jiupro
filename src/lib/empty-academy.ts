@@ -67,6 +67,8 @@ export function createEmptyAcademy(input: {
       dropInFee: 40,
       createdAt: new Date().toISOString(),
       joinCode: generateJoinCode(),
+      brandLogo: "",
+      brandTagline: "",
     },
     users: [owner],
     students: [],

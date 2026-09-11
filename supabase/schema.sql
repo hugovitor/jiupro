@@ -22,6 +22,9 @@ create table if not exists public.academies (
   created_at timestamptz not null default now()
 );
 
+alter table public.academies add column if not exists brand_logo text;
+alter table public.academies add column if not exists brand_tagline text;
+
 create table if not exists public.profiles (
   id uuid primary key references auth.users(id) on delete cascade,
   academy_id uuid references public.academies(id) on delete cascade,

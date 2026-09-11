@@ -81,7 +81,7 @@ export const FEATURE_UPSELL: Record<
   },
   academyBrand: {
     title: "Marca da academia no app",
-    body: "O app do aluno abre com o nome da sua academia, não só o TatameX. Só no Equipe.",
+    body: "O aluno abre o app da sua equipe: logo, nome da casa e atalho na tela inicial. Não só o TatameX. Só no Equipe.",
     plan: "equipe",
   },
 };

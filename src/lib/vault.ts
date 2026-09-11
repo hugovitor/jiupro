@@ -1,3 +1,4 @@
+import { defaultAcademyBrand } from "./academy-brand";
 import { collapseAcademyKey } from "./join-code";
 import { createSeed, DEMO_ACADEMY_ID } from "./seed";
 import type { AppState, Session } from "./types";
@@ -30,6 +31,8 @@ function migrateState(state: AppState): AppState {
       pixName: state.academy.pixName || state.academy.name,
       dropInFee: state.academy.dropInFee || 40,
       joinCode: state.academy.joinCode || "",
+      brandLogo: state.academy.brandLogo ?? defaultAcademyBrand(state.academy).brandLogo,
+      brandTagline: state.academy.brandTagline ?? defaultAcademyBrand(state.academy).brandTagline,
     },
     evaluations: state.evaluations ?? [],
     events: state.events ?? [],

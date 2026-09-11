@@ -5,6 +5,7 @@ import { useRouter, useSearchParams } from "next/navigation";
 import { Suspense, useEffect, useRef, useState } from "react";
 import { toast } from "sonner";
 import { AlunoAppCard } from "@/components/academia/aluno-app-card";
+import { AcademyBrandEditor } from "@/components/academia/brand-editor";
 import { FirstLoginHint } from "@/components/first-login-guide";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -81,6 +82,8 @@ function ConfigInner() {
       </div>
 
       <AlunoAppCard />
+
+      <AcademyBrandEditor />
 
       {!store.isDemo ? (
         <section className="surface p-5">

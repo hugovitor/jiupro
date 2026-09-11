@@ -222,6 +222,8 @@ export function mergeAcademyState(local: AppState, remote: AppState): AppState {
       joinCode: local.academy.joinCode || remote.academy.joinCode,
       pixKey: local.academy.pixKey || remote.academy.pixKey,
       pixName: local.academy.pixName || remote.academy.pixName,
+      brandLogo: local.academy.brandLogo || remote.academy.brandLogo,
+      brandTagline: local.academy.brandTagline || remote.academy.brandTagline,
     },
     students,
     classes,

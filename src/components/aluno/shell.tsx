@@ -6,6 +6,7 @@ import { usePathname, useRouter } from "next/navigation";
 import { CalendarDays, Home, LineChart, Lock, LogOut, MessageSquare, User } from "lucide-react";
 import { AcademyMark, Wordmark } from "@/components/brand";
 import { FirstLoginGuide } from "@/components/first-login-guide";
+import { StudentAppBrand } from "@/components/aluno/app-brand";
 import { hasFeature } from "@/lib/plan-access";
 import { DEMO_ACADEMY_ID } from "@/lib/seed";
 import { currentStudent, useStore } from "@/lib/store";
@@ -50,9 +51,14 @@ export function AlunoShell({ children }: { children: React.ReactNode }) {
     <div className="flex min-h-screen justify-center bg-[#070707] text-white selection:bg-red-600 selection:text-white">
       <div className="relative flex min-h-screen w-full max-w-md flex-col border-x border-white/10 bg-[#080808]">
         <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_50%_0%,rgba(220,38,38,0.14),transparent_36%)]" />
+        <StudentAppBrand />
         <header className="sticky top-0 z-30 flex h-16 items-center gap-3 border-b border-white/10 bg-[#080808]/90 px-4 backdrop-blur-xl">
           {branded ? (
-            <AcademyMark name={store.academy.name} />
+            <AcademyMark
+              name={store.academy.name}
+              logo={store.academy.brandLogo}
+              tagline={store.academy.brandTagline}
+            />
           ) : (
             <Wordmark href={null} kicker={false} />
           )}

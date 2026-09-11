@@ -53,6 +53,8 @@ export function createSeed(): AppState {
     dropInFee: 40,
     createdAt: "2021-03-08T12:00:00.000Z",
     joinCode: "ORIGEM",
+    brandLogo: "/origem-mark.svg",
+    brandTagline: "Jiu-Jitsu",
   };
 
   const session = {

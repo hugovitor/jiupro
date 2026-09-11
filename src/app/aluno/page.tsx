@@ -23,6 +23,7 @@ import { attendanceInDays } from "@/lib/insights";
 import { ADULT_ORDER, beltMeta } from "@/lib/belts";
 import { attendanceDay, attendanceForStudent, classesShareSlot } from "@/lib/roster-identity";
 import { currentStudent, useStore } from "@/lib/store";
+import { hasFeature } from "@/lib/plan-access";
 import type { Attendance, ClassSession, Student } from "@/lib/types";
 import { useNow } from "@/lib/use-now";
 import { cn } from "@/lib/utils";
@@ -32,6 +33,7 @@ export default function AlunoHome() {
   const store = useStore();
   const now = useNow();
   const student = currentStudent(store);
+  const branded = hasFeature(store.academy, "academyBrand");
   const today = isoDate(0);
   const [busyId, setBusyId] = useState<string | null>(null);
   const classes = [...store.todayClasses()]
@@ -76,11 +78,14 @@ export default function AlunoHome() {
       <div className="flex items-center justify-between pb-1">
         <div>
           <p className="text-[10px] font-black tracking-[0.18em] text-red-500 uppercase">
-            {weekdayFull(weekdayToday())}
+            {branded ? store.academy.name : weekdayFull(weekdayToday())}
           </p>
           <h1 className="mt-2 text-3xl font-black tracking-[-0.04em]">
             {student?.name.split(" ")[0] ?? "aluno"}
           </h1>
+          {branded ? (
+            <p className="mt-1 text-xs text-white/45">{weekdayFull(weekdayToday())}</p>
+          ) : null}
         </div>
         {student && <BeltBadge belt={student.belt} stripes={student.stripes} />}
       </div>

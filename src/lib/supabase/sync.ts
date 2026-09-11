@@ -19,6 +19,8 @@ const OPTIONAL_COLUMNS = [
   "validated_by",
   "guardian_name",
   "birth_date",
+  "brand_logo",
+  "brand_tagline",
 ];
 
 function stripOptional(rows: Record<string, unknown>[], columns: string[]) {

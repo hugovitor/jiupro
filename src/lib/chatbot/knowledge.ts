@@ -296,8 +296,11 @@ export const KNOWLEDGE: KnowledgeEntry[] = [
     phrases: ["marca da academia", "logo no app", "via tatamex"],
     keywords: ["marca", "logo", "branding", "nome no app"],
     answer: () => ({
-      text: "No plano Equipe o app do aluno abre com o nome da academia e um “via TATAMEX” pequeno. Nos outros planos o topo continua TatameX, com a academia no canto.",
-      links: [{ href: "/planos", label: "Plano Equipe" }],
+      text: "No plano Equipe o app do aluno é da academia: logo no topo, nome da casa, linha de Jiu-Jitsu e atalho na tela inicial com o nome da equipe. Nos outros planos o topo continua TatameX. O dono envia o logo em Configurações.",
+      links: [
+        { href: "/academia/configuracoes", label: "Configurações" },
+        { href: "/planos", label: "Plano Equipe" },
+      ],
       suggestions: ["Planos e preços", "PWA na tela inicial"],
     }),
   },

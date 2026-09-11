@@ -64,6 +64,8 @@ end;
 $$;
 
 alter table public.academies add column if not exists join_code text;
+alter table public.academies add column if not exists brand_logo text;
+alter table public.academies add column if not exists brand_tagline text;
 
 create or replace function public.academies_fill_join_code()
 returns trigger

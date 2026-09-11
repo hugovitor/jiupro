@@ -3,6 +3,7 @@
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 import { BeltBadge, PersonAvatar } from "@/components/belt-badge";
+import { AcademyMark } from "@/components/brand";
 import { FirstLoginHint } from "@/components/first-login-guide";
 import { InstallPwaButton } from "@/components/install-pwa-button";
 import { Button } from "@/components/ui/button";
@@ -106,7 +107,16 @@ export default function PerfilAluno() {
       </div>
 
       <div className="border border-border bg-card p-4 text-sm">
-        <p className="font-medium">{store.academy.name}</p>
+        {hasFeature(store.academy, "academyBrand") ? (
+          <AcademyMark
+            className="mb-3"
+            name={store.academy.name}
+            logo={store.academy.brandLogo}
+            tagline={store.academy.brandTagline}
+          />
+        ) : (
+          <p className="font-medium">{store.academy.name}</p>
+        )}
         <p className="text-muted-foreground">
           {store.academy.address}
           <br />

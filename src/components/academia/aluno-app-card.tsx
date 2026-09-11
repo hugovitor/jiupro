@@ -48,6 +48,17 @@ export function AlunoAppCard() {
             o aluno grava o atalho na tela inicial.
           </li>
         )}
+        {hasFeature(store.academy, "academyBrand") ? (
+          <li>
+            <strong className="text-foreground">Marca da casa.</strong> O topo do app, a aba e o
+            atalho usam o logo e o nome da {store.academy.name}.
+          </li>
+        ) : (
+          <li>
+            <strong className="text-foreground">Marca da academia.</strong> No Equipe o aluno vê
+            o logo da casa, não só o TatameX.
+          </li>
+        )}
       </ol>
       <p className="mt-4 break-all text-xs text-muted-foreground">{link}</p>
       <div className="mt-4 flex flex-wrap gap-2">

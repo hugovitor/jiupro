@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
+import { shortAcademyName } from "@/lib/academy-brand";
 import { hasFeature } from "@/lib/plan-access";
 import { useStore } from "@/lib/store";
 
@@ -35,7 +36,7 @@ export function InstallPwaButton({ className }: { className?: string }) {
         toast.success("Siga o pedido do navegador para instalar.");
       }}
     >
-      Instalar app da academia
+      Instalar app da {shortAcademyName(store.academy.name)}
     </Button>
   );
 }
