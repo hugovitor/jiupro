@@ -20,6 +20,7 @@ Feito para o dono que treina de manhã e administra de noite: mensalidades em at
 - **PWA do aluno** — o dono cadastra a ficha e manda o WhatsApp para criar a senha. Se ainda não tem ficha, o aluno busca o nome da academia, confirma a academia e se cadastra — a ficha aparece na lista. Cadastro de dono com o mesmo nome e cidade reaproveita a academia que já existe; não cria uma academia duplicada.
 - **LGPD** — termos e privacidade, consentimento no cadastro, aviso de armazenamento local, exportar dados, apagar ficha, responsável obrigatório no kids.
 - **Assistente na primeira entrada** — depois do cadastro o dono cai no assistente (Pix, convite, presença). Aluno vê como confirmar aula, faixa e mensalidade. Não aparece de novo depois de concluir ou pular.
+- **Assistente no site** — botão vermelho no canto: responde sozinho sobre planos, presença, Pix e o app. Se não souber, manda o WhatsApp. Sem chave de IA também funciona.
 - **Planos mensais** — Essencial (50 alunos: cadastro, mensalidades, presença, faixas), Academia (200: financeiro, estoque, candidatos, mural, PWA) e Equipe (ilimitado: relatórios, suporte prioritário, marca no app). O painel esconde o que o plano não inclui. Primeiro mês grátis no cadastro.
 - **Cadastro real** — nome, academia, cidade, e-mail e senha. Abre a academia vazia, isolada da Equipe Origem
 - **Demo completa** — Equipe Origem (Campinas) nos atalhos de Entrar ou em `/demo`
