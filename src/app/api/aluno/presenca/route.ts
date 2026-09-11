@@ -4,6 +4,10 @@ import { isoDate, weekdayToday } from "@/lib/format";
 import { supabaseAdmin } from "@/lib/operator";
 import { classFingerprint } from "@/lib/roster-identity";
 import { ensureStudentRosterRow } from "@/lib/student-enroll";
+import {
+  ensureAttendanceSchema,
+  isMissingAttendanceStatusColumn,
+} from "@/lib/supabase/ensure-attendance-schema";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -27,6 +31,83 @@ function timeValue(raw: string) {
   const hm = String(raw ?? "").trim().match(/^(\d{1,2}):(\d{2})/);
   if (!hm) return "";
   return `${hm[1].padStart(2, "0")}:${hm[2]}`;
+}
+
+type AttendanceClient = NonNullable<ReturnType<typeof supabaseAdmin>>;
+
+function withoutStatus(row: Record<string, unknown>) {
+  const next = { ...row };
+  delete next.status;
+  delete next.validated_at;
+  delete next.validated_by;
+  return next;
+}
+
+async function loadExistingAttendance(
+  db: AttendanceClient,
+  academyId: string,
+  studentId: string,
+  today: string,
+  classIds: string[],
+) {
+  const ids = classIds.length ? classIds : [];
+  if (!ids.length) return [];
+  const query = () =>
+    db
+      .from("attendance")
+      .select("id, status, class_id")
+      .eq("academy_id", academyId)
+      .eq("student_id", studentId)
+      .eq("date", today)
+      .in("class_id", ids)
+      .limit(8);
+  let result = await query();
+  if (result.error && isMissingAttendanceStatusColumn(result.error.message)) {
+    await ensureAttendanceSchema();
+    result = await query();
+  }
+  if (result.error && isMissingAttendanceStatusColumn(result.error.message)) {
+    const slim = await db
+      .from("attendance")
+      .select("id, class_id")
+      .eq("academy_id", academyId)
+      .eq("student_id", studentId)
+      .eq("date", today)
+      .in("class_id", ids)
+      .limit(8);
+    return (slim.data ?? []).map((row) => ({
+      id: String(row.id),
+      class_id: String(row.class_id ?? ""),
+      status: "pending",
+    }));
+  }
+  if (result.error) throw new Error(result.error.message);
+  return (result.data ?? []).map((row) => ({
+    id: String(row.id),
+    class_id: String(row.class_id ?? ""),
+    status: String(row.status ?? "pending"),
+  }));
+}
+
+async function writeAttendance(
+  db: AttendanceClient,
+  row: Record<string, unknown>,
+  existingId?: string,
+) {
+  const run = async (payload: Record<string, unknown>) =>
+    existingId
+      ? db.from("attendance").update(payload).eq("id", existingId)
+      : db.from("attendance").insert(payload);
+
+  let { error } = await run(row);
+  if (error && isMissingAttendanceStatusColumn(error.message)) {
+    await ensureAttendanceSchema();
+    ({ error } = await run(row));
+  }
+  if (error && isMissingAttendanceStatusColumn(error.message)) {
+    ({ error } = await run(withoutStatus(row)));
+  }
+  return error;
 }
 
 export async function POST(request: Request) {
@@ -66,6 +147,8 @@ export async function POST(request: Request) {
   if (!db) {
     return NextResponse.json({ error: "O banco da academia não está ligado." }, { status: 503 });
   }
+
+  await ensureAttendanceSchema().catch(() => undefined);
 
   const { data: profile, error: profileError } = await db
     .from("profiles")
@@ -159,16 +242,21 @@ export async function POST(request: Request) {
       );
     })
     .map((row) => String(row.id));
-  const { data: existingRows } = await db
-    .from("attendance")
-    .select("id, status, class_id")
-    .eq("academy_id", academyId)
-    .eq("student_id", studentId)
-    .eq("date", today)
-    .in("class_id", slotIds.length ? slotIds : [classId])
-    .limit(8);
+  let existingRows: { id: string; class_id: string; status: string }[] = [];
+  try {
+    existingRows = await loadExistingAttendance(
+      db,
+      academyId,
+      studentId,
+      today,
+      slotIds.length ? slotIds : [String(classId)],
+    );
+  } catch (err) {
+    const message = err instanceof Error ? err.message : "Não deu para ler a chamada.";
+    return NextResponse.json({ error: message }, { status: 400 });
+  }
   const existing =
-    existingRows?.find((row) => row.status !== "no_show") ?? existingRows?.[0];
+    existingRows.find((row) => row.status !== "no_show") ?? existingRows[0];
   if (existing?.id && existing.status !== "no_show") {
     return NextResponse.json({
       ok: true,
@@ -180,22 +268,32 @@ export async function POST(request: Request) {
 
   const now = new Date().toISOString();
   if (existing?.id) {
-    const { error } = await db
-      .from("attendance")
-      .update({
+    const error = await writeAttendance(
+      db,
+      {
         status: "pending",
         method: "app",
         checked_in_at: now,
         validated_at: null,
         validated_by: null,
-      })
-      .eq("id", existing.id);
-    if (error) return NextResponse.json({ error: error.message }, { status: 400 });
+      },
+      existing.id,
+    );
+    if (error) {
+      return NextResponse.json(
+        {
+          error: isMissingAttendanceStatusColumn(error.message)
+            ? "A chamada da academia está atualizando. Confirme de novo em alguns segundos."
+            : error.message,
+        },
+        { status: 400 },
+      );
+    }
     return NextResponse.json({ ok: true, attendanceId: existing.id, studentId, classId });
   }
 
   const id = crypto.randomUUID();
-  const { error } = await db.from("attendance").insert({
+  const error = await writeAttendance(db, {
     id,
     academy_id: academyId,
     student_id: studentId,
@@ -205,6 +303,15 @@ export async function POST(request: Request) {
     method: "app",
     status: "pending",
   });
-  if (error) return NextResponse.json({ error: error.message }, { status: 400 });
+  if (error) {
+    return NextResponse.json(
+      {
+        error: isMissingAttendanceStatusColumn(error.message)
+          ? "A chamada da academia está atualizando. Confirme de novo em alguns segundos."
+          : error.message,
+      },
+      { status: 400 },
+    );
+  }
   return NextResponse.json({ ok: true, attendanceId: id, studentId, classId });
 }

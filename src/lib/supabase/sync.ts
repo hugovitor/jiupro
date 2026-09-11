@@ -42,9 +42,11 @@ async function upsertRows(
     if (!error) return;
     lastError = error;
     const msg = error.message ?? "";
+    const quoted = [...msg.matchAll(/'([^']+)' column/gi)].map((m) => m[1]);
     const named = OPTIONAL_COLUMNS.filter((column) => msg.toLowerCase().includes(column));
-    if (named.length) {
-      payload = stripOptional(payload, named);
+    const drop = [...new Set([...quoted, ...named])];
+    if (drop.length) {
+      payload = stripOptional(payload, drop);
       continue;
     }
     if (/PGRST204|schema cache|could not find|column/i.test(msg)) {

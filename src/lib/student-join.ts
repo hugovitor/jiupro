@@ -416,6 +416,10 @@ $$;
 revoke all on function public.register_academy(text, text, text, text, text, text) from public;
 grant execute on function public.register_academy(text, text, text, text, text, text) to authenticated;
 
+alter table public.attendance add column if not exists status text not null default 'validated';
+alter table public.attendance add column if not exists validated_at timestamptz;
+alter table public.attendance add column if not exists validated_by uuid;
+
 notify pgrst, 'reload schema';
 `;
 
