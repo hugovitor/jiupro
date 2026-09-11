@@ -1,7 +1,12 @@
 import { NextResponse } from "next/server";
 import { createClient } from "@supabase/supabase-js";
 import { supabaseAdmin } from "@/lib/operator";
-import { enrollStudentInAcademy, ensureStudentRosterRow, resolveHouseViaJoinRpc } from "@/lib/student-enroll";
+import {
+  enrollStudentInAcademy,
+  ensureStudentRosterRow,
+  guardNewStudentSeat,
+  resolveHouseViaJoinRpc,
+} from "@/lib/student-enroll";
 import { isStudentJoinNotFound, preferredJoinCode, STUDENT_JOIN_NOT_FOUND, STUDENT_JOIN_SETUP_ERROR } from "@/lib/student-join";
 import { ensureStudentJoinSchema } from "@/lib/supabase/ensure-student-join";
 
@@ -114,6 +119,28 @@ export async function POST(request: Request) {
     house.houseName,
     house.code,
   ].filter((value, index, all) => value && all.indexOf(value) === index);
+
+  const capAdmin = supabaseAdmin() ?? db;
+  if (capAdmin && remoteHouse) {
+    let academyId = remoteHouse.id ?? "";
+    if (!academyId && remoteHouse.slug) {
+      const { data } = await capAdmin
+        .from("academies")
+        .select("id")
+        .eq("slug", remoteHouse.slug)
+        .maybeSingle();
+      academyId = data?.id ? String(data.id) : "";
+    }
+    if (academyId) {
+      const seat = await guardNewStudentSeat(capAdmin, academyId, {
+        id: user.id,
+        email: user.email,
+      });
+      if (!seat.ok) {
+        return NextResponse.json({ error: seat.error }, { status: 403 });
+      }
+    }
+  }
 
   const viaRpc = await joinWithUserToken(token, joinCodes, name, phone);
   if (viaRpc && "academyId" in viaRpc && viaRpc.academyId) {

@@ -13,10 +13,12 @@ import { PRODUCT_NAME } from "@/lib/brand";
 import { downloadJson } from "@/lib/lgpd";
 import { startPlanCheckout } from "@/lib/billing";
 import { brl } from "@/lib/format";
+import { signupTrialLabel } from "@/lib/billing-offer";
 import { PLANS, planById } from "@/lib/plans";
+import { hasFeature, planUsageLabel } from "@/lib/plan-access";
 import { useStore } from "@/lib/store";
 import type { PlanId } from "@/lib/types";
-import { SUPPORT_PHONE_DISPLAY, supportWhatsAppHref } from "@/lib/support";
+import { SUPPORT_PHONE_DISPLAY, prioritySupportHref, supportWhatsAppHref } from "@/lib/support";
 
 function ConfigInner() {
   const store = useStore();
@@ -135,9 +137,19 @@ function ConfigInner() {
       <section className="border border-border bg-card p-5">
         <h2 className="font-medium">Plano {PRODUCT_NAME} · {plan.name}</h2>
         <p className="mt-1 text-sm text-muted-foreground">
-          {brl(plan.price)}/mês · {plan.students} alunos. Cole o código
-          promocional (não o ID do cupom) e clique no plano.
+          {brl(plan.price)}/mês · {planUsageLabel(store.academy, store.students.length)}.
+          {signupTrialLabel() ? ` ${signupTrialLabel()}, depois ${brl(plan.price)}/mês.` : null}
         </p>
+        <ul className="mt-3 space-y-1 text-sm text-muted-foreground">
+          {plan.features.map((item) => (
+            <li key={item}>· {item}</li>
+          ))}
+        </ul>
+        {store.academy.plan !== "equipe" && !store.isDemo ? (
+          <p className="mt-3 text-xs text-muted-foreground">
+            Mural, estoque, financeiro completo, PWA, relatórios e marca no app dependem do plano.
+          </p>
+        ) : null}
         <div className="mt-4 space-y-1.5">
           <Label htmlFor="promo-code">Código promocional</Label>
           <Input
@@ -223,12 +235,22 @@ function ConfigInner() {
       ) : null}
 
       <section className="border border-border bg-card p-5 text-sm">
-        <h2 className="font-medium">Suporte {PRODUCT_NAME}</h2>
+        <h2 className="font-medium">
+          {hasFeature(store.academy, "prioritySupport")
+            ? "Prioridade no suporte"
+            : `Suporte ${PRODUCT_NAME}`}
+        </h2>
         <p className="mt-2 text-muted-foreground">
-          Plano, cupom, cadastro, acesso ou LGPD: fale no WhatsApp{" "}
+          {hasFeature(store.academy, "prioritySupport")
+            ? "Plano Equipe: sua academia entra na frente na fila do WhatsApp."
+            : "Plano, cupom, cadastro, acesso ou LGPD: fale no WhatsApp"}{" "}
           <a
             className="font-bold text-red-500 hover:text-red-400"
-            href={supportWhatsAppHref(`Olá, sou dono de academia no ${PRODUCT_NAME}.`)}
+            href={
+              hasFeature(store.academy, "prioritySupport")
+                ? prioritySupportHref(store.academy.name)
+                : supportWhatsAppHref(`Olá, sou dono de academia no ${PRODUCT_NAME}.`)
+            }
             target="_blank"
             rel="noreferrer"
           >

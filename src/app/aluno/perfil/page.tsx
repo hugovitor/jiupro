@@ -4,8 +4,10 @@ import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 import { BeltBadge, PersonAvatar } from "@/components/belt-badge";
 import { FirstLoginHint } from "@/components/first-login-guide";
+import { InstallPwaButton } from "@/components/install-pwa-button";
 import { Button } from "@/components/ui/button";
 import { brl, currentMonth, formatDate } from "@/lib/format";
+import { hasFeature } from "@/lib/plan-access";
 import { currentStudent, useStore } from "@/lib/store";
 import { downloadJson, studentPortability, deletionWhatsAppText } from "@/lib/lgpd";
 import { supportWhatsAppHref } from "@/lib/support";
@@ -145,10 +147,19 @@ export default function PerfilAluno() {
         </div>
       ) : null}
 
-      <p className="text-xs text-muted-foreground">
-        Adicione este app à tela inicial do celular: no Safari, Compartilhar →
-        Adicionar à Tela de Início. No Chrome, Instalar aplicativo.
-      </p>
+      {hasFeature(store.academy, "pwa") ? (
+        <div className="space-y-2">
+          <InstallPwaButton className="w-full" />
+          <p className="text-xs text-muted-foreground">
+            Adicione o app à tela inicial: no Safari, Compartilhar → Adicionar à Tela de Início.
+            No Chrome, Instalar aplicativo.
+          </p>
+        </div>
+      ) : (
+        <p className="text-xs text-muted-foreground">
+          O app instalável na tela inicial entra no plano Academia da sua academia.
+        </p>
+      )}
 
       <Button
         variant="outline"

@@ -4,6 +4,7 @@ import { looksLikeHouseCode, studentJoinUrl } from "@/lib/join-code";
 import type { Academy, Student } from "@/lib/types";
 
 export type PublicAcademyJoin = {
+  id?: string;
   name: string;
   city: string;
   state: string;
@@ -14,7 +15,9 @@ export type PublicAcademyJoin = {
 export function mapPublicHouse(row: Record<string, unknown>): PublicAcademyJoin {
   const slug = String(row.slug ?? "").trim();
   const join = String(row.join_code ?? "").trim();
+  const id = String(row.id ?? "").trim();
   return {
+    id: id || undefined,
     name: String(row.name ?? "").trim(),
     city: String(row.city ?? "").trim(),
     state: String(row.state ?? "").trim(),

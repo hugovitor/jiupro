@@ -19,6 +19,7 @@ import {
   type FirstLoginIdentity,
 } from "@/lib/first-login";
 import { isoDate } from "@/lib/format";
+import { studentCapMessage } from "@/lib/plan-access";
 import { currentStudent, useStore } from "@/lib/store";
 import { studentAppInviteHref } from "@/lib/student-join";
 import { firstName } from "@/lib/whatsapp";
@@ -128,7 +129,7 @@ export function FirstLoginGuide() {
       toast.error("Informe o nome do aluno.");
       return;
     }
-    store.addStudent({
+    if (!store.addStudent({
       name: studentName.trim(),
       email: studentEmail.trim(),
       phone: studentPhone.trim(),
@@ -141,7 +142,10 @@ export function FirstLoginGuide() {
       status: "active",
       monthlyFee: 180,
       notes: "",
-    });
+    })) {
+      toast.error(studentCapMessage(store.academy));
+      return;
+    }
     toast.success(`${studentName.trim()} entrou na ficha desta academia.`);
     setStudentName("");
     setStudentPhone("");

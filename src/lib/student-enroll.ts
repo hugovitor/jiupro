@@ -1,5 +1,6 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { pickCanonicalHouse, type HouseRow } from "@/lib/academy-canonical";
+import { joinStudentCapMessage, studentLimitForPlan } from "@/lib/plan-access";
 import { collapseAcademyKey, generateJoinCode, looksLikeHouseCode } from "@/lib/join-code";
 import { mapPublicHouse, STUDENT_JOIN_NOT_FOUND, type PublicAcademyJoin } from "@/lib/student-join";
 
@@ -225,6 +226,35 @@ function phoneDigits(value: string) {
   return value.replace(/\D/g, "");
 }
 
+export async function guardNewStudentSeat(
+  admin: SupabaseClient,
+  academyId: string,
+  user: { id: string; email?: string | null },
+): Promise<{ ok: true } | { ok: false; error: string }> {
+  const email = user.email?.trim().toLowerCase() ?? "";
+  const { data: roster, error: rosterError } = await admin
+    .from("students")
+    .select("id, user_id, email")
+    .eq("academy_id", academyId)
+    .limit(500);
+  if (rosterError) return { ok: true };
+
+  const already = (roster ?? []).some((row) => {
+    if (String(row.user_id ?? "") === user.id) return true;
+    if (email && String(row.email ?? "").trim().toLowerCase() === email) return true;
+    return false;
+  });
+  if (already) return { ok: true };
+
+  const { data: academy } = await admin.from("academies").select("plan").eq("id", academyId).maybeSingle();
+  const limit = studentLimitForPlan(typeof academy?.plan === "string" ? academy.plan : "academia");
+  if (limit == null) return { ok: true };
+  if ((roster?.length ?? 0) >= limit) {
+    return { ok: false, error: joinStudentCapMessage(limit) };
+  }
+  return { ok: true };
+}
+
 export async function enrollStudentInAcademy(
   admin: SupabaseClient,
   input: {
@@ -240,6 +270,11 @@ export async function enrollStudentInAcademy(
     return { error: ("error" in resolved && resolved.error) || STUDENT_JOIN_NOT_FOUND, status: 400 };
   }
   const academy = resolved.academy;
+  const seat = await guardNewStudentSeat(admin, academy.id, {
+    id: input.userId,
+    email: input.email,
+  });
+  if (!seat.ok) return { error: seat.error, status: 403 };
   await ensureJoinCode(admin, academy);
   const offered = (input.house.code ?? "").trim().toUpperCase();
   if (
@@ -383,6 +418,12 @@ export async function ensureStudentRosterRow(
     if (error) return { error: error.message };
     return { studentId };
   }
+
+  const seat = await guardNewStudentSeat(admin, input.academyId, {
+    id: input.userId,
+    email,
+  });
+  if (!seat.ok) return { error: seat.error };
 
   const { data: inserted, error } = await admin
     .from("students")

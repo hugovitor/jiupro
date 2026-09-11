@@ -1,6 +1,7 @@
 "use client";
 
 import { toast } from "sonner";
+import { PlanGate } from "@/components/academia/plan-gate";
 import { BeltBadge, PersonAvatar } from "@/components/belt-badge";
 import { IbjjfChart } from "@/components/ibjjf-chart";
 import { Button } from "@/components/ui/button";
@@ -9,7 +10,15 @@ import { monthsBetween, isoDate } from "@/lib/format";
 import { attendanceInDays, isPromotionCandidate } from "@/lib/insights";
 import { useStore } from "@/lib/store";
 
-export default function GraduacoesPage() {
+export default function GraduacoesRoute() {
+  return (
+    <PlanGate feature="promotions">
+      <GraduacoesPage />
+    </PlanGate>
+  );
+}
+
+function GraduacoesPage() {
   const store = useStore();
   const ready = store.students.filter((s) => isPromotionCandidate(store, s));
   const rest = store.students.filter(

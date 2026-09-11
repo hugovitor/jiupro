@@ -22,6 +22,7 @@ import {
 import { beltsForDivision } from "@/lib/belts";
 import { formatCpf } from "@/lib/cpf";
 import { brl, currentMonth, isoDate } from "@/lib/format";
+import { canAddStudent, planUsageLabel, studentCapMessage } from "@/lib/plan-access";
 import { useStore } from "@/lib/store";
 import type { Student, StudentStatus } from "@/lib/types";
 
@@ -66,7 +67,8 @@ export default function AlunosPage() {
         <div>
           <h1 className="font-display text-3xl">Alunos</h1>
           <p className="text-sm text-muted-foreground">
-            {store.students.length} cadastros · {store.students.filter((s) => s.status === "active").length} no tatame
+            {planUsageLabel(store.academy, store.students.length)} ·{" "}
+            {store.students.filter((s) => s.status === "active").length} no tatame
           </p>
         </div>
         <NovoAluno />
@@ -188,8 +190,8 @@ function NovoAluno() {
     monthlyFee: "180",
     cpf: "",
   });
-
   const belts = beltsForDivision(form.division);
+  const canAdd = canAddStudent(store.academy, store.students.length);
 
   useEffect(() => {
     if (new URLSearchParams(window.location.search).get("novo") === "1") setOpen(true);
@@ -202,7 +204,16 @@ function NovoAluno() {
 
   return (
     <>
-      <Button type="button" onClick={() => setOpen(true)}>
+      <Button
+        type="button"
+        onClick={() => {
+          if (!canAdd) {
+            toast.error(studentCapMessage(store.academy));
+            return;
+          }
+          setOpen(true);
+        }}
+      >
         Novo aluno
       </Button>
       <FormDialog open={open} onClose={close} title={saved ? "Mandar o acesso" : "Cadastrar aluno"}>
@@ -252,7 +263,7 @@ function NovoAluno() {
                   toast.error("No kids, informe o responsável (LGPD, art. 14).");
                   return;
                 }
-                store.addStudent({
+                if (!store.addStudent({
                   name: form.name.trim(),
                   email: form.email,
                   phone: form.phone,
@@ -267,7 +278,10 @@ function NovoAluno() {
                   monthlyFee: Number(form.monthlyFee) || 0,
                   notes: "",
                   cpf: form.cpf.replace(/\D/g, ""),
-                });
+                })) {
+                  toast.error(studentCapMessage(store.academy));
+                  return;
+                }
                 toast.success(`${form.name.trim()} entrou na academia.`);
                 setSaved({
                   name: form.name.trim(),

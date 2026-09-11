@@ -46,6 +46,7 @@ import {
 } from "./vault";
 import { attendanceStatus, classHeadcount, isOnRoster, isValidated, studentCanSelfCheckIn } from "./attendance";
 import { academyPortability } from "./lgpd";
+import { canAddStudent, studentCapMessage } from "./plan-access";
 import {
   attendanceDay,
   canonicalStudent,
@@ -109,7 +110,7 @@ type Store = AppState & {
   }) => Promise<LoginResult>;
   syncNow: () => Promise<SyncResult>;
   pullNow: () => Promise<SyncResult>;
-  addStudent: (input: Omit<Student, "id" | "academyId" | "userId" | "avatarHue">) => void;
+  addStudent: (input: Omit<Student, "id" | "academyId" | "userId" | "avatarHue">) => boolean;
   updateStudent: (id: string, patch: Partial<Student>) => void;
   recordPayment: (studentId: string, month: string, method: Payment["method"]) => void;
   checkIn: (studentId: string, classId: string, method?: Attendance["method"]) => boolean;
@@ -664,6 +665,9 @@ export function StoreProvider({ children }: { children: ReactNode }) {
     if (claimed?.userId && !existingUser) {
       return { ok: false, error: "Essa ficha já tem acesso. Entre com o e-mail e a senha." };
     }
+    if (!claimed && !canAddStudent(house.academy, house.students.length)) {
+      return { ok: false, error: studentCapMessage(house.academy) };
+    }
 
     const userId = existingUser?.id ?? crypto.randomUUID();
     const user = {
@@ -792,6 +796,8 @@ export function StoreProvider({ children }: { children: ReactNode }) {
   }, []);
 
   const addStudent: Store["addStudent"] = useCallback((input) => {
+    const prev = getSnapshot();
+    if (!canAddStudent(prev.academy, prev.students.length)) return false;
     commit((prev) => {
       const id = uid("s");
       const student: Student = {
@@ -815,6 +821,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
         payments: [payment, ...prev.payments],
       };
     });
+    return true;
   }, []);
 
   const updateStudent: Store["updateStudent"] = useCallback((id, patch) => {

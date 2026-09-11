@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect } from "react";
+import { useEffect, useMemo } from "react";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import {
@@ -16,12 +16,15 @@ import { Wordmark } from "@/components/brand";
 import { FirstLoginGuide } from "@/components/first-login-guide";
 import { Button } from "@/components/ui/button";
 import { isOperatorEmail } from "@/lib/operator";
+import { hasFeature, type PlanFeature } from "@/lib/plan-access";
+import { planById } from "@/lib/plans";
 import { DEMO_ACADEMY_ID } from "@/lib/seed";
 import { useStore } from "@/lib/store";
 import { createSupabaseBrowserClient } from "@/lib/supabase/client";
+import { prioritySupportHref } from "@/lib/support";
 import { cn } from "@/lib/utils";
 
-type NavItem = { href: string; label: string };
+type NavItem = { href: string; label: string; feature?: PlanFeature };
 
 type NavGroup = {
   id: string;
@@ -40,7 +43,7 @@ const GROUPS: NavGroup[] = [
     items: [
       { href: "/academia/alunos", label: "Alunos" },
       { href: "/academia/experimentais", label: "Experimentais" },
-      { href: "/academia/graduacoes", label: "Graduações" },
+      { href: "/academia/graduacoes", label: "Graduações", feature: "promotions" },
     ],
   },
   {
@@ -59,9 +62,9 @@ const GROUPS: NavGroup[] = [
     icon: Banknote,
     items: [
       { href: "/academia/cobrancas", label: "Cobranças" },
-      { href: "/academia/financeiro", label: "Lançamentos" },
-      { href: "/academia/fechamento", label: "Fechamento" },
-      { href: "/academia/estoque", label: "Estoque" },
+      { href: "/academia/financeiro", label: "Lançamentos", feature: "finance" },
+      { href: "/academia/fechamento", label: "Fechamento", feature: "finance" },
+      { href: "/academia/estoque", label: "Estoque", feature: "inventory" },
     ],
   },
   {
@@ -69,7 +72,8 @@ const GROUPS: NavGroup[] = [
     label: "Academia",
     icon: Building2,
     items: [
-      { href: "/academia/mural", label: "Mural" },
+      { href: "/academia/mural", label: "Mural", feature: "board" },
+      { href: "/academia/evolucao", label: "Relatórios", feature: "evolutionReports" },
       { href: "/academia/configuracoes", label: "Configurações" },
     ],
   },
@@ -90,9 +94,19 @@ export function AcademiaShell({ children }: { children: React.ReactNode }) {
   const router = useRouter();
   const pathname = usePathname();
   const user = store.users.find((u) => u.id === store.session?.userId);
-  const activeGroup = GROUPS.find((g) => groupIsActive(g, pathname)) ?? GROUPS[0];
+  const groups = useMemo(() => {
+    return GROUPS.map((group) => ({
+      ...group,
+      items: group.items.filter(
+        (item) => !item.feature || hasFeature(store.academy, item.feature),
+      ),
+    })).filter((group) => group.href || group.items.length > 0);
+  }, [store.academy]);
+  const activeGroup = groups.find((g) => groupIsActive(g, pathname)) ?? groups[0];
   const pageTitle =
     activeGroup.items.find((i) => itemIsActive(i.href, pathname))?.label ?? "Início";
+  const plan = planById(store.academy.plan);
+  const priority = hasFeature(store.academy, "prioritySupport");
 
   useEffect(() => {
     if (!store.hydrated) return;
@@ -153,11 +167,27 @@ export function AcademiaShell({ children }: { children: React.ReactNode }) {
           <div className="hidden min-w-0 sm:block">
             <p className="truncate text-[13px] font-bold">{store.academy.name}</p>
             <p className="truncate text-[11px] text-white/40">
-              {store.academy.city}/{store.academy.state}
+              {store.academy.city}/{store.academy.state} · {plan.name}
             </p>
           </div>
         </div>
         <div className="flex items-center gap-3">
+          {priority ? (
+            <Button
+              variant="outline"
+              size="sm"
+              className="hidden border-red-500/40 text-red-400 hover:bg-red-600 hover:text-white sm:inline-flex"
+              render={
+                <a
+                  href={prioritySupportHref(store.academy.name)}
+                  target="_blank"
+                  rel="noreferrer"
+                />
+              }
+            >
+              Prioridade
+            </Button>
+          ) : null}
           {isOperatorEmail(user?.email) ? (
             <Button
               variant="outline"
@@ -202,7 +232,7 @@ export function AcademiaShell({ children }: { children: React.ReactNode }) {
             </div>
           </div>
           <nav className="flex-1 overflow-y-auto px-2 pb-4">
-            {GROUPS.map((group) => {
+            {groups.map((group) => {
               const active = groupIsActive(group, pathname);
               const href = group.href ?? group.items[0]?.href ?? "/academia";
               const Icon = group.icon;
@@ -288,7 +318,7 @@ export function AcademiaShell({ children }: { children: React.ReactNode }) {
 
       <nav className="fixed inset-x-0 bottom-0 z-40 border-t border-white/10 bg-[#080808]/95 pb-[max(0.25rem,env(safe-area-inset-bottom))] backdrop-blur-xl lg:hidden">
         <div className="flex">
-          {GROUPS.map((group) => {
+          {groups.map((group) => {
             const active = groupIsActive(group, pathname);
             const href = group.href ?? group.items[0]?.href ?? "/academia";
             const Icon = group.icon;

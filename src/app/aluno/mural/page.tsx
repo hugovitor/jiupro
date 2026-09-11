@@ -5,11 +5,23 @@ import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { formatDay, formatTime } from "@/lib/format";
+import { hasFeature } from "@/lib/plan-access";
 import { useStore } from "@/lib/store";
 
 export default function AlunoMural() {
   const store = useStore();
   const [content, setContent] = useState("");
+
+  if (!hasFeature(store.academy, "board")) {
+    return (
+      <div className="space-y-3">
+        <h1 className="font-display text-3xl">Mural</h1>
+        <p className="text-sm text-muted-foreground">
+          O mural entra no plano Academia. Peça para a secretaria liberar avisos no app.
+        </p>
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-5">

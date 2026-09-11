@@ -2,12 +2,21 @@
 
 import { useState } from "react";
 import { toast } from "sonner";
+import { PlanGate } from "@/components/academia/plan-gate";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { formatDate, formatTime } from "@/lib/format";
 import { useStore } from "@/lib/store";
 
-export default function MuralPage() {
+export default function MuralRoute() {
+  return (
+    <PlanGate feature="board">
+      <MuralPage />
+    </PlanGate>
+  );
+}
+
+function MuralPage() {
   const store = useStore();
   const [content, setContent] = useState("");
 

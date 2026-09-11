@@ -6,3 +6,9 @@ export function supportWhatsAppHref(text?: string) {
     text ?? "Olá, vim pelo TatameX e preciso de suporte.";
   return `https://wa.me/${SUPPORT_PHONE_E164}?text=${encodeURIComponent(message)}`;
 }
+
+export function prioritySupportHref(academyName: string) {
+  return supportWhatsAppHref(
+    `Prioridade Equipe — ${academyName}. Preciso de suporte no TatameX.`,
+  );
+}

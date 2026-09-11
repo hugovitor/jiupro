@@ -6,6 +6,7 @@ import { Copy, MessageCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { generateJoinCode, studentJoinUrl } from "@/lib/join-code";
 import { studentAppInviteHref } from "@/lib/student-join";
+import { hasFeature } from "@/lib/plan-access";
 import { DEMO_ACADEMY_ID } from "@/lib/seed";
 import { useStore } from "@/lib/store";
 
@@ -36,6 +37,17 @@ export function AlunoAppCard() {
           <strong className="text-foreground">O aluno se cadastra.</strong> Ele busca o nome da
           academia no app. A ficha nasce nesta academia.
         </li>
+        {hasFeature(store.academy, "pwa") ? (
+          <li>
+            <strong className="text-foreground">Instalar na tela inicial.</strong> No perfil do
+            aluno, o app pede para gravar o atalho — funciona offline na agenda.
+          </li>
+        ) : (
+          <li>
+            <strong className="text-foreground">App instalável.</strong> Entra no plano Academia:
+            o aluno grava o atalho na tela inicial.
+          </li>
+        )}
       </ol>
       <p className="mt-4 break-all text-xs text-muted-foreground">{link}</p>
       <div className="mt-4 flex flex-wrap gap-2">

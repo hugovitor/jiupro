@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { toast } from "sonner";
+import { PlanGate } from "@/components/academia/plan-gate";
 import { FormDialog } from "@/components/form-dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -19,7 +20,15 @@ const CAT: Record<InventoryCategory, string> = {
   other: "Outro",
 };
 
-export default function EstoquePage() {
+export default function EstoqueRoute() {
+  return (
+    <PlanGate feature="inventory">
+      <EstoquePage />
+    </PlanGate>
+  );
+}
+
+function EstoquePage() {
   const store = useStore();
   const sales = [...(store.sales ?? [])].slice(0, 8);
 

@@ -3,6 +3,7 @@
 import { useState } from "react";
 import Link from "next/link";
 import { toast } from "sonner";
+import { PlanGate } from "@/components/academia/plan-gate";
 import { AsaasChargeButton } from "@/components/asaas-pix-dialog";
 import { PersonAvatar } from "@/components/belt-badge";
 import { FormDialog } from "@/components/form-dialog";
@@ -26,7 +27,7 @@ const EXPENSE_LABEL: Record<ExpenseCategory, string> = {
   other: "Outros",
 };
 
-export default function FinanceiroPage() {
+function FinanceiroPage() {
   const store = useStore();
   const month = currentMonth();
   const revenue = monthRevenue(store, month);
@@ -232,5 +233,13 @@ function NovaDespesa() {
         </form>
       </FormDialog>
     </>
+  );
+}
+
+export default function FinanceiroRoute() {
+  return (
+    <PlanGate feature="finance">
+      <FinanceiroPage />
+    </PlanGate>
   );
 }

@@ -9,6 +9,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { brl, isoDate } from "@/lib/format";
+import { canAddStudent, studentCapMessage } from "@/lib/plan-access";
 import { useStore } from "@/lib/store";
 import { trialMessage, waHref } from "@/lib/whatsapp";
 import type { Student } from "@/lib/types";
@@ -106,7 +107,9 @@ function NovoExperimental() {
           onSubmit={(e) => {
             e.preventDefault();
             if (!name.trim()) return;
-            store.addStudent({
+            if (
+              !canAddStudent(store.academy, store.students.length) ||
+              !store.addStudent({
               name: name.trim(),
               email: "",
               phone,
@@ -119,7 +122,11 @@ function NovoExperimental() {
               status: "trial",
               monthlyFee: Number(fee) || 180,
               notes: "Aula experimental. Converter esta semana.",
-            } satisfies Omit<Student, "id" | "academyId" | "userId" | "avatarHue">);
+            } satisfies Omit<Student, "id" | "academyId" | "userId" | "avatarHue">)
+            ) {
+              toast.error(studentCapMessage(store.academy));
+              return;
+            }
             toast.success("Experimental na lista.");
             setOpen(false);
             setName("");

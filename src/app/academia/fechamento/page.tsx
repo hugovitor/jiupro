@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { toast } from "sonner";
+import { PlanGate } from "@/components/academia/plan-gate";
 import { PersonAvatar } from "@/components/belt-badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -33,7 +34,15 @@ const STATUS: Record<string, string> = {
   waived: "isento",
 };
 
-export default function FechamentoPage() {
+export default function FechamentoRoute() {
+  return (
+    <PlanGate feature="finance">
+      <FechamentoPage />
+    </PlanGate>
+  );
+}
+
+function FechamentoPage() {
   const store = useStore();
   const [month, setMonth] = useState(currentMonth());
   const next = shiftMonth(month, 1);

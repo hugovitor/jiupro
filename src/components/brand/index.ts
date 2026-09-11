@@ -1,4 +1,5 @@
 export { BeltMark } from "./belt-mark";
+export { AcademyMark } from "./academy-mark";
 export { Wordmark } from "./wordmark";
 export { DarkCanvas } from "./dark-canvas";
 export { Eyebrow } from "./eyebrow";

@@ -35,6 +35,7 @@ import {
   overdueTotal,
 } from "@/lib/insights";
 import { FirstHouseCard } from "@/components/academia/first-house-card";
+import { canAddStudent, hasFeature, planUsageLabel, studentCapMessage } from "@/lib/plan-access";
 import { useStore } from "@/lib/store";
 import { useNow } from "@/lib/use-now";
 import { birthdayMessage, comebackMessage, waHref } from "@/lib/whatsapp";
@@ -102,6 +103,20 @@ export default function AcademiaDashboard() {
       </div>
 
       {!store.isDemo && store.students.length === 0 ? <FirstHouseCard /> : null}
+
+      {!canAddStudent(store.academy, store.students.length) ? (
+        <div className="mt-6 surface border-red-500/30 bg-red-500/10 p-4 text-sm">
+          <p className="font-bold">Limite de alunos do plano</p>
+          <p className="mt-1 text-muted-foreground">{studentCapMessage(store.academy)}</p>
+          <Link href="/planos" className="mt-2 inline-block text-xs font-bold text-red-400">
+            Ver planos
+          </Link>
+        </div>
+      ) : (
+        <p className="mt-6 text-xs text-muted-foreground">
+          {planUsageLabel(store.academy, store.students.length)}
+        </p>
+      )}
 
       <div className="mt-6 grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
         <StatCard icon={Users} k="Alunos ativos" v={String(active.length)} hint={`${trials.length} experimental`} />
@@ -211,18 +226,28 @@ export default function AcademiaDashboard() {
             <Link className="surface px-3 py-3 text-sm hover:bg-muted" href="/academia/experimentais">
               Experimentais
             </Link>
-            <Link className="surface px-3 py-3 text-sm hover:bg-muted" href="/academia/fechamento">
-              Fechamento
-            </Link>
+            {hasFeature(store.academy, "finance") ? (
+              <Link className="surface px-3 py-3 text-sm hover:bg-muted" href="/academia/fechamento">
+                Fechamento
+              </Link>
+            ) : (
+              <Link className="surface px-3 py-3 text-sm hover:bg-muted" href="/academia/presenca">
+                Presença
+              </Link>
+            )}
           </div>
         </section>
 
         <section className="surface p-5">
           <div className="flex items-end justify-between gap-4">
             <h2 className="text-sm font-black tracking-tight">Pararam de aparecer</h2>
-            <p className="text-xs text-muted-foreground">
-              {brl(revenue)} no mês · despesas {brl(expenses)}
-            </p>
+            {hasFeature(store.academy, "finance") ? (
+              <p className="text-xs text-muted-foreground">
+                {brl(revenue)} no mês · despesas {brl(expenses)}
+              </p>
+            ) : (
+              <p className="text-xs text-muted-foreground">14 dias sem treino validado</p>
+            )}
           </div>
           <div className="mt-4 space-y-3">
             {risk.length === 0 && (
@@ -270,30 +295,35 @@ export default function AcademiaDashboard() {
       </div>
 
       <div className="mt-8 grid gap-4 lg:grid-cols-3">
-        <BoardCol
-          title="Prontos para graduação"
-          href="/academia/graduacoes"
-        >
-          {candidates.length === 0 && (
-            <p className="text-sm text-muted-foreground">Ninguém atingiu tempo + presença ainda.</p>
-          )}
-          {candidates.map((s) => (
-            <Link
-              key={s.id}
-              href="/academia/graduacoes"
-              className="flex items-center gap-3 py-1.5 hover:bg-muted/40"
-            >
-              <PersonAvatar name={s.name} hue={s.avatarHue} size="sm" />
-              <div className="min-w-0 flex-1">
-                <p className="truncate text-sm font-medium">{s.name}</p>
-                <p className="text-xs text-muted-foreground">
-                  {attendanceInDays(store, s.id, 90)} treinos em 90 dias
-                </p>
-              </div>
-              <BeltBadge belt={s.belt} stripes={s.stripes} compact />
-            </Link>
-          ))}
-        </BoardCol>
+        {hasFeature(store.academy, "promotions") ? (
+          <BoardCol title="Prontos para graduação" href="/academia/graduacoes">
+            {candidates.length === 0 && (
+              <p className="text-sm text-muted-foreground">Ninguém atingiu tempo + presença ainda.</p>
+            )}
+            {candidates.map((s) => (
+              <Link
+                key={s.id}
+                href="/academia/graduacoes"
+                className="flex items-center gap-3 py-1.5 hover:bg-muted/40"
+              >
+                <PersonAvatar name={s.name} hue={s.avatarHue} size="sm" />
+                <div className="min-w-0 flex-1">
+                  <p className="truncate text-sm font-medium">{s.name}</p>
+                  <p className="text-xs text-muted-foreground">
+                    {attendanceInDays(store, s.id, 90)} treinos em 90 dias
+                  </p>
+                </div>
+                <BeltBadge belt={s.belt} stripes={s.stripes} compact />
+              </Link>
+            ))}
+          </BoardCol>
+        ) : (
+          <BoardCol title="Histórico de faixas" href="/academia/alunos">
+            <p className="text-sm text-muted-foreground">
+              A faixa de cada aluno fica na ficha. A fila de candidatos a graduação entra no plano Academia.
+            </p>
+          </BoardCol>
+        )}
         <BoardCol title="Agenda" href="/academia/agenda">
           {upcoming.length === 0 && (
             <p className="text-sm text-muted-foreground">Nada marcado.</p>
@@ -336,21 +366,35 @@ export default function AcademiaDashboard() {
             </div>
           )}
         </BoardCol>
-        <BoardCol title="Estoque baixo" href="/academia/estoque">
-          {lowStock.length === 0 && (
-            <p className="text-sm text-muted-foreground">Nada abaixo do mínimo.</p>
-          )}
-          {lowStock.map((i) => (
-            <div key={i.id} className="flex justify-between py-1 text-sm">
-              <span>
-                {i.name} {i.size ? `· ${i.size}` : ""}
-              </span>
-              <span className="text-destructive">
-                {i.quantity} un.
-              </span>
-            </div>
-          ))}
-        </BoardCol>
+        {hasFeature(store.academy, "inventory") ? (
+          <BoardCol title="Estoque baixo" href="/academia/estoque">
+            {lowStock.length === 0 && (
+              <p className="text-sm text-muted-foreground">Nada abaixo do mínimo.</p>
+            )}
+            {lowStock.map((i) => (
+              <div key={i.id} className="flex justify-between py-1 text-sm">
+                <span>
+                  {i.name} {i.size ? `· ${i.size}` : ""}
+                </span>
+                <span className="text-destructive">
+                  {i.quantity} un.
+                </span>
+              </div>
+            ))}
+          </BoardCol>
+        ) : hasFeature(store.academy, "evolutionReports") ? (
+          <BoardCol title="Relatórios" href="/academia/evolucao">
+            <p className="text-sm text-muted-foreground">
+              Presença, evasão e fila de faixa da equipe.
+            </p>
+          </BoardCol>
+        ) : (
+          <BoardCol title="Plano" href="/planos">
+            <p className="text-sm text-muted-foreground">
+              Estoque, mural e financeiro completo entram no Academia.
+            </p>
+          </BoardCol>
+        )}
       </div>
     </div>
   );
