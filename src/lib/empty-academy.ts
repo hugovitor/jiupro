@@ -63,7 +63,7 @@ export function createEmptyAcademy(input: {
       pixKey: "",
       pixName: input.name.trim(),
       plan: input.plan,
-      monthlyGoal: 0,
+      monthlyGoal: 8000,
       dropInFee: 40,
       createdAt: new Date().toISOString(),
       joinCode: generateJoinCode(),

@@ -15,6 +15,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { weekdayFull, weekdayName, isoDate, weekdayToday } from "@/lib/format";
+import { attendanceDay } from "@/lib/roster-identity";
 import { useStore } from "@/lib/store";
 import type { ClassSession } from "@/lib/types";
 
@@ -63,10 +64,10 @@ export default function TurmasPage() {
               {g.classes.map((c) => {
                 const instructor = store.users.find((u) => u.id === c.instructorId);
                 const todayCount =
-                  store.attendance.filter((a) => a.classId === c.id && a.date === today)
+                  store.attendance.filter((a) => a.classId === c.id && attendanceDay(a.date) === today)
                     .length +
                   (store.dropIns ?? []).filter(
-                    (d) => d.classId === c.id && d.date === today,
+                    (d) => d.classId === c.id && attendanceDay(d.date) === today,
                   ).length;
                 return (
                   <article

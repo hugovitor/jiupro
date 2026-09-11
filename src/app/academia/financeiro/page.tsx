@@ -67,7 +67,11 @@ function FinanceiroPage() {
         <Tile k="Atrasados" v={brl(overdue)} warn />
         <Tile
           k="Meta"
-          v={`${Math.round((revenue / store.academy.monthlyGoal) * 100)}% de ${brl(store.academy.monthlyGoal)}`}
+          v={
+            store.academy.monthlyGoal > 0
+              ? `${Math.round((revenue / store.academy.monthlyGoal) * 100)}% de ${brl(store.academy.monthlyGoal)}`
+              : "Defina a meta nas configurações"
+          }
         />
       </div>
 

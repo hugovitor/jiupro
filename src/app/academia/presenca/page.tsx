@@ -139,7 +139,7 @@ export default function PresencaPage() {
   const listed = [...roster, ...extraRoster];
   const habitual = habitualStudentIds(classId, store.attendance);
   const visitors = (store.dropIns ?? []).filter(
-    (d) => d.classId === classId && d.date === today,
+    (d) => d.classId === classId && attendanceDay(d.date) === today,
   );
 
   const needle = q.trim().toLowerCase();

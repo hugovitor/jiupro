@@ -161,7 +161,7 @@ export default function AlunoHome() {
                 const already = onList(c.id);
                 const open = studentCanSelfCheckIn(c, now);
                 const n = store.attendance.filter(
-                  (a) => a.classId === c.id && a.date === today && isOnRoster(a),
+                  (a) => classIdsFor(c.id).has(a.classId) && attendanceDay(a.date) === today && isOnRoster(a),
                 ).length;
                 return (
                   <div key={c.id} className="flex items-center justify-between gap-3 text-sm">

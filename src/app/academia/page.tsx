@@ -36,6 +36,7 @@ import {
 } from "@/lib/insights";
 import { FirstHouseCard } from "@/components/academia/first-house-card";
 import { canAddStudent, hasFeature, planUsageLabel, studentCapMessage } from "@/lib/plan-access";
+import { attendanceDay } from "@/lib/roster-identity";
 import { useStore } from "@/lib/store";
 import { useNow } from "@/lib/use-now";
 import { birthdayMessage, comebackMessage, waHref } from "@/lib/whatsapp";
@@ -51,7 +52,7 @@ export default function AcademiaDashboard() {
   const overdue = overdueTotal(store);
   const today = isoDate(0);
   const todayCount = store.attendance.filter(
-    (a) => a.date === today && isValidated(a),
+    (a) => attendanceDay(a.date) === today && isValidated(a),
   ).length;
   const newThisMonth = store.students.filter((s) => s.joinDate.startsWith(month)).length;
   const overduePays = store.payments.filter((p) => p.status === "overdue").length;
@@ -66,7 +67,7 @@ export default function AcademiaDashboard() {
   const waitingNow = live
     ? store.attendance.filter(
         (a) =>
-          a.classId === live.id && a.date === today && isOnRoster(a) && !isValidated(a),
+          a.classId === live.id && attendanceDay(a.date) === today && isOnRoster(a) && !isValidated(a),
       ).length
     : 0;
   const upcoming = [...(store.events ?? [])]
@@ -139,12 +140,12 @@ export default function AcademiaDashboard() {
             <ul className="mt-4 space-y-4">
               {classes.map((c) => {
                 const confirmed = store.attendance.filter(
-                  (a) => a.classId === c.id && a.date === today && isOnRoster(a),
+                  (a) => a.classId === c.id && attendanceDay(a.date) === today && isOnRoster(a),
                 ).length;
                 const waiting = store.attendance.filter(
                   (a) =>
                     a.classId === c.id &&
-                    a.date === today &&
+                    attendanceDay(a.date) === today &&
                     isOnRoster(a) &&
                     !isValidated(a),
                 ).length;
