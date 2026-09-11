@@ -50,6 +50,10 @@ export function PlanGate({
   children: React.ReactNode;
 }) {
   const store = useStore();
+
+  if (!store.hydrated) {
+    return <p className="text-sm text-muted-foreground">Carregando o plano…</p>;
+  }
   if (!hasFeature(store.academy, feature)) {
     return <UpgradeWall feature={feature} />;
   }

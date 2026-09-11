@@ -34,14 +34,13 @@ export async function POST(request: Request) {
   const plan = planById(planId);
 
   if (!stripe) {
-    const next =
-      offer === "signup"
-        ? `${origin}/academia?guia=1&plan=${planId}&checkout=demo`
-        : `${origin}/academia/configuracoes?checkout=demo&plan=${planId}`;
-    return NextResponse.json({
-      demo: true,
-      url: next,
-    });
+    if (offer === "signup") {
+      return NextResponse.json({
+        demo: true,
+        url: `${origin}/academia?guia=1&plan=${planId}&checkout=demo`,
+      });
+    }
+    return NextResponse.json({ demo: true });
   }
 
   const price = await stripePriceIdForPlan(planId);

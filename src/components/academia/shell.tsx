@@ -7,6 +7,7 @@ import {
   Banknote,
   Building2,
   LayoutGrid,
+  Lock,
   LogOut,
   PersonStanding,
   Shield,
@@ -24,7 +25,7 @@ import { createSupabaseBrowserClient } from "@/lib/supabase/client";
 import { prioritySupportHref } from "@/lib/support";
 import { cn } from "@/lib/utils";
 
-type NavItem = { href: string; label: string; feature?: PlanFeature };
+type NavItem = { href: string; label: string; feature?: PlanFeature; locked?: boolean };
 
 type NavGroup = {
   id: string;
@@ -97,10 +98,11 @@ export function AcademiaShell({ children }: { children: React.ReactNode }) {
   const groups = useMemo(() => {
     return GROUPS.map((group) => ({
       ...group,
-      items: group.items.filter(
-        (item) => !item.feature || hasFeature(store.academy, item.feature),
-      ),
-    })).filter((group) => group.href || group.items.length > 0);
+      items: group.items.map((item) => ({
+        ...item,
+        locked: Boolean(item.feature && !hasFeature(store.academy, item.feature)),
+      })),
+    }));
   }, [store.academy]);
   const activeGroup = groups.find((g) => groupIsActive(g, pathname)) ?? groups[0];
   const pageTitle =
@@ -259,13 +261,16 @@ export function AcademiaShell({ children }: { children: React.ReactNode }) {
                           key={item.href}
                           href={item.href}
                           className={cn(
-                            "block rounded-lg py-1.5 pr-3 pl-9 text-[12px] transition",
+                            "flex items-center justify-between gap-2 rounded-lg py-1.5 pr-3 pl-9 text-[12px] transition",
                             itemIsActive(item.href, pathname)
                               ? "bg-red-600/15 font-bold text-red-400"
-                              : "text-white/35 hover:bg-white/5 hover:text-white",
+                              : item.locked
+                                ? "text-white/28 hover:bg-white/5 hover:text-white/60"
+                                : "text-white/35 hover:bg-white/5 hover:text-white",
                           )}
                         >
                           {item.label}
+                          {item.locked ? <Lock className="size-3 shrink-0" /> : null}
                         </Link>
                       ))}
                     </div>
@@ -299,13 +304,16 @@ export function AcademiaShell({ children }: { children: React.ReactNode }) {
                   key={item.href}
                   href={item.href}
                   className={cn(
-                    "shrink-0 border-b-2 px-4 py-2.5 text-[12px]",
+                    "inline-flex shrink-0 items-center gap-1.5 border-b-2 px-4 py-2.5 text-[12px]",
                     itemIsActive(item.href, pathname)
                       ? "border-red-600 font-bold text-red-400"
-                      : "border-transparent text-white/40",
+                      : item.locked
+                        ? "border-transparent text-white/30"
+                        : "border-transparent text-white/40",
                   )}
                 >
                   {item.label}
+                  {item.locked ? <Lock className="size-3" /> : null}
                 </Link>
               ))}
             </div>
@@ -316,7 +324,7 @@ export function AcademiaShell({ children }: { children: React.ReactNode }) {
         </div>
       </div>
 
-      <nav className="fixed inset-x-0 bottom-0 z-40 border-t border-white/10 bg-[#080808]/95 pb-[max(0.25rem,env(safe-area-inset-bottom))] backdrop-blur-xl lg:hidden">
+      <nav className="fixed inset-x-0 bottom-0 z-[55] border-t border-white/10 bg-[#080808]/95 pb-[max(0.25rem,env(safe-area-inset-bottom))] backdrop-blur-xl lg:hidden">
         <div className="flex">
           {groups.map((group) => {
             const active = groupIsActive(group, pathname);

@@ -138,7 +138,13 @@ export function planUsageLabel(
   currentCount: number,
 ) {
   const plan = planById(effectivePlan(academy));
+  const commercial = PLAN_STUDENT_LIMIT[academy.plan];
   const limit = studentLimit(academy);
-  if (limit == null) return `${currentCount} alunos · ${plan.name} ilimitado`;
+  if (limit == null) {
+    if (isDemoAcademy(academy) && commercial != null) {
+      return `${currentCount} alunos · ${plan.name} (até ${commercial} no plano)`;
+    }
+    return `${currentCount} alunos · ${plan.name} ilimitado`;
+  }
   return `${currentCount}/${limit} alunos · plano ${plan.name}`;
 }

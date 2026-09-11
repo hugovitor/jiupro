@@ -1,8 +1,8 @@
 "use client";
 
 import Link from "next/link";
-import { useSearchParams } from "next/navigation";
-import { Suspense, useEffect, useState } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
+import { Suspense, useEffect, useRef, useState } from "react";
 import { toast } from "sonner";
 import { AlunoAppCard } from "@/components/academia/aluno-app-card";
 import { FirstLoginHint } from "@/components/first-login-guide";
@@ -23,20 +23,34 @@ import { SUPPORT_PHONE_DISPLAY, prioritySupportHref, supportWhatsAppHref } from 
 function ConfigInner() {
   const store = useStore();
   const params = useSearchParams();
+  const router = useRouter();
   const plan = planById(store.academy.plan);
   const [promoCode, setPromoCode] = useState("");
+  const appliedCheckout = useRef(false);
 
   const changePlan = store.changePlan;
   useEffect(() => {
-    const checkout = params.get("checkout");
+    if (appliedCheckout.current) return;
     if (params.get("assinatura") === "cancelada") {
+      appliedCheckout.current = true;
       toast.message("Pagamento cancelado. Cole o código promocional e clique no plano.");
+      router.replace("/academia/configuracoes");
+      return;
     }
-    if (checkout !== "success" && checkout !== "demo") return;
-    const p = params.get("plan") as PlanId | null;
-    if (p) changePlan(p);
+    const paid =
+      params.get("assinatura") === "ok" || params.get("checkout") === "success";
+    const demoReturn = params.get("checkout") === "demo";
+    if (!paid && !demoReturn) return;
+    const p = params.get("plan");
+    if (!p || !PLANS.some((item) => item.id === p)) {
+      router.replace("/academia/configuracoes");
+      return;
+    }
+    appliedCheckout.current = true;
+    changePlan(p as PlanId);
     toast.success("Assinatura atualizada.");
-  }, [params, changePlan]);
+    router.replace("/academia/configuracoes");
+  }, [params, changePlan, router]);
 
   async function subscribe(planId: PlanId) {
     try {
@@ -171,6 +185,12 @@ function ConfigInner() {
             </Button>
           ))}
         </div>
+        {store.isDemo ? (
+          <p className="mt-3 text-xs text-muted-foreground">
+            Na demonstração o plano muda nesta tela, sem recarregar a URL. Os itens com cadeado
+            no menu abrem a parede de upgrade.
+          </p>
+        ) : null}
       </section>
 
       <DropInFeeForm />

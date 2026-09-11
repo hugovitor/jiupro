@@ -1,6 +1,6 @@
 "use client";
 
-import { useSearchParams } from "next/navigation";
+import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { Suspense, useEffect, useRef } from "react";
 import { toast } from "sonner";
 import { PLANS } from "@/lib/plans";
@@ -9,11 +9,14 @@ import type { PlanId } from "@/lib/types";
 
 function ReturnInner() {
   const params = useSearchParams();
+  const pathname = usePathname();
+  const router = useRouter();
   const store = useStore();
   const done = useRef(false);
 
   useEffect(() => {
     if (done.current) return;
+    if (pathname !== "/academia") return;
     const paid =
       params.get("assinatura") === "ok" || params.get("checkout") === "success";
     const demoSignup = params.get("checkout") === "demo" && params.get("guia") === "1";
@@ -26,7 +29,8 @@ function ReturnInner() {
         ? "Academia aberta. Vamos deixar a academia pronta."
         : "Pagamento confirmado. Assinatura do TatameX ativa.",
     );
-  }, [params, store]);
+    router.replace(pathname);
+  }, [params, pathname, router, store]);
 
   return null;
 }

@@ -6,6 +6,7 @@ import {
   useContext,
   useLayoutEffect,
   useMemo,
+  useState,
   useSyncExternalStore,
   type ReactNode,
 } from "react";
@@ -369,12 +370,13 @@ export function peekSession() {
 
 export function StoreProvider({ children }: { children: ReactNode }) {
   const state = useSyncExternalStore(subscribe, getSnapshot, getServerSnapshot);
-  const hydrated = true;
+  const [hydrated, setHydrated] = useState(false);
 
   useLayoutEffect(() => {
     clientReady = true;
     cached = load();
     emit();
+    setHydrated(true);
   }, []);
 
   const login = useCallback(async (email: string, password?: string): Promise<LoginResult> => {

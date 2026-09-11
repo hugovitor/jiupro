@@ -22,10 +22,10 @@ export async function startPlanCheckout(
     demo?: boolean;
     error?: string;
   };
+  if (data.demo) return "demo" as const;
   if (data.url) {
     window.location.assign(data.url);
     return "redirect" as const;
   }
-  if (data.demo) return "demo" as const;
   throw new Error(data.error || "Não foi possível iniciar o pagamento.");
 }

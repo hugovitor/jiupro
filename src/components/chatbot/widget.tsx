@@ -135,7 +135,11 @@ export function ChatbotWidget() {
     <div
       className={cn(
         "pointer-events-none fixed right-4 z-[80]",
-        inApp ? "bottom-[5.5rem] lg:bottom-6" : "bottom-6",
+        pathname.startsWith("/aluno")
+          ? "bottom-[5.5rem]"
+          : inApp
+            ? "bottom-[5.5rem] lg:bottom-6"
+            : "bottom-6",
       )}
     >
       {open ? (

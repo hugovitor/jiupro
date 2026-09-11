@@ -3,7 +3,7 @@
 import { useEffect, useMemo } from "react";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
-import { CalendarDays, Home, LineChart, LogOut, MessageSquare, User } from "lucide-react";
+import { CalendarDays, Home, LineChart, Lock, LogOut, MessageSquare, User } from "lucide-react";
 import { AcademyMark, Wordmark } from "@/components/brand";
 import { FirstLoginGuide } from "@/components/first-login-guide";
 import { hasFeature } from "@/lib/plan-access";
@@ -27,10 +27,10 @@ export function AlunoShell({ children }: { children: React.ReactNode }) {
   const branded = hasFeature(store.academy, "academyBrand");
   const items = useMemo(
     () =>
-      NAV.filter((item) => {
-        if (!item.feature) return true;
-        return hasFeature(store.academy, item.feature);
-      }),
+      NAV.map((item) => ({
+        ...item,
+        locked: Boolean(item.feature && !hasFeature(store.academy, item.feature)),
+      })),
     [store.academy],
   );
 
@@ -78,7 +78,10 @@ export function AlunoShell({ children }: { children: React.ReactNode }) {
         </header>
         <main className="relative flex-1 p-4 pb-20">{children}</main>
         <FirstLoginGuide />
-        <nav className="fixed bottom-0 left-1/2 z-20 w-full max-w-md -translate-x-1/2 border-t border-white/10 bg-[#080808]/95 pb-[max(0.25rem,env(safe-area-inset-bottom))] backdrop-blur-xl">
+        <nav
+          aria-label="Navegação do aluno"
+          className="fixed bottom-0 left-1/2 z-[55] w-full max-w-md -translate-x-1/2 border-t border-red-600/40 bg-[#0c0c0c]/95 pb-[max(0.35rem,env(safe-area-inset-bottom))] backdrop-blur-xl"
+        >
           <div className="flex">
             {items.map((item) => {
               const active =
@@ -89,12 +92,22 @@ export function AlunoShell({ children }: { children: React.ReactNode }) {
                 <Link
                   key={item.href}
                   href={item.href}
+                  aria-current={active ? "page" : undefined}
                   className={cn(
-                    "flex flex-1 flex-col items-center gap-1 py-2 text-[10px]",
-                    active ? "font-bold text-red-500" : "text-white/35",
+                    "flex flex-1 flex-col items-center gap-1 py-2.5 text-[11px]",
+                    active
+                      ? "font-bold text-red-400"
+                      : item.locked
+                        ? "text-white/40"
+                        : "text-white/70",
                   )}
                 >
-                  <item.icon className="size-4" />
+                  <span className="relative">
+                    <item.icon className="size-4" />
+                    {item.locked ? (
+                      <Lock className="absolute -top-1 -right-2 size-2.5 text-white/50" />
+                    ) : null}
+                  </span>
                   {item.label}
                 </Link>
               );
