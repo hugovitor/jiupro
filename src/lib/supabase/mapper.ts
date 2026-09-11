@@ -195,6 +195,13 @@ function dateCol(value: unknown) {
   return match ? match[1] : null;
 }
 
+function attendanceStatusFromRow(x: Row): Attendance["status"] {
+  const raw = str(x.status);
+  if (raw === "pending" || raw === "validated" || raw === "no_show") return raw;
+  if (str(x.method, "app") === "app" && !str(x.validated_at)) return "pending";
+  return "validated";
+}
+
 export function academyToRow(a: Academy): Row {
   return {
     id: a.id,
@@ -540,8 +547,7 @@ export function tablesToState(input: {
       date: dateCol(x.date) || str(x.date).slice(0, 10),
       checkedInAt: str(x.checked_in_at),
       method: (str(x.method, "manual") as Attendance["method"]) || "manual",
-      status:
-        (str(x.status, "validated") as Attendance["status"]) || "validated",
+      status: attendanceStatusFromRow(x),
       validatedAt: str(x.validated_at) || undefined,
       validatedBy: str(x.validated_by) || undefined,
     })),

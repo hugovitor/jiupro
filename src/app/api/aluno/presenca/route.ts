@@ -5,8 +5,10 @@ import { supabaseAdmin } from "@/lib/operator";
 import { classFingerprint } from "@/lib/roster-identity";
 import { ensureStudentRosterRow } from "@/lib/student-enroll";
 import {
+  attendanceStatusKnown,
   ensureAttendanceSchema,
   isMissingAttendanceStatusColumn,
+  rememberAttendanceStatusColumn,
 } from "@/lib/supabase/ensure-attendance-schema";
 
 export const runtime = "nodejs";
@@ -55,37 +57,18 @@ async function loadExistingAttendance(
   const query = () =>
     db
       .from("attendance")
-      .select("id, status, class_id")
+      .select("id, class_id, method")
       .eq("academy_id", academyId)
       .eq("student_id", studentId)
       .eq("date", today)
       .in("class_id", ids)
       .limit(8);
-  let result = await query();
-  if (result.error && isMissingAttendanceStatusColumn(result.error.message)) {
-    await ensureAttendanceSchema();
-    result = await query();
-  }
-  if (result.error && isMissingAttendanceStatusColumn(result.error.message)) {
-    const slim = await db
-      .from("attendance")
-      .select("id, class_id")
-      .eq("academy_id", academyId)
-      .eq("student_id", studentId)
-      .eq("date", today)
-      .in("class_id", ids)
-      .limit(8);
-    return (slim.data ?? []).map((row) => ({
-      id: String(row.id),
-      class_id: String(row.class_id ?? ""),
-      status: "pending",
-    }));
-  }
+  const result = await query();
   if (result.error) throw new Error(result.error.message);
   return (result.data ?? []).map((row) => ({
     id: String(row.id),
     class_id: String(row.class_id ?? ""),
-    status: String(row.status ?? "pending"),
+    status: String(row.method ?? "app") === "app" ? "pending" : "validated",
   }));
 }
 
@@ -99,13 +82,14 @@ async function writeAttendance(
       ? db.from("attendance").update(payload).eq("id", existingId)
       : db.from("attendance").insert(payload);
 
-  let { error } = await run(row);
+  const slim = withoutStatus(row);
+  const useStatus = attendanceStatusKnown() !== false;
+  let { error } = await run(useStatus ? row : slim);
   if (error && isMissingAttendanceStatusColumn(error.message)) {
-    await ensureAttendanceSchema();
-    ({ error } = await run(row));
-  }
-  if (error && isMissingAttendanceStatusColumn(error.message)) {
-    ({ error } = await run(withoutStatus(row)));
+    rememberAttendanceStatusColumn(false);
+    ({ error } = await run(slim));
+  } else if (!error && useStatus) {
+    rememberAttendanceStatusColumn(true);
   }
   return error;
 }
@@ -280,11 +264,14 @@ export async function POST(request: Request) {
       existing.id,
     );
     if (error) {
+      const duplicate = /duplicate|unique|23505/i.test(error.message);
       return NextResponse.json(
         {
-          error: isMissingAttendanceStatusColumn(error.message)
-            ? "A chamada da academia está atualizando. Confirme de novo em alguns segundos."
-            : error.message,
+          error: duplicate
+            ? "Você já confirmou esta aula."
+            : isMissingAttendanceStatusColumn(error.message)
+              ? "Não deu para gravar a presença. Confirme de novo."
+              : error.message,
         },
         { status: 400 },
       );
@@ -304,11 +291,14 @@ export async function POST(request: Request) {
     status: "pending",
   });
   if (error) {
+    const duplicate = /duplicate|unique|23505/i.test(error.message);
     return NextResponse.json(
       {
-        error: isMissingAttendanceStatusColumn(error.message)
-          ? "A chamada da academia está atualizando. Confirme de novo em alguns segundos."
-          : error.message,
+        error: duplicate
+          ? "Você já confirmou esta aula."
+          : isMissingAttendanceStatusColumn(error.message)
+            ? "Não deu para gravar a presença. Confirme de novo."
+            : error.message,
       },
       { status: 400 },
     );

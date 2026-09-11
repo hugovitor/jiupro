@@ -14,11 +14,18 @@ let inFlight: Promise<boolean> | null = null;
 
 export function isMissingAttendanceStatusColumn(message?: string) {
   const msg = message ?? "";
-  return (
-    /PGRST204|schema cache|could not find/i.test(msg) &&
-    /attendance/i.test(msg) &&
-    /status|validated_at|validated_by/i.test(msg)
-  );
+  if (!/status|validated_at|validated_by/i.test(msg)) return false;
+  return /PGRST204|schema cache|could not find|does not exist|42703|attendance\.status/i.test(msg);
+}
+
+let statusColumn: boolean | null = null;
+
+export function attendanceStatusKnown() {
+  return statusColumn;
+}
+
+export function rememberAttendanceStatusColumn(exists: boolean) {
+  statusColumn = exists;
 }
 
 export async function ensureAttendanceSchema(): Promise<{
