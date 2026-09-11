@@ -48,7 +48,7 @@ export function createSeed(): AppState {
     instagram: "@origemjj",
     pixKey: "origemjj@pix.com.br",
     pixName: "Equipe Origem Jiu-Jitsu",
-    plan: "academia",
+    plan: "equipe",
     monthlyGoal: 18000,
     dropInFee: 40,
     createdAt: "2021-03-08T12:00:00.000Z",

@@ -91,7 +91,6 @@ export function isDemoAcademy(academy: Pick<Academy, "id">) {
 }
 
 export function effectivePlan(academy: Pick<Academy, "id" | "plan">): PlanId {
-  if (isDemoAcademy(academy)) return "equipe";
   return academy.plan;
 }
 
