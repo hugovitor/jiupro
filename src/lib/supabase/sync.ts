@@ -49,6 +49,9 @@ async function upsertRows(
     const named = OPTIONAL_COLUMNS.filter((column) => msg.toLowerCase().includes(column));
     const drop = [...new Set([...quoted, ...named])].filter(Boolean);
     if (drop.length && /PGRST204|schema cache|could not find|does not exist|42703|column/i.test(msg)) {
+      if (table === "attendance" && drop.includes("status")) {
+        payload = payload.filter((row) => row.status !== "no_show");
+      }
       payload = stripOptional(payload, drop);
       continue;
     }

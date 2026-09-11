@@ -241,6 +241,25 @@ async function retractStudentCheckIn(session: ClassSession): Promise<{ ok: boole
   }
 }
 
+async function publishOwnerAttendance(input: {
+  studentId: string;
+  classId: string;
+  action: "validate" | "no_show";
+}) {
+  const client = createSupabaseBrowserClient();
+  if (!client) return;
+  const token = await ensureBrowserAuthSession(client);
+  if (!token) return;
+  await fetch("/api/academia/presenca", {
+    method: "POST",
+    headers: {
+      Authorization: `Bearer ${token}`,
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify(input),
+  }).catch(() => undefined);
+}
+
 function classAliasIds(classes: ClassSession[], classId: string) {
   const cls = classes.find((item) => item.id === classId);
   const ids = new Set<string>([classId]);
@@ -961,6 +980,10 @@ export function StoreProvider({ children }: { children: ReactNode }) {
         }),
       };
     });
+    if (ok) {
+      void publishOwnerAttendance({ studentId, classId, action: "validate" });
+      flushRemotePush();
+    }
     return ok;
   }, []);
 
@@ -985,10 +1008,14 @@ export function StoreProvider({ children }: { children: ReactNode }) {
             return a;
           }
           ok = true;
-          return { ...a, status: "no_show" as const };
+          return { ...a, status: "no_show" as const, validatedAt: undefined, validatedBy: undefined };
         }),
       };
     });
+    if (ok) {
+      void publishOwnerAttendance({ studentId, classId, action: "no_show" });
+      flushRemotePush();
+    }
     return ok;
   }, []);
 
@@ -1019,6 +1046,19 @@ export function StoreProvider({ children }: { children: ReactNode }) {
         }),
       };
     });
+    if (n) {
+      const snap = getSnapshot();
+      const today = isoDate(0);
+      const classIds = classAliasIds(snap.classes, classId);
+      const seen = new Set<string>();
+      for (const row of snap.attendance) {
+        if (!classIds.has(row.classId) || attendanceDay(row.date) !== today) continue;
+        if (attendanceStatus(row) !== "validated" || seen.has(row.studentId)) continue;
+        seen.add(row.studentId);
+        void publishOwnerAttendance({ studentId: row.studentId, classId, action: "validate" });
+      }
+      flushRemotePush();
+    }
     return n;
   }, []);
 

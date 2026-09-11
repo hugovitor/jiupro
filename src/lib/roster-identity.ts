@@ -101,10 +101,15 @@ export function remapClassIds(local: ClassSession[], remote: ClassSession[]) {
 
 function attendanceRank(row: Attendance) {
   const status = attendanceStatus(row);
-  if (status === "validated") return 3;
-  if (status === "pending") return 2;
-  if (status === "no_show") return 1;
+  if (status === "validated") return 4;
+  if (status === "no_show") return 3;
+  if (status === "pending") return 1;
   return 0;
+}
+
+function checkedAt(row: Attendance) {
+  const n = Date.parse(row.checkedInAt || "");
+  return Number.isFinite(n) ? n : 0;
 }
 
 export function mergeStudents(local: Student[], remote: Student[]) {
@@ -170,6 +175,15 @@ export function mergeAttendance(
       byKey.set(key, row);
       return;
     }
+    const prevStatus = attendanceStatus(prev);
+    const nextStatus = attendanceStatus(row);
+    if (nextStatus === "pending" && prevStatus === "no_show" && checkedAt(row) > checkedAt(prev)) {
+      byKey.set(key, row);
+      return;
+    }
+    if (prevStatus === "pending" && nextStatus === "no_show" && checkedAt(prev) > checkedAt(row)) {
+      return;
+    }
     const next = attendanceRank(row) >= attendanceRank(prev) ? row : prev;
     byKey.set(key, { ...next, id: prev.id || next.id });
   };
@@ -177,7 +191,7 @@ export function mergeAttendance(
   local.forEach((raw) => {
     const row = remap(raw);
     const key = `${row.studentId}|${row.classId}|${attendanceDay(row.date)}`;
-    if (!byKey.has(key) && row.method === "app") {
+    if (!byKey.has(key) && row.method === "app" && attendanceStatus(row) === "pending") {
       /* Confirmou no app e o servidor já não tem a linha: o aluno desistiu. */
       return;
     }

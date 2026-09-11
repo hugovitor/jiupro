@@ -158,8 +158,17 @@ async function loadExistingAttendance(
 ) {
   const ids = classIds.length ? classIds : [];
   if (!ids.length) return [];
-  const query = () =>
-    db
+  let rows: { id?: unknown; class_id?: unknown; method?: unknown; status?: unknown; validated_at?: unknown }[] = [];
+  const full = await db
+    .from("attendance")
+    .select("id, class_id, method, status, validated_at")
+    .eq("academy_id", academyId)
+    .eq("student_id", studentId)
+    .eq("date", today)
+    .in("class_id", ids)
+    .limit(8);
+  if (full.error && isMissingAttendanceStatusColumn(full.error.message)) {
+    const slim = await db
       .from("attendance")
       .select("id, class_id, method")
       .eq("academy_id", academyId)
@@ -167,13 +176,27 @@ async function loadExistingAttendance(
       .eq("date", today)
       .in("class_id", ids)
       .limit(8);
-  const result = await query();
-  if (result.error) throw new Error(result.error.message);
-  return (result.data ?? []).map((row) => ({
-    id: String(row.id),
-    class_id: String(row.class_id ?? ""),
-    status: String(row.method ?? "app") === "app" ? "pending" : "validated",
-  }));
+    if (slim.error) throw new Error(slim.error.message);
+    rows = slim.data ?? [];
+  } else if (full.error) {
+    throw new Error(full.error.message);
+  } else {
+    rows = full.data ?? [];
+  }
+  return rows.map((row) => {
+    const status = String(row.status ?? "");
+    if (status === "no_show") {
+      return { id: String(row.id), class_id: String(row.class_id ?? ""), status: "no_show" };
+    }
+    if (row.validated_at) {
+      return { id: String(row.id), class_id: String(row.class_id ?? ""), status: "validated" };
+    }
+    return {
+      id: String(row.id),
+      class_id: String(row.class_id ?? ""),
+      status: String(row.method ?? "app") === "app" ? "pending" : "validated",
+    };
+  });
 }
 
 async function writeAttendance(
