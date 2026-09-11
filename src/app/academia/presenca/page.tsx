@@ -24,7 +24,7 @@ import {
   statusLabel,
 } from "@/lib/attendance";
 import { brl, clockLabel, currentMonth, formatTime, isoDate, minutes, weekdayName } from "@/lib/format";
-import { attendanceForStudent, classesAreSame } from "@/lib/roster-identity";
+import { attendanceDay, attendanceForStudent, classesShareSlot } from "@/lib/roster-identity";
 import { useStore } from "@/lib/store";
 import type { Attendance, ClassSession, Student } from "@/lib/types";
 import { useNow } from "@/lib/use-now";
@@ -36,14 +36,27 @@ export default function PresencaPage() {
   const today = isoDate(0);
 
   useEffect(() => {
-    void store.syncNow().catch(() => undefined);
-  }, [store.syncNow]);
+    void store.pullNow().catch(() => undefined);
+    const tick = window.setInterval(() => {
+      void store.pullNow().catch(() => undefined);
+    }, 5000);
+    const onVis = () => {
+      if (document.visibilityState === "visible") {
+        void store.pullNow().catch(() => undefined);
+      }
+    };
+    document.addEventListener("visibilitychange", onVis);
+    return () => {
+      window.clearInterval(tick);
+      document.removeEventListener("visibilitychange", onVis);
+    };
+  }, [store.pullNow]);
 
   const todayList = useMemo(() => {
     const byDay = store.todayClasses();
     const withCheckIn = store.classes.filter((cls) =>
       store.attendance.some(
-        (row) => row.classId === cls.id && row.date === today && isOnRoster(row),
+        (row) => row.classId === cls.id && attendanceDay(row.date) === today && isOnRoster(row),
       ),
     );
     const seen = new Map<string, ClassSession>();
@@ -55,10 +68,10 @@ export default function PresencaPage() {
   const [q, setQ] = useState("");
   const waitingClassId = store.classes.find((item) =>
     store.attendance.some((row) => {
-      if (row.date !== today || attendanceStatus(row) !== "pending") return false;
+      if (attendanceDay(row.date) !== today || attendanceStatus(row) !== "pending") return false;
       if (row.classId === item.id) return true;
       const origin = store.classes.find((cls) => cls.id === row.classId);
-      return origin ? classesAreSame(origin, item) : false;
+      return origin ? classesShareSlot(origin, item) : false;
     }),
   )?.id;
 
@@ -72,7 +85,7 @@ export default function PresencaPage() {
   const cls = store.classes.find((c) => c.id === classId);
   const phase = cls ? classPhase(cls, now) : "closed";
   const classIds = new Set(
-    store.classes.filter((item) => cls && classesAreSame(item, cls)).map((item) => item.id),
+    store.classes.filter((item) => cls && classesShareSlot(item, cls)).map((item) => item.id),
   );
   if (cls) classIds.add(cls.id);
 
@@ -86,7 +99,7 @@ export default function PresencaPage() {
   }, [store.students, cls]);
 
   const presentRows = store.attendance.filter(
-    (a) => classIds.has(a.classId) && a.date === today && isOnRoster(a),
+    (a) => classIds.has(a.classId) && attendanceDay(a.date) === today && isOnRoster(a),
   );
   const presentByStudent = new Map<string, Attendance>();
   for (const student of roster) {
@@ -100,7 +113,7 @@ export default function PresencaPage() {
   const noShowRows = store.attendance.filter(
     (a) =>
       classIds.has(a.classId) &&
-      a.date === today &&
+      attendanceDay(a.date) === today &&
       attendanceStatus(a) === "no_show",
   );
   const noShowByStudent = new Map<string, Attendance>();
@@ -108,6 +121,22 @@ export default function PresencaPage() {
     const row = attendanceForStudent(student, noShowRows, store.students);
     if (row) noShowByStudent.set(student.id, row);
   }
+  for (const row of presentRows) {
+    if ([...presentByStudent.values()].some((att) => att.id === row.id)) continue;
+    const student =
+      store.students.find((item) => item.id === row.studentId) ??
+      store.students.find((item) => item.userId === row.studentId) ??
+      ghostStudent(row);
+    presentByStudent.set(student.id, row);
+  }
+  const extraRoster: Student[] = [];
+  for (const [id, row] of presentByStudent) {
+    if (roster.some((item) => item.id === id)) continue;
+    extraRoster.push(
+      store.students.find((item) => item.id === id) ?? ghostStudent(row),
+    );
+  }
+  const listed = [...roster, ...extraRoster];
   const habitual = habitualStudentIds(classId, store.attendance);
   const visitors = (store.dropIns ?? []).filter(
     (d) => d.classId === classId && d.date === today,
@@ -121,7 +150,7 @@ export default function PresencaPage() {
     );
   }
 
-  const waiting = roster
+  const waiting = listed
     .filter(
       (s) =>
         presentByStudent.has(s.id) &&
@@ -129,7 +158,7 @@ export default function PresencaPage() {
         matches(s),
     )
     .sort(sortByName);
-  const validated = roster
+  const validated = listed
     .filter(
       (s) =>
         presentByStudent.has(s.id) &&
@@ -189,13 +218,17 @@ export default function PresencaPage() {
         {tabs.map((c) => {
           const selected = c.id === classId;
           const live = classPhase(c, now);
+          const ids = new Set(
+            store.classes.filter((item) => classesShareSlot(item, c)).map((item) => item.id),
+          );
+          ids.add(c.id);
           const n = store.attendance.filter(
-            (a) => a.classId === c.id && a.date === today && isOnRoster(a),
+            (a) => ids.has(a.classId) && attendanceDay(a.date) === today && isOnRoster(a),
           ).length;
           const pending = store.attendance.filter(
             (a) =>
-              a.classId === c.id &&
-              a.date === today &&
+              ids.has(a.classId) &&
+              attendanceDay(a.date) === today &&
               attendanceStatus(a) === "pending",
           ).length;
           return (
@@ -517,6 +550,27 @@ export default function PresencaPage() {
       <FrequenciaMes />
     </div>
   );
+}
+
+function ghostStudent(row: Attendance): Student {
+  return {
+    id: row.studentId,
+    academyId: row.academyId,
+    userId: "",
+    name: "Aluno do app",
+    email: "",
+    phone: "",
+    birthDate: "",
+    division: "adult",
+    belt: "white",
+    stripes: 0,
+    joinDate: attendanceDay(row.date),
+    lastPromotionDate: attendanceDay(row.date),
+    status: "active",
+    monthlyFee: 0,
+    notes: "Confirmou no app — a ficha ainda não bateu com a lista.",
+    avatarHue: 12,
+  };
 }
 
 function Kpi({

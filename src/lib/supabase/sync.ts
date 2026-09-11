@@ -5,9 +5,7 @@ import { mapAuthError } from "../auth-errors";
 import { looksLikeHouseCode } from "../join-code";
 import { isStudentJoinNotFound, preferredJoinCode, STUDENT_JOIN_NOT_FOUND, type PublicAcademyJoin } from "../student-join";
 import { ensureUuidState, rehomeAcademy, stateToTables, tablesToState } from "./mapper";
-import { classFingerprint } from "../roster-identity";
 import { DEMO_ACADEMY_ID } from "../seed";
-import { isUuid } from "./ids";
 import type { AppState, Role, Session } from "../types";
 
 const OPTIONAL_COLUMNS = [
@@ -93,43 +91,6 @@ async function replaceRows(
     if (error) throw error;
   }
   await upsertRows(client, table, rows);
-}
-
-async function remapAttendanceRows(
-  client: SupabaseClient,
-  academyId: string,
-  rows: Record<string, unknown>[],
-  localClasses: AppState["classes"],
-  userId?: string,
-) {
-  if (!rows.length) return rows;
-  const [{ data: roster }, { data: remoteClasses }] = await Promise.all([
-    client.from("students").select("id, user_id, email").eq("academy_id", academyId),
-    client.from("classes").select("id, weekday, start_time, name, division").eq("academy_id", academyId),
-  ]);
-  const byUser = (roster ?? []).find((row) => String(row.user_id ?? "") === (userId ?? ""));
-  const classIdByPrint = new Map<string, string>();
-  for (const row of remoteClasses ?? []) {
-    classIdByPrint.set(
-      classFingerprint({
-        weekday: Number(row.weekday),
-        startTime: String(row.start_time ?? "").slice(0, 5),
-        name: String(row.name ?? ""),
-        division: (String(row.division ?? "adult") as AppState["classes"][number]["division"]) || "adult",
-      }),
-      String(row.id),
-    );
-  }
-  return rows
-    .map((row) => {
-      const local = localClasses.find((item) => item.id === String(row.class_id ?? ""));
-      const classId = local
-        ? (classIdByPrint.get(classFingerprint(local)) ?? String(row.class_id ?? ""))
-        : String(row.class_id ?? "");
-      const studentId = (byUser?.id ? String(byUser.id) : "") || String(row.student_id ?? "");
-      return { ...row, class_id: classId, student_id: studentId };
-    })
-    .filter((row) => isUuid(String(row.student_id ?? "")) && isUuid(String(row.class_id ?? "")));
 }
 
 async function replaceJoin(
@@ -222,19 +183,7 @@ export async function pushAcademyState(state: AppState, opts?: { refresh?: boole
   }
 
   if (ready.session?.role === "student") {
-    try {
-      const rows = await remapAttendanceRows(
-        client,
-        ready.academy.id,
-        tables.attendance,
-        ready.classes,
-        sessionUser.user?.id,
-      );
-      await upsertRows(client, "attendance", rows);
-    } catch (err) {
-      const message = err instanceof Error ? err.message : "Não foi possível salvar agora.";
-      return { error: message, state: ready };
-    }
+    /* Presença do aluno vai por POST /api/aluno/presenca. Não reescreve a chamada da academia. */
     return { state: ready };
   }
 
@@ -358,6 +307,9 @@ export async function pullAcademyState(session: Session): Promise<AppState | { e
 
   if (academy.error) return { error: academy.error.message };
   if (!academy.data) return { error: "Academia não encontrada." };
+  if (students.error) return { error: students.error.message };
+  if (classes.error) return { error: classes.error.message };
+  if (attendance.error) return { error: attendance.error.message };
 
   const postIds = (posts.data ?? []).map((p: { id: string }) => String(p.id));
   const eventIds = (events.data ?? []).map((e: { id: string }) => String(e.id));

@@ -187,8 +187,12 @@ function time(v: string) {
 }
 
 function dateCol(value: unknown) {
-  const raw = String(value ?? "").trim().slice(0, 10);
-  return /^\d{4}-\d{2}-\d{2}$/.test(raw) ? raw : null;
+  if (value instanceof Date && !Number.isNaN(value.getTime())) {
+    return value.toISOString().slice(0, 10);
+  }
+  const raw = String(value ?? "").trim();
+  const match = raw.match(/^(\d{4}-\d{2}-\d{2})/);
+  return match ? match[1] : null;
 }
 
 export function academyToRow(a: Academy): Row {
@@ -533,7 +537,7 @@ export function tablesToState(input: {
       academyId,
       studentId: str(x.student_id),
       classId: str(x.class_id),
-      date: str(x.date),
+      date: dateCol(x.date) || str(x.date).slice(0, 10),
       checkedInAt: str(x.checked_in_at),
       method: (str(x.method, "manual") as Attendance["method"]) || "manual",
       status:

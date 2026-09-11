@@ -148,16 +148,34 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: "Não achamos essa turma na academia." }, { status: 400 });
   }
 
-  const { data: existing } = await db
+  const slotIds = (classes ?? [])
+    .filter((row) => {
+      const hit = (classes ?? []).find((item) => String(item.id) === String(classId));
+      if (!hit) return String(row.id) === String(classId);
+      return (
+        Number(row.weekday) === Number(hit.weekday) &&
+        timeValue(String(row.start_time ?? "")) === timeValue(String(hit.start_time ?? "")) &&
+        String(row.division ?? "adult") === String(hit.division ?? "adult")
+      );
+    })
+    .map((row) => String(row.id));
+  const { data: existingRows } = await db
     .from("attendance")
-    .select("id, status")
+    .select("id, status, class_id")
     .eq("academy_id", academyId)
     .eq("student_id", studentId)
-    .eq("class_id", classId)
     .eq("date", today)
-    .maybeSingle();
+    .in("class_id", slotIds.length ? slotIds : [classId])
+    .limit(8);
+  const existing =
+    existingRows?.find((row) => row.status !== "no_show") ?? existingRows?.[0];
   if (existing?.id && existing.status !== "no_show") {
-    return NextResponse.json({ ok: true, attendanceId: existing.id, studentId, classId });
+    return NextResponse.json({
+      ok: true,
+      attendanceId: existing.id,
+      studentId,
+      classId: String(existing.class_id ?? classId),
+    });
   }
 
   const now = new Date().toISOString();

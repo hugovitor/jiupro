@@ -26,14 +26,33 @@ export function studentsAreSame(a: Student, b: Student) {
   return false;
 }
 
+export function attendanceDay(value: unknown) {
+  if (value instanceof Date && !Number.isNaN(value.getTime())) {
+    return value.toISOString().slice(0, 10);
+  }
+  const raw = String(value ?? "").trim();
+  const match = raw.match(/^(\d{4}-\d{2}-\d{2})/);
+  return match ? match[1] : raw.slice(0, 10);
+}
+
 export function classFingerprint(cls: Pick<ClassSession, "weekday" | "startTime" | "name" | "division">) {
   const time = String(cls.startTime ?? "").slice(0, 5);
   return `${cls.weekday}|${time}|${nameKey(cls.name)}|${cls.division ?? "adult"}`;
 }
 
+export function classSlot(cls: Pick<ClassSession, "weekday" | "startTime" | "division">) {
+  const time = String(cls.startTime ?? "").slice(0, 5);
+  return `${cls.weekday}|${time}|${cls.division ?? "adult"}`;
+}
+
 export function classesAreSame(a: ClassSession, b: ClassSession) {
   if (a.id && b.id && a.id === b.id) return true;
   return classFingerprint(a) === classFingerprint(b);
+}
+
+/** Same weekday + time + division, even if the name differs (Adultos vs Adultos Gi). */
+export function classesShareSlot(a: ClassSession, b: ClassSession) {
+  return classesAreSame(a, b) || classSlot(a) === classSlot(b);
 }
 
 /** Oldest roster row that represents this person. */
@@ -57,16 +76,15 @@ export function studentAliasIds(student: Student, roster: Student[]) {
 
 export function remapStudentIds(local: Student[], remote: Student[]) {
   const map = new Map<string, string>();
-  for (const row of local) {
-    const hit = canonicalStudent(remote, row) ?? canonicalStudent(local, row);
-    if (hit) {
-      map.set(row.id, hit.id);
-      if (row.userId) map.set(row.userId, hit.id);
-    }
-  }
-  for (const row of remote) {
-    map.set(row.id, row.id);
-    if (row.userId) map.set(row.userId, row.id);
+  const prefer = (from: string, to: string) => {
+    if (!from || !to) return;
+    if (!map.has(from)) map.set(from, to);
+  };
+  const pool = remote.length ? remote : local;
+  for (const row of [...local, ...remote]) {
+    const hit = canonicalStudent(pool, row) ?? row;
+    prefer(row.id, hit.id);
+    if (row.userId) prefer(row.userId, hit.id);
   }
   return map;
 }

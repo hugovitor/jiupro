@@ -1,5 +1,6 @@
 "use client";
 
+import { useState } from "react";
 import Link from "next/link";
 import { toast } from "sonner";
 import { BeltBadge, BeltStrip, PersonAvatar } from "@/components/belt-badge";
@@ -20,6 +21,7 @@ import {
 import { formatDay, isoDate, minutes, weekdayFull, weekdayToday, currentMonth } from "@/lib/format";
 import { attendanceInDays } from "@/lib/insights";
 import { ADULT_ORDER, beltMeta } from "@/lib/belts";
+import { attendanceDay, attendanceForStudent, classesShareSlot } from "@/lib/roster-identity";
 import { currentStudent, useStore } from "@/lib/store";
 import type { Attendance, ClassSession, Student } from "@/lib/types";
 import { useNow } from "@/lib/use-now";
@@ -31,6 +33,7 @@ export default function AlunoHome() {
   const now = useNow();
   const student = currentStudent(store);
   const today = isoDate(0);
+  const [busyId, setBusyId] = useState<string | null>(null);
   const classes = [...store.todayClasses()]
     .filter((c) => {
       if (!student) return true;
@@ -42,11 +45,26 @@ export default function AlunoHome() {
   const featured = recommendClass(classes, now);
   const att = student ? attendanceInDays(store, student.id, 30) : 0;
 
-  const mineRow = (classId: string) =>
-    store.attendance.find(
-      (a) =>
-        a.studentId === student?.id && a.classId === classId && a.date === today,
+  const classIdsFor = (classId: string) => {
+    const cls = store.classes.find((c) => c.id === classId);
+    const ids = new Set<string>([classId]);
+    if (!cls) return ids;
+    for (const item of store.classes) {
+      if (classesShareSlot(item, cls)) ids.add(item.id);
+    }
+    return ids;
+  };
+
+  const mineRow = (classId: string) => {
+    if (!student) return undefined;
+    return attendanceForStudent(
+      student,
+      store.attendance.filter(
+        (a) => classIdsFor(classId).has(a.classId) && attendanceDay(a.date) === today,
+      ),
+      store.students,
     );
+  };
 
   const onList = (classId: string) => {
     const row = mineRow(classId);
@@ -101,20 +119,25 @@ export default function AlunoHome() {
               !onList(featured.id)
             }
             classmates={rosterFor(store.students, store.attendance, featured.id, today)}
-            onConfirm={() => {
-              if (!student) return;
+            onConfirm={async () => {
+              if (!student || busyId) return;
               if (onList(featured.id)) return;
               if (!studentCanSelfCheckIn(featured, now)) {
                 toast.error(selfCheckInHint(featured, now));
                 return;
               }
-              const ok = store.confirmClass(student.id, featured.id);
-              if (ok) {
-                toast.success(
-                  "Confirmado. A turma já te vê na lista. O professor valida no tatame.",
-                );
-              } else {
-                toast.error("Não deu para confirmar. A turma pode ter lotado.");
+              setBusyId(featured.id);
+              try {
+                const result = await store.confirmClass(student.id, featured.id);
+                if (result.ok) {
+                  toast.success(
+                    "Confirmado. A turma já te vê na lista. O professor valida no tatame.",
+                  );
+                } else {
+                  toast.error(result.error ?? "Não deu para confirmar. A turma pode ter lotado.");
+                }
+              } finally {
+                setBusyId(null);
               }
             }}
             onCancel={() => {
@@ -153,16 +176,21 @@ export default function AlunoHome() {
                       <Button
                         size="sm"
                         variant="outline"
-                        disabled={!student || !open}
-                        onClick={() => {
-                          if (!student) return;
-                          const ok = store.confirmClass(student.id, c.id);
-                          if (ok) {
-                            toast.success("Confirmado. A turma já te vê.");
-                          } else if (!open) {
-                            toast.error(selfCheckInHint(c, now));
-                          } else {
-                            toast.error("Não deu para confirmar.");
+                        disabled={!student || !open || busyId === c.id}
+                        onClick={async () => {
+                          if (!student || busyId) return;
+                          setBusyId(c.id);
+                          try {
+                            const result = await store.confirmClass(student.id, c.id);
+                            if (result.ok) {
+                              toast.success("Confirmado. A turma já te vê.");
+                            } else if (!open) {
+                              toast.error(selfCheckInHint(c, now));
+                            } else {
+                              toast.error(result.error ?? "Não deu para confirmar.");
+                            }
+                          } finally {
+                            setBusyId(null);
                           }
                         }}
                       >
@@ -224,7 +252,7 @@ function FeaturedClass({
   canCheck: boolean;
   lockHint: string;
   full: boolean;
-  onConfirm: () => void;
+  onConfirm: () => void | Promise<void>;
   onCancel: () => void;
   classmates: { student: Student; row: Attendance }[];
 }) {
@@ -259,7 +287,12 @@ function FeaturedClass({
         </p>
       ) : canCheck ? (
         <>
-          <Button className="mt-4 h-12 w-full rounded-xl text-base font-black" size="lg" onClick={onConfirm}>
+          <Button
+            className="mt-4 h-12 w-full rounded-xl text-base font-black"
+            size="lg"
+            disabled={!canCheck}
+            onClick={onConfirm}
+          >
             Confirmar que vou
           </Button>
           <p className="mt-2 text-center text-xs text-white/40">{lockHint}</p>
