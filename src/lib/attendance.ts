@@ -120,7 +120,12 @@ export function lastVisitIso(studentId: string, attendance: Attendance[]) {
 
 export function isOverdue(student: Student, attendance: Attendance[], days = 14) {
   if (student.status !== "active") return false;
-  const last = lastVisitIso(student.id, attendance);
+  const ids = new Set([student.id, student.userId].filter(Boolean));
+  const dates = attendance
+    .filter((a) => ids.has(a.studentId) && isOnRoster(a))
+    .map((a) => a.date);
+  if (dates.length === 0) return true;
+  const last = dates.sort().at(-1) ?? null;
   if (!last) return true;
   return last < daysAgoIso(days);
 }

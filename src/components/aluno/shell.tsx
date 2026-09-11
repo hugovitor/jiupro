@@ -26,15 +26,15 @@ export function AlunoShell({ children }: { children: React.ReactNode }) {
 
   useEffect(() => {
     if (store.academy.id === DEMO_ACADEMY_ID) return;
-    void store.pullNow().catch(() => undefined);
+    void store.pullNow().then(() => store.republishPendingCheckIns()).catch(() => undefined);
     const onVis = () => {
       if (document.visibilityState === "visible") {
-        void store.pullNow().catch(() => undefined);
+        void store.pullNow().then(() => store.republishPendingCheckIns()).catch(() => undefined);
       }
     };
     document.addEventListener("visibilitychange", onVis);
     return () => document.removeEventListener("visibilitychange", onVis);
-  }, [store.academy.id, store.pullNow]);
+  }, [store.academy.id, store.pullNow, store.republishPendingCheckIns]);
 
   return (
     <div className="flex min-h-screen justify-center bg-[#070707] text-white selection:bg-red-600 selection:text-white">

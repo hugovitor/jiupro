@@ -45,6 +45,7 @@ import {
 } from "./vault";
 import { attendanceStatus, classHeadcount, isOnRoster, isValidated, studentCanSelfCheckIn } from "./attendance";
 import { academyPortability } from "./lgpd";
+import { canonicalStudent, classesAreSame, mergeAcademyState, studentAliasIds } from "./roster-identity";
 import type {
   AcademyEvent,
   AppState,
@@ -134,6 +135,7 @@ type Store = AppState & {
   removeClass: (id: string) => void;
   addEvaluation: (input: Omit<Evaluation, "id" | "academyId">) => void;
   confirmClass: (studentId: string, classId: string) => boolean;
+  republishPendingCheckIns: () => void;
   generateMonthCharges: (month: string) => number;
   addExpense: (input: {
     description: string;
@@ -195,6 +197,36 @@ function flushRemotePush() {
   const state = cached;
   if (!state || state.academy.id === DEMO_ACADEMY_ID) return;
   void pushAcademyState(state);
+}
+
+function classAliasIds(classes: ClassSession[], classId: string) {
+  const cls = classes.find((item) => item.id === classId);
+  const ids = new Set<string>([classId]);
+  if (!cls) return ids;
+  for (const item of classes) {
+    if (classesAreSame(item, cls)) ids.add(item.id);
+  }
+  return ids;
+}
+
+async function publishStudentCheckIn(session: ClassSession) {
+  const client = createSupabaseBrowserClient();
+  const token = (await client?.auth.getSession())?.data.session?.access_token;
+  if (!token) return;
+  await fetch("/api/aluno/presenca", {
+    method: "POST",
+    headers: {
+      Authorization: `Bearer ${token}`,
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify({
+      classId: session.id,
+      weekday: session.weekday,
+      startTime: session.startTime,
+      name: session.name,
+      division: session.division,
+    }),
+  }).catch(() => undefined);
 }
 
 function load(): AppState {
@@ -606,7 +638,14 @@ export function StoreProvider({ children }: { children: ReactNode }) {
     if (!isSupabaseConfigured()) {
       return { ok: false, error: "Ainda não dá para gravar a academia. Tente de novo ou fale com o suporte." };
     }
-    const ready = ensureUuidState(current);
+    const readyLocal = ensureUuidState(current);
+    let ready = readyLocal;
+    if (current.session) {
+      const pulled = await pullAcademyState(current.session);
+      if (!("error" in pulled)) {
+        ready = ensureUuidState(mergeAcademyState(readyLocal, pulled));
+      }
+    }
     write(ready);
     const epoch = writeEpoch;
     const owner = ready.users.find((u) => u.role === "owner");
@@ -633,7 +672,9 @@ export function StoreProvider({ children }: { children: ReactNode }) {
       return { ok: true };
     }
     if (pushed.error) return { ok: false, error: pushed.error };
-    if (pushed.state && writeEpoch === epoch) write(pushed.state);
+    if (pushed.state && writeEpoch === epoch) {
+      write(mergeAcademyState(getSnapshot(), pushed.state));
+    }
     return { ok: true };
   }, []);
 
@@ -649,8 +690,9 @@ export function StoreProvider({ children }: { children: ReactNode }) {
     const pulled = await pullAcademyState(current.session);
     if ("error" in pulled) return { ok: false, error: pulled.error };
     if (writeEpoch !== epoch) return { ok: true };
-    putAcademy(pulled);
-    write(pulled);
+    const merged = mergeAcademyState(current, pulled);
+    putAcademy(merged);
+    write(merged);
     return { ok: true };
   }, []);
 
@@ -791,13 +833,24 @@ export function StoreProvider({ children }: { children: ReactNode }) {
 
   const checkOut: Store["checkOut"] = useCallback((studentId, classId) => {
     const today = isoDate(0);
-    commit((prev) => ({
-      ...prev,
-      attendance: prev.attendance.filter(
-        (a) =>
-          !(a.studentId === studentId && a.classId === classId && a.date === today),
-      ),
-    }));
+    const removed: string[] = [];
+    commit((prev) => {
+      const student = prev.students.find((item) => item.id === studentId);
+      const aliases = student ? studentAliasIds(student, prev.students) : new Set([studentId]);
+      const classIds = classAliasIds(prev.classes, classId);
+      return {
+        ...prev,
+        attendance: prev.attendance.filter((a) => {
+          const drop = aliases.has(a.studentId) && classIds.has(a.classId) && a.date === today;
+          if (drop) removed.push(a.id);
+          return !drop;
+        }),
+      };
+    });
+    const client = createSupabaseBrowserClient();
+    if (client && removed.length) {
+      void client.from("attendance").delete().in("id", removed);
+    }
   }, []);
 
   const validateCheckIn: Store["validateCheckIn"] = useCallback((studentId, classId) => {
@@ -806,12 +859,17 @@ export function StoreProvider({ children }: { children: ReactNode }) {
     commit((prev) => {
       const now = new Date().toISOString();
       const who = prev.session?.userId;
+      const student = prev.students.find((item) => item.id === studentId);
+      const aliases = student
+        ? studentAliasIds(student, prev.students)
+        : new Set([studentId]);
+      const classIds = classAliasIds(prev.classes, classId);
       return {
         ...prev,
         attendance: prev.attendance.map((a) => {
           if (
-            a.studentId !== studentId ||
-            a.classId !== classId ||
+            !aliases.has(a.studentId) ||
+            !classIds.has(a.classId) ||
             a.date !== today ||
             attendanceStatus(a) !== "pending"
           ) {
@@ -833,21 +891,28 @@ export function StoreProvider({ children }: { children: ReactNode }) {
   const markNoShow: Store["markNoShow"] = useCallback((studentId, classId) => {
     const today = isoDate(0);
     let ok = false;
-    commit((prev) => ({
-      ...prev,
-      attendance: prev.attendance.map((a) => {
-        if (
-          a.studentId !== studentId ||
-          a.classId !== classId ||
-          a.date !== today ||
-          !isOnRoster(a)
-        ) {
-          return a;
-        }
-        ok = true;
-        return { ...a, status: "no_show" as const };
-      }),
-    }));
+    commit((prev) => {
+      const student = prev.students.find((item) => item.id === studentId);
+      const aliases = student
+        ? studentAliasIds(student, prev.students)
+        : new Set([studentId]);
+      const classIds = classAliasIds(prev.classes, classId);
+      return {
+        ...prev,
+        attendance: prev.attendance.map((a) => {
+          if (
+            !aliases.has(a.studentId) ||
+            !classIds.has(a.classId) ||
+            a.date !== today ||
+            !isOnRoster(a)
+          ) {
+            return a;
+          }
+          ok = true;
+          return { ...a, status: "no_show" as const };
+        }),
+      };
+    });
     return ok;
   }, []);
 
@@ -1101,10 +1166,12 @@ export function StoreProvider({ children }: { children: ReactNode }) {
       const session = current.classes.find((c) => c.id === classId);
       if (!session) return false;
       if (!studentCanSelfCheckIn(session)) return false;
+      const who = current.students.find((item) => item.id === studentId);
+      const sid = (who ? canonicalStudent(current.students, who)?.id : null) ?? studentId;
       const today = isoDate(0);
+      const aliases = who ? studentAliasIds(who, current.students) : new Set([sid]);
       const mine = current.attendance.find(
-        (a) =>
-          a.studentId === studentId && a.classId === classId && a.date === today,
+        (a) => aliases.has(a.studentId) && a.classId === classId && a.date === today,
       );
       if (mine && isOnRoster(mine)) return false;
       const heads = classHeadcount(
@@ -1114,12 +1181,25 @@ export function StoreProvider({ children }: { children: ReactNode }) {
         today,
       );
       if (session.capacity > 0 && heads >= session.capacity) return false;
-      const ok = checkIn(studentId, classId, "app");
-      if (ok) flushRemotePush();
+      const ok = checkIn(sid, classId, "app");
+      if (ok) {
+        flushRemotePush();
+        void publishStudentCheckIn(session);
+      }
       return ok;
     },
     [checkIn],
   );
+
+  const republishPendingCheckIns: Store["republishPendingCheckIns"] = useCallback(() => {
+    const current = getSnapshot();
+    const today = isoDate(0);
+    for (const row of current.attendance) {
+      if (row.date !== today || attendanceStatus(row) !== "pending") continue;
+      const cls = current.classes.find((item) => item.id === row.classId);
+      if (cls) void publishStudentCheckIn(cls);
+    }
+  }, []);
 
   const generateMonthCharges: Store["generateMonthCharges"] = useCallback(
     (month) => {
@@ -1341,6 +1421,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
       removeClass,
       addEvaluation,
       confirmClass,
+      republishPendingCheckIns,
       generateMonthCharges,
       addExpense,
       waivePayment,
@@ -1391,6 +1472,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
       removeClass,
       addEvaluation,
       confirmClass,
+      republishPendingCheckIns,
       generateMonthCharges,
       addExpense,
       waivePayment,
@@ -1410,10 +1492,19 @@ export function StoreProvider({ children }: { children: ReactNode }) {
 export function currentStudent(state: {
   academy: { id: string };
   students: Student[];
+  users?: { id: string; email: string }[];
   session: AppState["session"];
 }) {
   const byUser = state.students.find((s) => s.userId && s.userId === state.session?.userId);
   if (byUser) return byUser;
+  const email = state.users
+    ?.find((user) => user.id === state.session?.userId)
+    ?.email.trim()
+    .toLowerCase();
+  if (email) {
+    const byEmail = state.students.find((s) => s.email.trim().toLowerCase() === email);
+    if (byEmail) return byEmail;
+  }
   if (state.academy.id === DEMO_ACADEMY_ID) {
     return state.students.find((s) => s.id === "s_joao");
   }

@@ -24,6 +24,7 @@ import {
   statusLabel,
 } from "@/lib/attendance";
 import { brl, clockLabel, currentMonth, formatTime, isoDate, minutes, weekdayName } from "@/lib/format";
+import { attendanceForStudent, classesAreSame } from "@/lib/roster-identity";
 import { useStore } from "@/lib/store";
 import type { Attendance, ClassSession, Student } from "@/lib/types";
 import { useNow } from "@/lib/use-now";
@@ -52,15 +53,28 @@ export default function PresencaPage() {
   const recommended = recommendClass(todayList, now);
   const [pinnedId, setPinnedId] = useState<string | null>(null);
   const [q, setQ] = useState("");
+  const waitingClassId = store.classes.find((item) =>
+    store.attendance.some((row) => {
+      if (row.date !== today || attendanceStatus(row) !== "pending") return false;
+      if (row.classId === item.id) return true;
+      const origin = store.classes.find((cls) => cls.id === row.classId);
+      return origin ? classesAreSame(origin, item) : false;
+    }),
+  )?.id;
 
   const classId =
     pinnedId ??
+    waitingClassId ??
     recommended?.id ??
     todayList[0]?.id ??
     store.classes[0]?.id ??
     "";
   const cls = store.classes.find((c) => c.id === classId);
   const phase = cls ? classPhase(cls, now) : "closed";
+  const classIds = new Set(
+    store.classes.filter((item) => cls && classesAreSame(item, cls)).map((item) => item.id),
+  );
+  if (cls) classIds.add(cls.id);
 
   const roster = useMemo(() => {
     return store.students.filter((s) => {
@@ -72,16 +86,28 @@ export default function PresencaPage() {
   }, [store.students, cls]);
 
   const presentRows = store.attendance.filter(
-    (a) => a.classId === classId && a.date === today && isOnRoster(a),
+    (a) => classIds.has(a.classId) && a.date === today && isOnRoster(a),
   );
-  const presentByStudent = new Map(presentRows.map((a) => [a.studentId, a]));
+  const presentByStudent = new Map<string, Attendance>();
+  for (const student of roster) {
+    const row = attendanceForStudent(
+      student,
+      presentRows,
+      store.students,
+    );
+    if (row) presentByStudent.set(student.id, row);
+  }
   const noShowRows = store.attendance.filter(
     (a) =>
-      a.classId === classId &&
+      classIds.has(a.classId) &&
       a.date === today &&
       attendanceStatus(a) === "no_show",
   );
-  const noShowByStudent = new Map(noShowRows.map((a) => [a.studentId, a]));
+  const noShowByStudent = new Map<string, Attendance>();
+  for (const student of roster) {
+    const row = attendanceForStudent(student, noShowRows, store.students);
+    if (row) noShowByStudent.set(student.id, row);
+  }
   const habitual = habitualStudentIds(classId, store.attendance);
   const visitors = (store.dropIns ?? []).filter(
     (d) => d.classId === classId && d.date === today,

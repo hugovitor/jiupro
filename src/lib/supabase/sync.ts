@@ -5,7 +5,9 @@ import { mapAuthError } from "../auth-errors";
 import { looksLikeHouseCode } from "../join-code";
 import { isStudentJoinNotFound, preferredJoinCode, STUDENT_JOIN_NOT_FOUND, type PublicAcademyJoin } from "../student-join";
 import { ensureUuidState, rehomeAcademy, stateToTables, tablesToState } from "./mapper";
+import { classFingerprint } from "../roster-identity";
 import { DEMO_ACADEMY_ID } from "../seed";
+import { isUuid } from "./ids";
 import type { AppState, Role, Session } from "../types";
 
 const OPTIONAL_COLUMNS = [
@@ -62,7 +64,7 @@ async function replaceRows(
   academyId: string,
   rows: Record<string, unknown>[],
   academyColumn = "academy_id",
-  opts?: { keepClaimed?: boolean; keepIfEmpty?: boolean },
+  opts?: { keepClaimed?: boolean; keepIfEmpty?: boolean; keepRemote?: boolean },
 ) {
   const { data: existing, error: readError } = await client
     .from(table)
@@ -82,13 +84,52 @@ async function replaceRows(
   const extra = (existing ?? [])
     .map((r) => String((r as { id: string }).id))
     .filter((id: string) => !keep.has(id) && !claimed.has(id));
-  if ((opts?.keepClaimed || opts?.keepIfEmpty) && !rows.length) {
-    /* Lista local vazia não apaga a grade / quem já entrou pelo app. */
+  if ((opts?.keepClaimed || opts?.keepIfEmpty || opts?.keepRemote) && !rows.length) {
+    /* Lista local vazia não apaga presença / grade / quem já entrou pelo app. */
+  } else if (opts?.keepRemote) {
+    /* Presença do app de outro aparelho permanece até o dono aceitar ou desistir. */
   } else if (extra.length) {
     const { error } = await client.from(table).delete().in("id", extra);
     if (error) throw error;
   }
   await upsertRows(client, table, rows);
+}
+
+async function remapAttendanceRows(
+  client: SupabaseClient,
+  academyId: string,
+  rows: Record<string, unknown>[],
+  localClasses: AppState["classes"],
+  userId?: string,
+) {
+  if (!rows.length) return rows;
+  const [{ data: roster }, { data: remoteClasses }] = await Promise.all([
+    client.from("students").select("id, user_id, email").eq("academy_id", academyId),
+    client.from("classes").select("id, weekday, start_time, name, division").eq("academy_id", academyId),
+  ]);
+  const byUser = (roster ?? []).find((row) => String(row.user_id ?? "") === (userId ?? ""));
+  const classIdByPrint = new Map<string, string>();
+  for (const row of remoteClasses ?? []) {
+    classIdByPrint.set(
+      classFingerprint({
+        weekday: Number(row.weekday),
+        startTime: String(row.start_time ?? "").slice(0, 5),
+        name: String(row.name ?? ""),
+        division: (String(row.division ?? "adult") as AppState["classes"][number]["division"]) || "adult",
+      }),
+      String(row.id),
+    );
+  }
+  return rows
+    .map((row) => {
+      const local = localClasses.find((item) => item.id === String(row.class_id ?? ""));
+      const classId = local
+        ? (classIdByPrint.get(classFingerprint(local)) ?? String(row.class_id ?? ""))
+        : String(row.class_id ?? "");
+      const studentId = (byUser?.id ? String(byUser.id) : "") || String(row.student_id ?? "");
+      return { ...row, class_id: classId, student_id: studentId };
+    })
+    .filter((row) => isUuid(String(row.student_id ?? "")) && isUuid(String(row.class_id ?? "")));
 }
 
 async function replaceJoin(
@@ -182,7 +223,14 @@ export async function pushAcademyState(state: AppState, opts?: { refresh?: boole
 
   if (ready.session?.role === "student") {
     try {
-      await upsertRows(client, "attendance", tables.attendance);
+      const rows = await remapAttendanceRows(
+        client,
+        ready.academy.id,
+        tables.attendance,
+        ready.classes,
+        sessionUser.user?.id,
+      );
+      await upsertRows(client, "attendance", rows);
     } catch (err) {
       const message = err instanceof Error ? err.message : "Não foi possível salvar agora.";
       return { error: message, state: ready };
@@ -215,7 +263,9 @@ export async function pushAcademyState(state: AppState, opts?: { refresh?: boole
       await replaceRows(client, "classes", ready.academy.id, tables.classes, "academy_id", {
         keepIfEmpty: true,
       });
-      await replaceRows(client, "attendance", ready.academy.id, tables.attendance);
+      await replaceRows(client, "attendance", ready.academy.id, tables.attendance, "academy_id", {
+        keepRemote: true,
+      });
       await replaceRows(client, "payments", ready.academy.id, tables.payments);
       await replaceRows(client, "expenses", ready.academy.id, tables.expenses);
       await replaceRows(client, "inventory", ready.academy.id, tables.inventory);

@@ -478,6 +478,15 @@ export function tablesToState(input: {
     if (str(profile.role) !== "student") continue;
     const userId = str(profile.id);
     const email = str(profile.email).trim().toLowerCase();
+    const existing =
+      students.find((row) => row.userId && row.userId === userId) ??
+      students.find((row) => email && row.email.trim().toLowerCase() === email);
+    if (existing) {
+      if (userId && !existing.userId) existing.userId = userId;
+      if (userId) seenUser.add(userId);
+      if (email) seenEmail.add(email);
+      continue;
+    }
     if (userId && seenUser.has(userId)) continue;
     if (email && seenEmail.has(email)) continue;
     students.push({
