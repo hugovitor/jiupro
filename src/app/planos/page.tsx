@@ -32,6 +32,7 @@ export default function PlanosPage() {
   const [promoCode, setPromoCode] = useState("");
 
   const currentPlanId = store.academy.plan as PlanId | undefined;
+  const liveOwner = Boolean(store.session && !store.isDemo);
 
   async function subscribe(planId: PlanId) {
     if (loadingPlan) return;
@@ -109,6 +110,15 @@ export default function PlanosPage() {
             : null}{" "}
           Seus alunos continuam pagando as mensalidades diretamente para você.
         </p>
+        {store.isDemo ? (
+          <p className="mx-auto mt-5 max-w-xl rounded-xl border border-red-500/30 bg-red-500/10 px-4 py-3 text-sm text-white/70">
+            Você está na Equipe Origem (demonstração). Para assinar,{" "}
+            <Link href="/cadastro" className="font-bold text-white underline underline-offset-4">
+              abra a sua academia
+            </Link>
+            .
+          </p>
+        ) : null}
 
         <div className="mt-9 flex flex-wrap items-center justify-center gap-x-7 gap-y-3 text-xs font-medium text-white/40">
           {[
@@ -125,7 +135,7 @@ export default function PlanosPage() {
       </section>
 
       <section className="relative mx-auto max-w-7xl px-5 pb-24 lg:px-8 lg:pb-32">
-        {store.session ? (
+        {liveOwner ? (
           <div className="mx-auto mb-8 max-w-md">
             <label htmlFor="promo-code" className="sr-only">
               Código promocional
@@ -144,7 +154,7 @@ export default function PlanosPage() {
           {PLANS.map((plan) => {
             const popular = Boolean(plan.popular);
             const loading = loadingPlan === plan.id;
-            const current = Boolean(store.session && currentPlanId === plan.id);
+            const current = Boolean(liveOwner && currentPlanId === plan.id);
 
             return (
               <article
@@ -226,7 +236,7 @@ export default function PlanosPage() {
                 </ul>
 
                 <div className="mt-8">
-                  {store.session ? (
+                  {liveOwner ? (
                     <button
                       type="button"
                       onClick={() => void subscribe(plan.id)}
