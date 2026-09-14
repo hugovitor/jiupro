@@ -5,8 +5,10 @@ import { mapAuthError } from "../auth-errors";
 import { looksLikeHouseCode } from "../join-code";
 import { isStudentJoinNotFound, preferredJoinCode, STUDENT_JOIN_NOT_FOUND, type PublicAcademyJoin } from "../student-join";
 import { ensureUuidState, rehomeAcademy, stateToTables, tablesToState } from "./mapper";
+import { ensureBrowserAuthSession } from "./session";
 import { DEMO_ACADEMY_ID } from "../seed";
 import type { AppState, Role, Session } from "../types";
+import { isUuid } from "./ids";
 
 const OPTIONAL_COLUMNS = [
   "cpf",
@@ -66,39 +68,77 @@ async function upsertRows(
   if (lastError) throw lastError;
 }
 
-async function replaceRows(
+type RemoteTableSnapshot = {
+  academyId: string;
+  students: string[];
+  classes: string[];
+  attendance: string[];
+  payments: string[];
+  expenses: string[];
+  inventory: string[];
+  graduations: string[];
+  evaluations: string[];
+  posts: string[];
+  events: string[];
+  sales: string[];
+  dropIns: string[];
+};
+
+let remoteSnapshot: RemoteTableSnapshot | null = null;
+
+function idsOf(rows: { id: string }[]) {
+  return rows.map((row) => row.id).filter((id) => isUuid(id));
+}
+
+export function rememberRemoteSnapshot(state: AppState) {
+  remoteSnapshot = {
+    academyId: state.academy.id,
+    students: idsOf(state.students),
+    classes: idsOf(state.classes),
+    attendance: idsOf(state.attendance),
+    payments: idsOf(state.payments),
+    expenses: idsOf(state.expenses),
+    inventory: idsOf(state.inventory),
+    graduations: idsOf(state.graduations),
+    evaluations: idsOf(state.evaluations ?? []),
+    posts: idsOf(state.posts),
+    events: idsOf(state.events ?? []),
+    sales: idsOf(state.sales ?? []),
+    dropIns: idsOf(state.dropIns ?? []),
+  };
+}
+
+export function clearRemoteSnapshot() {
+  remoteSnapshot = null;
+}
+
+function previousIds(table: keyof Omit<RemoteTableSnapshot, "academyId">, academyId: string) {
+  if (!remoteSnapshot || remoteSnapshot.academyId !== academyId) return [];
+  return remoteSnapshot[table];
+}
+
+function isMissingRelation(error: { message?: string; code?: string } | null) {
+  if (!error) return false;
+  const msg = error.message ?? "";
+  return (
+    error.code === "PGRST205" ||
+    error.code === "42P01" ||
+    /does not exist|schema cache|PGRST205|42P01/i.test(msg)
+  );
+}
+
+/** Apaga só o que este aparelho já tinha baixado e o dono tirou. Linha nova de outro aparelho permanece. */
+async function syncTable(
   client: SupabaseClient,
   table: string,
-  academyId: string,
   rows: Record<string, unknown>[],
-  academyColumn = "academy_id",
-  opts?: { keepClaimed?: boolean; keepIfEmpty?: boolean; keepRemote?: boolean },
+  previous: string[],
 ) {
-  const { data: existing, error: readError } = await client
-    .from(table)
-    .select("id")
-    .eq(academyColumn, academyId);
-  if (readError) throw readError;
   const keep = new Set(rows.map((r) => String(r.id)));
-  const claimed = new Set<string>();
-  if (opts?.keepClaimed) {
-    const linked = await client.from(table).select("id, user_id").eq(academyColumn, academyId);
-    if (linked.error) throw linked.error;
-    for (const row of linked.data ?? []) {
-      const rec = row as { id?: string; user_id?: string | null };
-      if (rec.user_id && rec.id) claimed.add(String(rec.id));
-    }
-  }
-  const extra = (existing ?? [])
-    .map((r) => String((r as { id: string }).id))
-    .filter((id: string) => !keep.has(id) && !claimed.has(id));
-  if ((opts?.keepClaimed || opts?.keepIfEmpty || opts?.keepRemote) && !rows.length) {
-    /* Lista local vazia não apaga presença / grade / quem já entrou pelo app. */
-  } else if (opts?.keepRemote) {
-    /* Presença do app de outro aparelho permanece até o dono aceitar ou desistir. */
-  } else if (extra.length) {
+  const extra = previous.filter((id) => !keep.has(id));
+  if (extra.length) {
     const { error } = await client.from(table).delete().in("id", extra);
-    if (error) throw error;
+    if (error && !isMissingRelation(error)) throw error;
   }
   await upsertRows(client, table, rows);
 }
@@ -213,46 +253,39 @@ export async function pushAcademyState(state: AppState, opts?: { refresh?: boole
   }
 
   try {
-    if (rehomed) {
-      await upsertRows(client, "students", tables.students);
-    } else {
-      await replaceRows(client, "students", ready.academy.id, tables.students, "academy_id", {
-        keepClaimed: true,
-      });
-      await replaceRows(client, "classes", ready.academy.id, tables.classes, "academy_id", {
-        keepIfEmpty: true,
-      });
-      await replaceRows(client, "attendance", ready.academy.id, tables.attendance, "academy_id", {
-        keepRemote: true,
-      });
-      await replaceRows(client, "payments", ready.academy.id, tables.payments);
-      await replaceRows(client, "expenses", ready.academy.id, tables.expenses);
-      await replaceRows(client, "inventory", ready.academy.id, tables.inventory);
-      await replaceRows(client, "graduations", ready.academy.id, tables.graduations);
-      await replaceRows(client, "evaluations", ready.academy.id, tables.evaluations);
-      await replaceRows(client, "posts", ready.academy.id, tables.posts);
-      await replaceJoin(
-        client,
-        "post_likes",
-        "post_id",
-        tables.posts.map((p) => String(p.id)),
-        tables.postLikes,
-      );
-      await replaceRows(client, "events", ready.academy.id, tables.events);
-      await replaceJoin(
-        client,
-        "event_rsvps",
-        "event_id",
-        tables.events.map((e) => String(e.id)),
-        tables.eventRsvps,
-      );
-      await replaceRows(client, "sales", ready.academy.id, tables.sales);
-      await replaceRows(client, "drop_ins", ready.academy.id, tables.dropIns);
-    }
+    const academyId = ready.academy.id;
+    await syncTable(client, "students", tables.students, previousIds("students", academyId));
+    await syncTable(client, "classes", tables.classes, previousIds("classes", academyId));
+    await syncTable(client, "attendance", tables.attendance, previousIds("attendance", academyId));
+    await syncTable(client, "payments", tables.payments, previousIds("payments", academyId));
+    await syncTable(client, "expenses", tables.expenses, previousIds("expenses", academyId));
+    await syncTable(client, "inventory", tables.inventory, previousIds("inventory", academyId));
+    await syncTable(client, "graduations", tables.graduations, previousIds("graduations", academyId));
+    await syncTable(client, "evaluations", tables.evaluations, previousIds("evaluations", academyId));
+    await syncTable(client, "posts", tables.posts, previousIds("posts", academyId));
+    await replaceJoin(
+      client,
+      "post_likes",
+      "post_id",
+      tables.posts.map((p) => String(p.id)),
+      tables.postLikes,
+    );
+    await syncTable(client, "events", tables.events, previousIds("events", academyId));
+    await replaceJoin(
+      client,
+      "event_rsvps",
+      "event_id",
+      tables.events.map((e) => String(e.id)),
+      tables.eventRsvps,
+    );
+    await syncTable(client, "sales", tables.sales, previousIds("sales", academyId));
+    await syncTable(client, "drop_ins", tables.dropIns, previousIds("dropIns", academyId));
   } catch (err) {
     const message = err instanceof Error ? err.message : "Não foi possível salvar agora.";
     return { error: message, state: ready };
   }
+
+  rememberRemoteSnapshot(ready);
 
   if ((rehomed || opts?.refresh) && sessionUser.user?.id) {
     const pulled = await pullAcademyState({
@@ -275,7 +308,7 @@ export function scheduleRemotePush(state: AppState) {
         console.warn("TatameX: sync Supabase —", result.error);
       }
     });
-  }, 800);
+  }, 350);
   return () => window.clearTimeout(handle);
 }
 
@@ -317,9 +350,29 @@ export async function pullAcademyState(session: Session): Promise<AppState | { e
 
   if (academy.error) return { error: academy.error.message };
   if (!academy.data) return { error: "Academia não encontrada." };
-  if (students.error) return { error: students.error.message };
-  if (classes.error) return { error: classes.error.message };
-  if (attendance.error) return { error: attendance.error.message };
+
+  const required: Array<[string, { error: { message: string } | null }]> = [
+    ["alunos", students],
+    ["turmas", classes],
+    ["presença", attendance],
+    ["cobranças", payments],
+    ["lançamentos", expenses],
+    ["estoque", inventory],
+    ["graduações", graduations],
+    ["avaliações", evaluations],
+    ["mural", posts],
+    ["agenda", events],
+    ["vendas", sales],
+    ["experimentais avulsos", dropIns],
+  ];
+  for (const [label, result] of required) {
+    if (result.error && !isMissingRelation(result.error)) {
+      return { error: `Não deu para ler ${label}: ${result.error.message}` };
+    }
+  }
+  if (profiles.error && !isMissingRelation(profiles.error)) {
+    return { error: profiles.error.message };
+  }
 
   const postIds = (posts.data ?? []).map((p: { id: string }) => String(p.id));
   const eventIds = (events.data ?? []).map((e: { id: string }) => String(e.id));
@@ -330,8 +383,12 @@ export async function pullAcademyState(session: Session): Promise<AppState | { e
     ? await client.from("event_rsvps").select("*").in("event_id", eventIds)
     : { data: [], error: null };
 
-  if (postLikes.error) return { error: postLikes.error.message };
-  if (eventRsvps.error) return { error: eventRsvps.error.message };
+  if (postLikes.error && !isMissingRelation(postLikes.error)) {
+    return { error: postLikes.error.message };
+  }
+  if (eventRsvps.error && !isMissingRelation(eventRsvps.error)) {
+    return { error: eventRsvps.error.message };
+  }
 
   return tablesToState({
     academy: academy.data,
@@ -351,6 +408,33 @@ export async function pullAcademyState(session: Session): Promise<AppState | { e
     sales: sales.data ?? [],
     dropIns: dropIns.data ?? [],
     session,
+  });
+}
+
+export async function resumeRemoteSession(
+  hint?: Session | null,
+): Promise<AppState | { error: string } | null> {
+  const client = createSupabaseBrowserClient();
+  if (!client) return null;
+  const first = (await client.auth.getSession()).data.session;
+  if (!first && !hint) return null;
+  const token = first?.access_token ?? (await ensureBrowserAuthSession(client));
+  if (!token) return null;
+  const { data: userData } = await client.auth.getUser();
+  const user = userData.user;
+  if (!user) return null;
+  const { data: profile, error } = await client
+    .from("profiles")
+    .select("id, academy_id, role")
+    .eq("id", user.id)
+    .maybeSingle();
+  if (error && !isMissingRelation(error)) return { error: error.message };
+  const academyId = (profile?.academy_id as string | undefined) || hint?.academyId;
+  if (!academyId) return null;
+  return pullAcademyState({
+    userId: user.id,
+    academyId,
+    role: ((profile?.role as Role | undefined) || hint?.role || "owner") as Role,
   });
 }
 
