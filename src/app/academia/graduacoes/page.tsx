@@ -1,6 +1,8 @@
 "use client";
 
 import { toast } from "sonner";
+import Link from "next/link";
+import { EmptyState } from "@/components/academia/empty-state";
 import { PlanGate } from "@/components/academia/plan-gate";
 import { BeltBadge, PersonAvatar } from "@/components/belt-badge";
 import { IbjjfChart } from "@/components/ibjjf-chart";
@@ -36,6 +38,16 @@ function GraduacoesPage() {
       </div>
 
       <IbjjfChart />
+
+      {store.students.length === 0 ? (
+        <EmptyState
+          title="Ainda não tem ficha para graduar"
+          body="Cadastre o aluno, registre presença e o tempo de faixa. A fila de prontos aparece sozinha."
+          action={
+            <Button render={<Link href="/academia/alunos?novo=1" />}>Cadastrar aluno</Button>
+          }
+        />
+      ) : null}
 
       <section>
         <h2 className="mb-3 font-display text-sm text-primary">

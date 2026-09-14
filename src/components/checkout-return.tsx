@@ -29,7 +29,7 @@ function ReturnInner() {
         ? "Academia aberta. Vamos deixar a academia pronta."
         : "Pagamento confirmado. Assinatura do TatameX ativa.",
     );
-    router.replace(pathname);
+    router.replace(`${pathname}?guia=1`);
   }, [params, pathname, router, store]);
 
   return null;

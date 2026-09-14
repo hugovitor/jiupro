@@ -118,6 +118,7 @@ type Store = AppState & {
   pullNow: () => Promise<SyncResult>;
   addStudent: (input: Omit<Student, "id" | "academyId" | "userId" | "avatarHue">) => boolean;
   updateStudent: (id: string, patch: Partial<Student>) => void;
+  convertTrial: (id: string) => void;
   recordPayment: (studentId: string, month: string, method: Payment["method"]) => void;
   checkIn: (studentId: string, classId: string, method?: Attendance["method"]) => boolean;
   checkInMany: (
@@ -887,6 +888,36 @@ export function StoreProvider({ children }: { children: ReactNode }) {
     }));
   }, []);
 
+  const convertTrial: Store["convertTrial"] = useCallback((id) => {
+    const month = currentMonth();
+    commit((prev) => {
+      const student = prev.students.find((s) => s.id === id);
+      if (!student) return prev;
+      const students = prev.students.map((s) =>
+        s.id === id ? { ...s, status: "active" as const } : s,
+      );
+      const hasPay = prev.payments.some((p) => p.studentId === id && p.month === month);
+      if (hasPay || student.monthlyFee <= 0) {
+        return { ...prev, students };
+      }
+      return {
+        ...prev,
+        students,
+        payments: [
+          {
+            id: uid("pay"),
+            academyId: prev.academy.id,
+            studentId: id,
+            month,
+            amount: student.monthlyFee,
+            status: "pending" as const,
+          },
+          ...prev.payments,
+        ],
+      };
+    });
+  }, []);
+
   const recordPayment: Store["recordPayment"] = useCallback(
     (studentId, month, method) => {
       commit((prev) => {
@@ -1638,6 +1669,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
       pullNow,
       addStudent,
       updateStudent,
+      convertTrial,
       recordPayment,
       checkIn,
       checkInMany,
@@ -1690,6 +1722,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
       pullNow,
       addStudent,
       updateStudent,
+      convertTrial,
       recordPayment,
       checkIn,
       checkInMany,

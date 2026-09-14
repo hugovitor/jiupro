@@ -21,6 +21,7 @@ import { brl } from "@/lib/format";
 import { startPlanCheckout } from "@/lib/billing";
 import { signupTrialLabel } from "@/lib/billing-offer";
 import { PLANS, planCapacityLabel } from "@/lib/plans";
+import { SUPPORT_PHONE_DISPLAY, supportWhatsAppHref } from "@/lib/support";
 import { useStore } from "@/lib/store";
 import type { PlanId } from "@/lib/types";
 
@@ -262,7 +263,7 @@ export default function PlanosPage() {
                           : "border border-white/15 bg-white/[0.04] text-white hover:border-red-500 hover:bg-red-600"
                       }`}
                     >
-                      Assinar {plan.name}
+                      {signupTrialLabel() ? `Começar no ${plan.name}` : `Assinar ${plan.name}`}
                       <ArrowRight className="h-4 w-4 transition-transform group-hover/button:translate-x-1" />
                     </Link>
                   )}
@@ -302,6 +303,7 @@ export default function PlanosPage() {
               Experimente o TatameX antes de assinar.
             </h2>
           </div>
+          <div className="flex shrink-0 flex-col gap-3 sm:flex-row">
           <Link
             href="/demo"
             className="inline-flex h-12 shrink-0 items-center gap-2 rounded-xl bg-white px-6 text-sm font-black text-red-700 transition hover:bg-black hover:text-white"
@@ -309,6 +311,15 @@ export default function PlanosPage() {
             Abrir demonstração
             <ArrowRight className="h-4 w-4" />
           </Link>
+          <a
+            href={supportWhatsAppHref("Olá, quero escolher o plano certo para a minha academia.")}
+            target="_blank"
+            rel="noreferrer"
+            className="inline-flex h-12 shrink-0 items-center gap-2 rounded-xl border border-white/30 px-6 text-sm font-black text-white transition hover:bg-black"
+          >
+            WhatsApp {SUPPORT_PHONE_DISPLAY}
+          </a>
+          </div>
         </div>
       </section>
 

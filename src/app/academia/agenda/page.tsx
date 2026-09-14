@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { toast } from "sonner";
+import { EmptyState } from "@/components/academia/empty-state";
 import { PersonAvatar } from "@/components/belt-badge";
 import { FormDialog } from "@/components/form-dialog";
 import { Button } from "@/components/ui/button";
@@ -35,9 +36,12 @@ export default function AgendaPage() {
         <NovoEvento />
       </div>
 
-      {upcoming.length === 0 && (
-        <p className="text-sm text-muted-foreground">Nada marcado à frente.</p>
-      )}
+      {upcoming.length === 0 ? (
+        <EmptyState
+          title="Nada marcado à frente"
+          body="Seminário, campeonato, open mat. Quem confirma aparece na lista; quem falta recebe o Zap."
+        />
+      ) : null}
       {upcoming.map((evt) => (
         <EventCard key={evt.id} eventId={evt.id} />
       ))}

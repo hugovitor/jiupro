@@ -1,7 +1,9 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
+import Link from "next/link";
 import { toast } from "sonner";
+import { EmptyState } from "@/components/academia/empty-state";
 import { FormDialog } from "@/components/form-dialog";
 import { PersonAvatar } from "@/components/belt-badge";
 import { Button } from "@/components/ui/button";
@@ -261,9 +263,13 @@ export default function PresencaPage() {
       </div>
 
       {!cls ? (
-        <p className="surface p-4 text-sm text-muted-foreground">
-          Cadastre uma turma para abrir a chamada.
-        </p>
+        <EmptyState
+          title="Sem turma para chamar"
+          body="Monte a grade da semana. Com o horário no lugar, o aluno confirma no celular e você valida no tatame."
+          action={
+            <Button render={<Link href="/academia/turmas" />}>Abrir turmas</Button>
+          }
+        />
       ) : (
         <>
           <div className="grid gap-4 lg:grid-cols-[minmax(0,1.15fr)_minmax(0,0.85fr)]">

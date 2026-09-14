@@ -35,6 +35,7 @@ import {
   overdueTotal,
 } from "@/lib/insights";
 import { FirstHouseCard } from "@/components/academia/first-house-card";
+import { LaunchChecklist } from "@/components/academia/launch-checklist";
 import { canAddStudent, hasFeature, planUsageLabel, studentCapMessage } from "@/lib/plan-access";
 import { attendanceDay } from "@/lib/roster-identity";
 import { useStore } from "@/lib/store";
@@ -104,6 +105,7 @@ export default function AcademiaDashboard() {
       </div>
 
       {!store.isDemo && store.students.length === 0 ? <FirstHouseCard /> : null}
+      <LaunchChecklist />
 
       {!canAddStudent(store.academy, store.students.length) ? (
         <div className="mt-6 surface border-red-500/30 bg-red-500/10 p-4 text-sm">
