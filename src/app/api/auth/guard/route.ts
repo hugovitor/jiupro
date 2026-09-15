@@ -32,7 +32,7 @@ export async function POST(request: Request) {
 
   const ip = clientIp(request);
   const rule = ACTIONS[action];
-  const hit = consumeRateLimit(`guard:${action}:${ip}:${email}`, rule);
+  const hit = await consumeRateLimit(`guard:${action}:${ip}:${email}`, rule);
   if (!hit.ok) return rateLimitExceededResponse(hit.retryAfterSec);
   return NextResponse.json({ ok: true });
 }

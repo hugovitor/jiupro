@@ -75,6 +75,7 @@ export type Academy = {
   billingStatus: BillingStatus;
   stripeCustomerId: string;
   stripeSubscriptionId: string;
+  updatedAt: string;
 };
 
 export type User = {

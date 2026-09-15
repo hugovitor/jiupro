@@ -183,7 +183,7 @@ export function EntrarAlunoForm({ initialCode = "" }: { initialCode?: string }) 
     <AuthScreen
       kicker="App do aluno"
       title="Encontre a sua academia."
-      subtitle="Se a academia já te cadastrou, confirma o nome e cria a senha. Se ainda não te cadastrou, escolhe a academia — sua ficha entra na lista."
+      subtitle="Se a academia já te cadastrou, entra com o e-mail da ficha e cria a senha. Se ainda não te cadastrou, escolhe a academia — sua ficha entra na lista."
       switchHref="/login"
       switchLabel="Já tenho senha"
     >
@@ -355,8 +355,8 @@ export function EntrarAlunoForm({ initialCode = "" }: { initialCode?: string }) 
         >
           <p className="text-sm text-white/45">
             Acesso em <strong className="text-white">{house.name}</strong>. Se a academia já te
-            cadastrou, use o mesmo e-mail ou WhatsApp — puxamos a ficha. Se ainda não, você entra
-            na lista da academia agora.
+            cadastrou, use o mesmo e-mail da ficha. O WhatsApp não puxa a ficha — só o e-mail que o
+            dono cadastrou. Se ainda não, você entra na lista da academia agora.
           </p>
           <div className="space-y-1.5">
             <Label>Seu nome</Label>

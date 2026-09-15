@@ -223,10 +223,6 @@ async function ensureJoinCode(admin: SupabaseClient, academy: AcademyHit) {
   return academy.slug ?? "";
 }
 
-function phoneDigits(value: string) {
-  return value.replace(/\D/g, "");
-}
-
 export async function guardNewStudentSeat(
   admin: SupabaseClient,
   academyId: string,
@@ -358,7 +354,6 @@ export async function ensureStudentRosterRow(
 ): Promise<{ studentId: string } | { error: string }> {
   const email = input.email.trim().toLowerCase();
   const phone = input.phone.trim();
-  const digits = phoneDigits(phone);
   const label = input.name.trim() || email.split("@")[0] || "Aluno";
   const division = resolvedEnrollmentDivision({
     division: input.division,
@@ -397,18 +392,6 @@ export async function ensureStudentRosterRow(
     if (emailHit?.id) {
       studentId = String(emailHit.id);
       claimed = emailHit.user_id ? String(emailHit.user_id) : null;
-    }
-  }
-
-  if (!studentId && digits.length >= 10) {
-    const hit = (roster ?? []).find((row) => {
-      const phoneKey = phoneDigits(String(row.phone ?? ""));
-      if (phoneKey.length < 10) return false;
-      return phoneKey === digits || phoneKey === `55${digits}` || `55${phoneKey}` === digits;
-    });
-    if (hit?.id) {
-      studentId = String(hit.id);
-      claimed = hit.user_id ? String(hit.user_id) : null;
     }
   }
 

@@ -70,6 +70,7 @@ async function upsertRows(
 
 type RemoteTableSnapshot = {
   academyId: string;
+  revision: string;
   students: string[];
   classes: string[];
   attendance: string[];
@@ -93,6 +94,7 @@ function idsOf(rows: { id: string }[]) {
 export function rememberRemoteSnapshot(state: AppState) {
   remoteSnapshot = {
     academyId: state.academy.id,
+    revision: state.academy.updatedAt || "",
     students: idsOf(state.students),
     classes: idsOf(state.classes),
     attendance: idsOf(state.attendance),
@@ -112,7 +114,7 @@ export function clearRemoteSnapshot() {
   remoteSnapshot = null;
 }
 
-function previousIds(table: keyof Omit<RemoteTableSnapshot, "academyId">, academyId: string) {
+function previousIds(table: keyof Omit<RemoteTableSnapshot, "academyId" | "revision">, academyId: string) {
   if (!remoteSnapshot || remoteSnapshot.academyId !== academyId) return [];
   return remoteSnapshot[table];
 }
@@ -238,26 +240,53 @@ export async function pushAcademyState(state: AppState, opts?: { refresh?: boole
     };
   }
 
-  const { error: academyError } = await client
-    .from("academies")
-    .update(tables.academy)
-    .eq("id", ready.academy.id);
+  const expectedRevision = remoteSnapshot.revision;
+  const updateAcademy = async (payload: Record<string, unknown>) => {
+    let query = client.from("academies").update(payload).eq("id", ready.academy.id);
+    if (expectedRevision) query = query.eq("updated_at", expectedRevision);
+    let { data, error } = await query.select("id, updated_at");
+    if (error && expectedRevision && /updated_at|42703|schema cache|PGRST204/i.test(error.message)) {
+      const retry = await client
+        .from("academies")
+        .update(payload)
+        .eq("id", ready.academy.id)
+        .select("id, updated_at");
+      data = retry.data;
+      error = retry.error;
+    }
+    return { data, error };
+  };
+
+  let { data: academyRows, error: academyError } = await updateAcademy(tables.academy);
   if (academyError && /join_code|duplicate|unique|23505/i.test(academyError.message) && remoteCode) {
     tables.academy.join_code = remoteCode;
-    const retry = await client.from("academies").update(tables.academy).eq("id", ready.academy.id);
-    if (retry.error) return { error: retry.error.message, state: ready };
+    ({ data: academyRows, error: academyError } = await updateAcademy(tables.academy));
+    if (academyError) return { error: academyError.message, state: ready };
     ready.academy.joinCode = remoteCode;
   } else if (academyError && /due_day|billing_status/i.test(academyError.message)) {
     const slim = { ...tables.academy };
     delete slim.due_day;
     delete slim.billing_status;
-    const retry = await client.from("academies").update(slim).eq("id", ready.academy.id);
-    if (retry.error) return { error: retry.error.message, state: ready };
+    ({ data: academyRows, error: academyError } = await updateAcademy(slim));
+    if (academyError) return { error: academyError.message, state: ready };
   } else if (academyError) {
     return { error: academyError.message, state: ready };
   } else if (looksLikeHouseCode(localCode)) {
     ready.academy.joinCode = localCode;
   }
+
+  if (expectedRevision && (!academyRows || academyRows.length === 0)) {
+    return {
+      error: "Esta ficha já foi alterada em outra aba. Recarregamos os dados.",
+      conflict: true as const,
+      state: ready,
+    };
+  }
+  const touched = Array.isArray(academyRows) ? academyRows[0] : academyRows;
+  const nextRevision = touched && typeof (touched as { updated_at?: unknown }).updated_at === "string"
+    ? String((touched as { updated_at: string }).updated_at)
+    : "";
+  if (nextRevision) ready.academy.updatedAt = nextRevision;
 
   try {
     const academyId = ready.academy.id;
@@ -299,12 +328,43 @@ export function scheduleRemotePush(state: AppState) {
   if (!createSupabaseBrowserClient()) return;
   const handle = window.setTimeout(() => {
     void pushAcademyState(state).then((result) => {
+      if ("conflict" in result && result.conflict) {
+        window.dispatchEvent(new CustomEvent("jiupro-sync-conflict"));
+        return;
+      }
       if (result.error && !("missingAcademy" in result && result.missingAcademy) && !("needsPull" in result && result.needsPull)) {
         console.warn("TatameX: sync Supabase —", result.error);
       }
     });
   }, 350);
   return () => window.clearTimeout(handle);
+}
+
+const ACADEMY_MEMBER_COLUMNS =
+  "id, name, slug, city, state, address, phone, instagram, pix_key, pix_name, plan, monthly_goal, drop_in_fee, due_day, join_code, brand_logo, brand_tagline, billing_status, created_at, updated_at";
+
+async function loadAcademyRecord(
+  client: SupabaseClient,
+  academyId: string,
+  isStudent: boolean,
+) {
+  if (isStudent) {
+    const rpc = await client.rpc("academy_for_member");
+    if (!rpc.error) {
+      const row = Array.isArray(rpc.data) ? rpc.data[0] : rpc.data;
+      return { data: row ?? null, error: null };
+    }
+    if (!/PGRST202|does not exist|schema cache|42883/i.test(rpc.error.message)) {
+      return { data: null, error: rpc.error };
+    }
+    const slim = await client
+      .from("academies")
+      .select(ACADEMY_MEMBER_COLUMNS)
+      .eq("id", academyId)
+      .maybeSingle();
+    return slim;
+  }
+  return client.from("academies").select("*").eq("id", academyId).maybeSingle();
 }
 
 export async function pullAcademyState(session: Session): Promise<AppState | { error: string }> {
@@ -328,7 +388,7 @@ export async function pullAcademyState(session: Session): Promise<AppState | { e
     sales,
     dropIns,
   ] = await Promise.all([
-    client.from("academies").select("*").eq("id", academyId).maybeSingle(),
+    loadAcademyRecord(client, academyId, isStudent),
     client.from("profiles").select("*").eq("academy_id", academyId),
     client.from("students").select("*").eq("academy_id", academyId),
     client.from("classes").select("*").eq("academy_id", academyId),
@@ -493,7 +553,15 @@ export async function testSupabaseConnection() {
   return { ok: false as const, error: msg };
 }
 
-async function provisionAndSignIn(email: string, password: string, captchaToken?: string) {
+type ProvisionIntent = {
+  intent: "cadastro" | "aluno";
+  academyName?: string;
+  ownerName?: string;
+  house?: string;
+  captchaToken?: string;
+};
+
+async function provisionAndSignIn(email: string, password: string, extra: ProvisionIntent) {
   const client = createSupabaseBrowserClient();
   if (!client) return { error: "offline" as const };
 
@@ -509,14 +577,28 @@ async function provisionAndSignIn(email: string, password: string, captchaToken?
   const provisioned = await fetch("/api/auth/signup", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ email, password, captchaToken }),
+    body: JSON.stringify({
+      email,
+      password,
+      captchaToken: extra.captchaToken,
+      intent: extra.intent,
+      academyName: extra.academyName,
+      ownerName: extra.ownerName,
+      house: extra.house,
+    }),
   }).catch(() => null);
   const payload = provisioned
     ? ((await provisioned.json().catch(() => ({}))) as { error?: string })
     : {};
 
+  if (provisioned && provisioned.status === 429) {
+    return { error: payload.error || "Muitas tentativas. Espere um pouco e tente de novo." };
+  }
   if (provisioned && provisioned.status === 400 && payload.error) {
     return { error: mapAuthError(payload.error) };
+  }
+  if (provisioned && provisioned.status === 403) {
+    return { error: mapAuthError(payload.error || "Origem não permitida.") };
   }
 
   if (!provisioned || provisioned.status === 503) {
@@ -551,7 +633,12 @@ export async function registerRemoteAcademy(input: {
   joinCode?: string;
   captchaToken?: string;
 }): Promise<{ academyId?: string; ownerId?: string; error?: string; pendingEmail?: boolean }> {
-  const auth = await provisionAndSignIn(input.email, input.password, input.captchaToken);
+  const auth = await provisionAndSignIn(input.email, input.password, {
+    intent: "cadastro",
+    academyName: input.name,
+    ownerName: input.ownerName,
+    captchaToken: input.captchaToken,
+  });
   if ("error" in auth) {
     if (auth.error === "offline") return {};
     return { error: auth.error };
@@ -670,7 +757,12 @@ export async function attachLocalAcademy(input: {
   if (signedIn.data.session?.user) {
     ownerId = signedIn.data.user.id;
   } else {
-    const created = await provisionAndSignIn(input.email, input.password);
+    const created = await provisionAndSignIn(input.email, input.password, {
+      intent: "cadastro",
+      academyName: input.state.academy.name,
+      ownerName:
+        input.state.users.find((u) => u.role === "owner")?.name ?? input.state.academy.name,
+    });
     if ("error" in created) return { error: created.error === "offline" ? "Cole a URL e a anon key do projeto." : created.error };
     ownerId = created.user.id;
   }
@@ -818,7 +910,12 @@ export async function joinStudentRemote(input: {
   captchaToken?: string;
 }) {
   const email = input.email.trim().toLowerCase();
-  const auth = await provisionAndSignIn(email, input.password, input.captchaToken);
+  const houseLabel = (input.houseName || input.code || input.slug || "aluno").trim();
+  const auth = await provisionAndSignIn(email, input.password, {
+    intent: "aluno",
+    house: houseLabel,
+    captchaToken: input.captchaToken,
+  });
   if ("error" in auth) {
     if (auth.error === "offline") return { error: "offline" as const };
     return { error: auth.error };

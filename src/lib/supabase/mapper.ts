@@ -462,6 +462,7 @@ export function tablesToState(input: {
       : "none") as Academy["billingStatus"],
     stripeCustomerId: str(a.stripe_customer_id),
     stripeSubscriptionId: str(a.stripe_subscription_id),
+    updatedAt: str(a.updated_at),
   };
 
   const users: User[] = input.profiles.map((p) => ({

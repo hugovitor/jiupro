@@ -12,6 +12,7 @@ import {
   type ReactNode,
 } from "react";
 import { nextGraduation } from "./belts";
+import { toast } from "sonner";
 import { createEmptyAcademy, uniqueSlug } from "./empty-academy";
 import { currentMonth, isoDate, uid, weekdayToday } from "./format";
 import { createSeed, DEMO_ACADEMY_ID, DEMO_ACCOUNTS } from "./seed";
@@ -236,7 +237,21 @@ function flushRemotePush() {
   const state = cached;
   if (!state || state.academy.id === DEMO_ACADEMY_ID) return;
   if (!usesDatabase(state.academy.id)) return;
-  void pushAcademyState(state);
+  void pushAcademyState(state).then((result) => {
+    if ("conflict" in result && result.conflict) {
+      window.dispatchEvent(new CustomEvent("jiupro-sync-conflict"));
+    }
+  });
+}
+
+async function reloadRemoteAfterConflict() {
+  const current = getSnapshot();
+  if (!current.session || current.academy.id === DEMO_ACADEMY_ID) return;
+  if (!usesDatabase(current.academy.id)) return;
+  const pulled = await pullAcademyState(current.session);
+  if ("error" in pulled) return;
+  adoptRemote({ ...pulled, session: current.session });
+  toast.message("Outra aba já tinha gravado esta ficha. Recarregamos o que está no banco.");
 }
 
 function adoptRemote(state: AppState) {
@@ -443,12 +458,17 @@ export function StoreProvider({ children }: { children: ReactNode }) {
     })();
 
     const onLeave = () => flushRemotePush();
+    const onConflict = () => {
+      void reloadRemoteAfterConflict();
+    };
     window.addEventListener("pagehide", onLeave);
     window.addEventListener("beforeunload", onLeave);
+    window.addEventListener("jiupro-sync-conflict", onConflict);
     return () => {
       cancelled = true;
       window.removeEventListener("pagehide", onLeave);
       window.removeEventListener("beforeunload", onLeave);
+      window.removeEventListener("jiupro-sync-conflict", onConflict);
     };
   }, []);
 
@@ -769,13 +789,9 @@ export function StoreProvider({ children }: { children: ReactNode }) {
       return { ok: false, error: "Este e-mail já tem senha. Entre no login." };
     }
 
-    const digits = input.phone.replace(/\D/g, "");
-    const claimed = house.students.find((student) => {
-      if (student.email.trim().toLowerCase() === email) return true;
-      const phone = student.phone.replace(/\D/g, "");
-      if (digits.length < 10 || phone.length < 10) return false;
-      return phone === digits || phone === `55${digits}` || `55${phone}` === digits;
-    });
+    const claimed = house.students.find(
+      (student) => student.email.trim().toLowerCase() === email,
+    );
     if (claimed?.userId && existingUser && claimed.userId !== existingUser.id) {
       return { ok: false, error: "Essa ficha já tem acesso. Entre com o e-mail e a senha." };
     }
@@ -880,7 +896,15 @@ export function StoreProvider({ children }: { children: ReactNode }) {
       }
       return { ok: true };
     }
-    if (pushed.error) return { ok: false, error: pushed.error };
+    if (pushed.error) {
+      if ("conflict" in pushed && pushed.conflict && current.session) {
+        const pulled = await pullAcademyState(current.session);
+        if (!("error" in pulled) && writeEpoch === epoch) {
+          adoptRemote({ ...pulled, session: current.session });
+        }
+      }
+      return { ok: false, error: pushed.error };
+    }
     if (pushed.state && writeEpoch === epoch) {
       adoptRemote(pushed.state);
     }

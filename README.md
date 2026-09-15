@@ -53,22 +53,25 @@ Projeto **novo e vazio** é o esperado. O Dashboard não cria as tabelas do Tata
 2. Dashboard → Project Settings → API: **Project URL** + **anon public** (nunca a service role)
 3. No TatameX: **Configurações** → colar as duas → Salvar → Testar conexão
 4. Criar tabelas, uma destas:
-   - **Copiar SQL** → SQL Editor → **Run** (não usa a porta 5432), ou
-   - Colar a URI Direct ou Session pooler em **Aplicar schema pela URI**. Direct (`db.…supabase.co`) é IPv6; o app reescreve para o pooler IPv4.
-5. Authentication → Providers → Email: desligue **Confirm email** (o cadastro do aluno não manda e-mail; a cota grátis do Supabase estoura rápido).
+   - SQL Editor do Supabase → cole `supabase/schema.sql` → **Run** (o dono não vê SQL no app), ou
+   - `DATABASE_URL` no servidor e o app aplica sozinho. Em produção a URI do Postgres **não** entra no navegador.
+5. Authentication → Providers → Email: deixe **Confirm email ligado**. O cadastro da academia e do aluno confirma no servidor; um POST solto não cria conta confirmada.
 6. Authentication → URL Configuration: Redirect URLs deve incluir `https://tatamex.vercel.app/atualizar-senha` (senha esquecida). Em Email Templates → Reset password, use o link com `token_hash` para o aluno abrir noutro aparelho.
 7. Opcional, mas recomendado: Authentication → SMTP Settings com Resend/SES. Sem isso, “esqueci a senha” também cai na cota de 2–4 e-mails/hora.
-8. **Rode de novo o `supabase/schema.sql`** no SQL Editor depois de atualizar o app (teto do plano, responsável no kids, aluno só lê a própria ficha).
+8. **Rode de novo o `supabase/schema.sql`** no SQL Editor depois de atualizar o app (ficha só por e-mail, aluno não lê Stripe, duas abas não se sobrescrevem).
 9. Na sua academia (não na demo): **Enviar esta academia**
-10. App do aluno: o dono cadastra a ficha e manda o WhatsApp, ou o aluno busca o nome da academia em `/entrar`. **O dono não vê SQL.** Se `DATABASE_URL` (ou `SUPABASE_DB_URL`) estiver no servidor, o app aplica o SQL do convite sozinho.
+10. App do aluno: o dono cadastra a ficha **com o e-mail** e manda o link. Quem tiver só o WhatsApp do aluno **não** reivindica a ficha. Se `DATABASE_URL` estiver no servidor, o app aplica o SQL do convite sozinho.
 
 Também dá para colocar no `.env.local`:
 
 ```
 NEXT_PUBLIC_SUPABASE_URL=
 NEXT_PUBLIC_SUPABASE_ANON_KEY=
-# Opcional — operador: URI Postgres para o app do aluno aplicar sozinho (sem o dono ver SQL)
+# Operador: URI Postgres para aplicar o schema no servidor (sem colar no navegador)
 DATABASE_URL=
+# Produção: limite de cadastro compartilhado entre instâncias da Vercel
+UPSTASH_REDIS_REST_URL=
+UPSTASH_REDIS_REST_TOKEN=
 ```
 
 O schema isola dados por `academy_id` (RLS). O cadastro chama `register_academy` e o painel grava em tabelas. A Equipe Origem não sincroniza. A URI do banco não fica salva no navegador.
@@ -113,7 +116,7 @@ Eventos do webhook: `checkout.session.completed`, `customer.subscription.created
 
 Convite de professor: Configurações → WhatsApp com link mágico (não depende de SMTP). Senha esquecida do dono: Authentication → SMTP no Supabase.
 
-Depois de um deploy com schema novo, rode de novo o `supabase/schema.sql` no SQL Editor (é idempotente). Isso atualiza o RLS: aluno lê a academia; só dono/professor grava financeiro, ficha e Pix. Também impede cadastro com o mesmo nome/cidade de assumir academia alheia.
+Depois de um deploy com schema novo, rode de novo o `supabase/schema.sql` no SQL Editor (é idempotente). Isso atualiza o RLS: aluno lê Pix e dados da casa, sem `stripe_customer_id`; ficha de aluno só amarra pelo e-mail; duas abas do dono não se sobrescrevem na mesma ficha.
 
 ## Publicar na Vercel (URL `*.vercel.app`)
 
@@ -181,11 +184,12 @@ Asaas e Stripe podem ficar vazios.
 1. Crie um projeto no [Supabase](https://supabase.com) (região São Paulo, se aparecer)
 2. Project Settings → API: **Project URL** + **anon public** (nunca a service role no frontend)
 3. Cole as duas na Vercel (acima) **ou** em Configurações no app
-4. SQL Editor → no TatameX, **Copiar SQL** → Run
-5. Authentication → Providers → Email: desligue **Confirm email**
+4. SQL Editor → cole `supabase/schema.sql` → Run (o app não entrega SQL para qualquer um)
+5. Authentication → Providers → Email: deixe **Confirm email ligado**
 6. Authentication → URL Configuration: Site URL `https://tatamex.vercel.app` e Redirect URLs `https://tatamex.vercel.app/atualizar-senha` (e `http://127.0.0.1:43123/atualizar-senha` se for testar local). Sem isso o e-mail de senha esquecida não volta para o app.
 7. Abra a academia em `/cadastro` (não a demo). Depois do cartão o dono cai no assistente (Pix, convite, presença).
-8. Opcional: `DATABASE_URL` na Vercel (URI Direct ou pooler) para o convite do aluno aplicar sozinho. Sem isso, cole o SQL do schema uma vez no Editor — o dono nunca vê SQL.
+8. Coloque `DATABASE_URL` na Vercel (URI Direct ou pooler) para o schema aplicar no servidor. Sem isso, cole o SQL no Editor. Em produção a URI **não** cola no navegador.
+9. Coloque `UPSTASH_REDIS_REST_URL` e `UPSTASH_REDIS_REST_TOKEN` para o limite de cadastro valer em todas as instâncias.
 
 Sem isso, cadastro e painel ficam só no `localStorage`.
 
@@ -222,7 +226,7 @@ Vencimento: Configurações → dia do mês; pendente vira atraso sozinho. Cobra
 
 ## PWA do aluno
 
-O aluno abre `/entrar`, busca o nome da academia, confirma o nome e cria a senha. Se a academia já tinha cadastrado a ficha, o mesmo e-mail ou WhatsApp puxa os dados. No celular, `/aluno` na tela inicial: um toque confirma a aula; o professor valida no tatame.
+O aluno abre `/entrar`, busca o nome da academia, confirma o nome e cria a senha com o **e-mail da ficha**. O WhatsApp não reivindica a ficha de outra pessoa. No celular, `/aluno` na tela inicial: um toque confirma a aula; o professor valida no tatame.
 
 ## Stack
 

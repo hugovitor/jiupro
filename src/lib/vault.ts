@@ -39,6 +39,7 @@ function migrateState(state: AppState): AppState {
       billingStatus: state.academy.billingStatus ?? "none",
       stripeCustomerId: state.academy.stripeCustomerId ?? "",
       stripeSubscriptionId: state.academy.stripeSubscriptionId ?? "",
+      updatedAt: state.academy.updatedAt ?? "",
     },
     evaluations: state.evaluations ?? [],
     events: state.events ?? [],

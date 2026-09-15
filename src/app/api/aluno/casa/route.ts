@@ -97,7 +97,7 @@ async function searchHouses(query: string) {
 
 export async function GET(request: Request) {
   const ip = clientIp(request);
-  const limited = consumeRateLimit(`search:${ip}`, RATE_LIMITS.search);
+  const limited = await consumeRateLimit(`search:${ip}`, RATE_LIMITS.search);
   if (!limited.ok) return rateLimitExceededResponse(limited.retryAfterSec);
 
   const url = new URL(request.url);

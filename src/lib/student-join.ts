@@ -193,7 +193,6 @@ declare
   v_q text := trim(p_code);
   v_academy uuid;
   v_student uuid;
-  v_phone text;
   v_claimed uuid;
   v_profile_academy uuid;
   v_profile_role text;
@@ -258,7 +257,6 @@ begin
     end if;
   end if;
 
-  v_phone := regexp_replace(coalesce(p_phone, ''), '\\D', '', 'g');
   v_label := nullif(trim(p_name), '');
   v_division := case
     when lower(trim(coalesce(p_division, ''))) = 'kids' then 'kids'
@@ -280,15 +278,6 @@ begin
     from public.students s
     where s.academy_id = v_academy
       and lower(trim(coalesce(s.email, ''))) = v_email
-    order by s.created_at asc
-    limit 1;
-  end if;
-
-  if v_student is null and length(v_phone) >= 10 then
-    select s.id, s.user_id into v_student, v_claimed
-    from public.students s
-    where s.academy_id = v_academy
-      and regexp_replace(coalesce(s.phone, ''), '\\D', '', 'g') in (v_phone, '55' || v_phone)
     order by s.created_at asc
     limit 1;
   end if;
@@ -552,6 +541,86 @@ create policy "evaluations read academy" on public.evaluations
     and (public.is_academy_staff() or student_id = public.current_student_id())
   );
 
+alter table public.academies add column if not exists updated_at timestamptz not null default now();
+alter table public.academies add column if not exists billing_status text not null default 'none';
+alter table public.academies add column if not exists due_day int not null default 10;
+
+create or replace function public.academies_touch_updated_at()
+returns trigger
+language plpgsql
+as $$
+begin
+  new.updated_at := now();
+  return new;
+end;
+$$;
+
+drop trigger if exists academies_touch_updated_at on public.academies;
+create trigger academies_touch_updated_at
+  before update on public.academies
+  for each row execute function public.academies_touch_updated_at();
+
+drop policy if exists "academy members" on public.academies;
+drop policy if exists "academy staff read" on public.academies;
+create policy "academy staff read" on public.academies
+  for select using (id = public.current_academy_id() and public.is_academy_staff());
+
+create or replace function public.academy_for_member()
+returns table (
+  id uuid,
+  name text,
+  slug text,
+  city text,
+  state text,
+  address text,
+  phone text,
+  instagram text,
+  pix_key text,
+  pix_name text,
+  plan text,
+  monthly_goal numeric,
+  drop_in_fee numeric,
+  due_day int,
+  join_code text,
+  brand_logo text,
+  brand_tagline text,
+  billing_status text,
+  created_at timestamptz,
+  updated_at timestamptz
+)
+language sql
+stable
+security definer
+set search_path = public
+as $$
+  select
+    a.id,
+    a.name,
+    a.slug,
+    a.city,
+    a.state,
+    a.address,
+    a.phone,
+    a.instagram,
+    a.pix_key,
+    a.pix_name,
+    a.plan,
+    a.monthly_goal,
+    a.drop_in_fee,
+    a.due_day,
+    a.join_code,
+    a.brand_logo,
+    a.brand_tagline,
+    a.billing_status,
+    a.created_at,
+    a.updated_at
+  from public.academies a
+  where a.id = public.current_academy_id()
+$$;
+
+revoke all on function public.academy_for_member() from public;
+grant execute on function public.academy_for_member() to authenticated;
+
 notify pgrst, 'reload schema';
 `;
 
@@ -561,7 +630,7 @@ export function studentAppInviteMessage(academy: Academy, student?: Pick<Student
   if (student) {
     const emailHint = student.email?.trim()
       ? `Usa o e-mail ${student.email.trim()} (o mesmo da ficha) e cria a senha.`
-      : "Usa o mesmo e-mail ou WhatsApp da ficha e cria a senha.";
+      : "Pede o e-mail da ficha para a secretaria e cria a senha com esse e-mail.";
     return `Fala, ${who}.
 
 Sua ficha já está na ${academy.name}.
@@ -580,7 +649,7 @@ App da ${academy.name}:
 
 ${link}
 
-Se a academia já te cadastrou, confirma o nome da academia e cria a senha com o mesmo e-mail ou WhatsApp da ficha.
+Se a academia já te cadastrou, confirma o nome da academia e cria a senha com o mesmo e-mail da ficha.
 
 Se ainda não te cadastrou, busca o nome da academia nessa tela e se cadastra — sua ficha aparece na lista da academia.`;
 }

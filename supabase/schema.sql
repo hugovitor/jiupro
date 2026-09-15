@@ -19,7 +19,8 @@ create table if not exists public.academies (
   stripe_subscription_id text,
   monthly_goal numeric not null default 0,
   drop_in_fee numeric not null default 40,
-  created_at timestamptz not null default now()
+  created_at timestamptz not null default now(),
+  updated_at timestamptz not null default now()
 );
 
 alter table public.academies add column if not exists brand_logo text;
@@ -192,7 +193,13 @@ create policy "profiles update self" on public.profiles
 
 drop policy if exists "academy members" on public.academies;
 create policy "academy members" on public.academies
-  for select using (id = public.current_academy_id());
+  for select using (
+    id = public.current_academy_id()
+    and exists (
+      select 1 from public.profiles p
+      where p.id = auth.uid() and p.role in ('owner', 'instructor')
+    )
+  );
 
 drop policy if exists "students by academy" on public.students;
 create policy "students by academy" on public.students
@@ -592,7 +599,6 @@ declare
   v_q text := trim(p_code);
   v_academy uuid;
   v_student uuid;
-  v_phone text;
   v_claimed uuid;
   v_profile_academy uuid;
   v_profile_role text;
@@ -657,7 +663,6 @@ begin
     end if;
   end if;
 
-  v_phone := regexp_replace(coalesce(p_phone, ''), '\D', '', 'g');
   v_label := nullif(trim(p_name), '');
   v_division := case
     when lower(trim(coalesce(p_division, ''))) = 'kids' then 'kids'
@@ -679,15 +684,6 @@ begin
     from public.students s
     where s.academy_id = v_academy
       and lower(trim(coalesce(s.email, ''))) = v_email
-    order by s.created_at asc
-    limit 1;
-  end if;
-
-  if v_student is null and length(v_phone) >= 10 then
-    select s.id, s.user_id into v_student, v_claimed
-    from public.students s
-    where s.academy_id = v_academy
-      and regexp_replace(coalesce(s.phone, ''), '\D', '', 'g') in (v_phone, '55' || v_phone)
     order by s.created_at asc
     limit 1;
   end if;
@@ -996,6 +992,84 @@ drop policy if exists "drop ins write staff" on public.drop_ins;
 create policy "drop ins write staff" on public.drop_ins
   for all using (academy_id = public.current_academy_id() and public.is_academy_staff())
   with check (academy_id = public.current_academy_id() and public.is_academy_staff());
+
+alter table public.academies add column if not exists updated_at timestamptz not null default now();
+
+create or replace function public.academies_touch_updated_at()
+returns trigger
+language plpgsql
+as $$
+begin
+  new.updated_at := now();
+  return new;
+end;
+$$;
+
+drop trigger if exists academies_touch_updated_at on public.academies;
+create trigger academies_touch_updated_at
+  before update on public.academies
+  for each row execute function public.academies_touch_updated_at();
+
+drop policy if exists "academy members" on public.academies;
+drop policy if exists "academy staff read" on public.academies;
+create policy "academy staff read" on public.academies
+  for select using (id = public.current_academy_id() and public.is_academy_staff());
+
+create or replace function public.academy_for_member()
+returns table (
+  id uuid,
+  name text,
+  slug text,
+  city text,
+  state text,
+  address text,
+  phone text,
+  instagram text,
+  pix_key text,
+  pix_name text,
+  plan text,
+  monthly_goal numeric,
+  drop_in_fee numeric,
+  due_day int,
+  join_code text,
+  brand_logo text,
+  brand_tagline text,
+  billing_status text,
+  created_at timestamptz,
+  updated_at timestamptz
+)
+language sql
+stable
+security definer
+set search_path = public
+as $$
+  select
+    a.id,
+    a.name,
+    a.slug,
+    a.city,
+    a.state,
+    a.address,
+    a.phone,
+    a.instagram,
+    a.pix_key,
+    a.pix_name,
+    a.plan,
+    a.monthly_goal,
+    a.drop_in_fee,
+    a.due_day,
+    a.join_code,
+    a.brand_logo,
+    a.brand_tagline,
+    a.billing_status,
+    a.created_at,
+    a.updated_at
+  from public.academies a
+  where a.id = public.current_academy_id()
+$$;
+
+revoke all on function public.academy_for_member() from public;
+grant execute on function public.academy_for_member() to authenticated;
 
 -- Faz o PostgREST (API) enxergar as tabelas novas neste projeto vazio.
 notify pgrst, 'reload schema';

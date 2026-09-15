@@ -13,32 +13,63 @@ import { requestOriginAllowed } from "@/lib/request-origin";
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
+type Intent = "cadastro" | "aluno";
+
+function parseIntent(value: string): Intent | null {
+  if (value === "cadastro" || value === "aluno") return value;
+  return null;
+}
+
 export async function POST(request: Request) {
   if (!requestOriginAllowed(request)) {
     return NextResponse.json({ error: "Origem não permitida." }, { status: 403 });
   }
 
   const ip = clientIp(request);
-  const limited = consumeRateLimit(`signup:${ip}`, RATE_LIMITS.signup);
-  if (!limited.ok) return rateLimitExceededResponse(limited.retryAfterSec);
 
   let email = "";
   let password = "";
   let captchaToken = "";
-  let intent = "";
+  let intent: Intent | null = null;
+  let academyName = "";
+  let ownerName = "";
+  let house = "";
   try {
     const body = (await request.json()) as {
       email?: string;
       password?: string;
       captchaToken?: string;
       intent?: string;
+      academyName?: string;
+      ownerName?: string;
+      house?: string;
     };
     email = String(body.email ?? "").trim().toLowerCase();
     password = String(body.password ?? "");
     captchaToken = String(body.captchaToken ?? "");
-    intent = String(body.intent ?? "");
+    intent = parseIntent(String(body.intent ?? "").trim());
+    academyName = String(body.academyName ?? "").trim();
+    ownerName = String(body.ownerName ?? "").trim();
+    house = String(body.house ?? "").trim();
   } catch {
     return NextResponse.json({ error: "Pedido inválido." }, { status: 400 });
+  }
+
+  const ipLimit = await consumeRateLimit(`signup:${ip}`, RATE_LIMITS.signup);
+  if (!ipLimit.ok) return rateLimitExceededResponse(ipLimit.retryAfterSec);
+  if (email) {
+    const emailLimit = await consumeRateLimit(`signup-email:${email}`, RATE_LIMITS.signup);
+    if (!emailLimit.ok) return rateLimitExceededResponse(emailLimit.retryAfterSec);
+  }
+
+  if (!intent) {
+    return NextResponse.json({ error: "Cadastro só pelo fluxo da academia ou do aluno." }, { status: 400 });
+  }
+  if (intent === "cadastro" && (academyName.length < 3 || ownerName.length < 2)) {
+    return NextResponse.json({ error: "Informe o nome da academia e do dono." }, { status: 400 });
+  }
+  if (intent === "aluno" && house.length < 3) {
+    return NextResponse.json({ error: "Informe a academia do aluno." }, { status: 400 });
   }
 
   if (!email.includes("@") || password.length < 6) {
@@ -62,7 +93,7 @@ export async function POST(request: Request) {
     email,
     password,
     email_confirm: true,
-    user_metadata: intent === "aluno" || intent === "cadastro" ? { intent } : { intent: "app" },
+    user_metadata: { intent, academyName, ownerName, house },
   });
 
   if (!created.error) {

@@ -88,7 +88,7 @@ async function joinWithUserToken(
 }
 
 export async function POST(request: Request) {
-  const limited = consumeRateLimit(`join:${clientIp(request)}`, RATE_LIMITS.join);
+  const limited = await consumeRateLimit(`join:${clientIp(request)}`, RATE_LIMITS.join);
   if (!limited.ok) return rateLimitExceededResponse(limited.retryAfterSec);
 
   const token = bearerToken(request);

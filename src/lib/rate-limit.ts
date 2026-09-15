@@ -24,7 +24,7 @@ export function clientIp(request: Request) {
   );
 }
 
-export function consumeRateLimit(key: string, rule: RateLimitRule) {
+function memoryLimit(key: string, rule: RateLimitRule) {
   const now = Date.now();
   const current = buckets.get(key);
   if (!current || current.resetAt <= now) {
@@ -40,6 +40,59 @@ export function consumeRateLimit(key: string, rule: RateLimitRule) {
   }
   current.count += 1;
   return { ok: true as const, remaining: rule.limit - current.count, retryAfterSec: 0 };
+}
+
+function upstashConfig() {
+  const url = process.env.UPSTASH_REDIS_REST_URL?.trim() ?? "";
+  const token = process.env.UPSTASH_REDIS_REST_TOKEN?.trim() ?? "";
+  if (!url || !token) return null;
+  return { url: url.replace(/\/$/, ""), token };
+}
+
+async function upstashLimit(key: string, rule: RateLimitRule) {
+  const cfg = upstashConfig();
+  if (!cfg) return null;
+  const windowSec = Math.max(1, Math.ceil(rule.windowMs / 1000));
+  const redisKey = `tatamex:rl:${key}`;
+  try {
+    const res = await fetch(`${cfg.url}/pipeline`, {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${cfg.token}`,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify([
+        ["INCR", redisKey],
+        ["EXPIRE", redisKey, String(windowSec), "NX"],
+        ["PTTL", redisKey],
+      ]),
+    });
+    if (!res.ok) return null;
+    const rows = (await res.json()) as Array<{ result?: unknown }>;
+    const count = Number(rows[0]?.result ?? 0);
+    const ttlMs = Number(rows[2]?.result ?? rule.windowMs);
+    if (!Number.isFinite(count) || count <= 0) return null;
+    if (count > rule.limit) {
+      return {
+        ok: false as const,
+        remaining: 0,
+        retryAfterSec: Math.max(1, Math.ceil(Math.max(ttlMs, 0) / 1000)),
+      };
+    }
+    return {
+      ok: true as const,
+      remaining: Math.max(0, rule.limit - count),
+      retryAfterSec: 0,
+    };
+  } catch {
+    return null;
+  }
+}
+
+export async function consumeRateLimit(key: string, rule: RateLimitRule) {
+  const remote = await upstashLimit(key, rule);
+  if (remote) return remote;
+  return memoryLimit(key, rule);
 }
 
 export function rateLimitExceededResponse(retryAfterSec: number) {
