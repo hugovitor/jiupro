@@ -30,6 +30,14 @@ export type BeltId = AdultBeltId | KidsBeltId;
 export type StudentStatus = "active" | "inactive" | "trial";
 export type PaymentStatus = "paid" | "pending" | "overdue" | "waived";
 export type PlanId = "essencial" | "academia" | "equipe";
+export type BillingStatus =
+  | "none"
+  | "incomplete"
+  | "trialing"
+  | "active"
+  | "past_due"
+  | "unpaid"
+  | "canceled";
 export type InventoryCategory = "kimono" | "belt" | "apparel" | "gear" | "other";
 export type ExpenseCategory =
   | "rent"
@@ -59,10 +67,14 @@ export type Academy = {
   plan: PlanId;
   monthlyGoal: number;
   dropInFee: number;
+  dueDay: number;
   createdAt: string;
   joinCode: string;
   brandLogo: string;
   brandTagline: string;
+  billingStatus: BillingStatus;
+  stripeCustomerId: string;
+  stripeSubscriptionId: string;
 };
 
 export type User = {

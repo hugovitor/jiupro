@@ -218,6 +218,7 @@ export function academyToRow(a: Academy): Row {
     plan: a.plan,
     monthly_goal: a.monthlyGoal,
     drop_in_fee: a.dropInFee,
+    due_day: a.dueDay || 10,
     join_code: a.joinCode || null,
     brand_logo: a.brandLogo || null,
     brand_tagline: a.brandTagline || null,
@@ -450,10 +451,18 @@ export function tablesToState(input: {
     plan: (str(a.plan, "academia") as PlanId) || "academia",
     monthlyGoal: num(a.monthly_goal),
     dropInFee: num(a.drop_in_fee, 40),
+    dueDay: Math.min(28, Math.max(1, num(a.due_day, 10) || 10)),
     createdAt: str(a.created_at, new Date().toISOString()),
     joinCode: str(a.join_code).toUpperCase(),
     brandLogo: str(a.brand_logo),
     brandTagline: str(a.brand_tagline),
+    billingStatus: (["none", "incomplete", "trialing", "active", "past_due", "unpaid", "canceled"].includes(
+      str(a.billing_status),
+    )
+      ? str(a.billing_status)
+      : "none") as Academy["billingStatus"],
+    stripeCustomerId: str(a.stripe_customer_id),
+    stripeSubscriptionId: str(a.stripe_subscription_id),
   };
 
   const users: User[] = input.profiles.map((p) => ({

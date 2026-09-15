@@ -108,6 +108,10 @@ STRIPE_PRICE_EQUIPE=
 
 Webhook: `POST /api/stripe/webhook`. Sem chaves, o checkout só troca o plano na demo.
 
+Eventos do webhook: `checkout.session.completed`, `customer.subscription.updated`, `customer.subscription.deleted`, `invoice.paid`, `invoice.payment_failed`. Sem pagamento, o painel da academia real trava até regularizar.
+
+Convite de professor: Configurações → WhatsApp com link mágico (não depende de SMTP). Senha esquecida do dono: Authentication → SMTP no Supabase.
+
 ## Publicar na Vercel (URL `*.vercel.app`)
 
 Não precisa de domínio próprio no começo. O projeto na Vercel deve se chamar **tatamex** (`https://tatamex.vercel.app`). Se ainda estiver como jiupro: Settings → General → Project Name → `tatamex`.
@@ -151,7 +155,7 @@ Sem a chave, o cadastro abre a academia **sem cobrar**. Com a chave, o cadastro 
 1. Crie a conta em [stripe.com](https://stripe.com) (Brasil, cobranca em reais)
 2. Developers → API keys: **Secret key** (`sk_live_…` em produção)
 3. Developers → Webhooks → Add endpoint: `https://tatamex.vercel.app/api/stripe/webhook`
-   Eventos: `checkout.session.completed`, `customer.subscription.updated`, `customer.subscription.deleted`
+   Eventos: `checkout.session.completed`, `customer.subscription.updated`, `customer.subscription.deleted`, `invoice.paid`, `invoice.payment_failed`
 4. Na Vercel, em **tatamex** → Environment Variables (Production):
 
 ```
@@ -207,6 +211,11 @@ STRIPE_PRICE_EQUIPE=
 
 Webhook Asaas: `https://tatamex.vercel.app/api/asaas/webhook` (v3, header `asaas-access-token`, eventos `PAYMENT_RECEIVED` + `PAYMENT_CONFIRMED`).
 Webhook Stripe: `https://tatamex.vercel.app/api/stripe/webhook`.
+Academia real sem assinatura ativa (ou cartão recusado) vê a tela para regularizar — a demo não trava.
+
+Importar alunos: Alunos → Importar CSV (nome, whatsapp, faixa, mensalidade).
+Convidar professor: Configurações → convite no WhatsApp com link da senha.
+Vencimento: Configurações → dia do mês; pendente vira atraso sozinho. Cobranças → Zap o próximo.
 
 ## PWA do aluno
 

@@ -65,6 +65,9 @@ export default function RecuperarSenhaPage() {
             senha nova.
           </p>
           <p>
+            Professor convidado: o dono manda o WhatsApp com o link. Não espera e-mail.
+          </p>
+          <p>
             Não chegou?{" "}
             <a
               className="font-bold text-red-400 hover:text-red-300"

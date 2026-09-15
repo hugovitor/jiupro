@@ -4,6 +4,7 @@ import {
   createContext,
   useCallback,
   useContext,
+  useEffect,
   useLayoutEffect,
   useMemo,
   useState,
@@ -53,6 +54,7 @@ import {
 } from "./vault";
 import { attendanceStatus, classHeadcount, isOnRoster, isValidated, studentCanSelfCheckIn } from "./attendance";
 import { academyPortability } from "./lgpd";
+import { applyOverdueStatus } from "./payment-overdue";
 import { canAddStudent, studentCapMessage } from "./plan-access";
 import {
   attendanceDay,
@@ -117,6 +119,9 @@ type Store = AppState & {
   syncNow: () => Promise<SyncResult>;
   pullNow: () => Promise<SyncResult>;
   addStudent: (input: Omit<Student, "id" | "academyId" | "userId" | "avatarHue">) => boolean;
+  importStudents: (rows: Omit<Student, "id" | "academyId" | "userId" | "avatarHue">[]) => number;
+  addInstructor: (input: { id?: string; name: string; email: string; phone: string }) => void;
+  refreshOverdue: () => number;
   updateStudent: (id: string, patch: Partial<Student>) => void;
   convertTrial: (id: string) => void;
   recordPayment: (studentId: string, month: string, method: Payment["method"]) => void;
@@ -881,6 +886,93 @@ export function StoreProvider({ children }: { children: ReactNode }) {
     return true;
   }, []);
 
+  const importStudents: Store["importStudents"] = useCallback((rows) => {
+    let added = 0;
+    commit((prev) => {
+      let students = [...prev.students];
+      let payments = [...prev.payments];
+      const month = currentMonth();
+      for (const row of rows) {
+        if (!canAddStudent(prev.academy, students.length)) break;
+        const id = uid("s");
+        students = [
+          {
+            ...row,
+            id,
+            academyId: prev.academy.id,
+            userId: "",
+            avatarHue: Math.floor(Math.random() * 360),
+          },
+          ...students,
+        ];
+        if (row.status === "active" && row.monthlyFee > 0) {
+          payments = [
+            {
+              id: uid("pay"),
+              academyId: prev.academy.id,
+              studentId: id,
+              month,
+              amount: row.monthlyFee,
+              status: "pending",
+            },
+            ...payments,
+          ];
+        }
+        added += 1;
+      }
+      return { ...prev, students, payments };
+    });
+    return added;
+  }, []);
+
+  const addInstructor: Store["addInstructor"] = useCallback((input) => {
+    commit((prev) => {
+      const email = input.email.trim().toLowerCase();
+      if (prev.users.some((user) => user.email.trim().toLowerCase() === email)) {
+        return {
+          ...prev,
+          users: prev.users.map((user) =>
+            user.email.trim().toLowerCase() === email
+              ? { ...user, name: input.name, phone: input.phone, role: "instructor" }
+              : user,
+          ),
+        };
+      }
+      return {
+        ...prev,
+        users: [
+          ...prev.users,
+          {
+            id: input.id || uid("u"),
+            academyId: prev.academy.id,
+            name: input.name.trim(),
+            email,
+            role: "instructor" as const,
+            phone: input.phone.trim(),
+            avatarHue: Math.floor(Math.random() * 360),
+          },
+        ],
+      };
+    });
+  }, []);
+
+  const refreshOverdue: Store["refreshOverdue"] = useCallback(() => {
+    let changed = 0;
+    commit((prev) => {
+      const next = applyOverdueStatus(prev.payments, prev.academy);
+      changed = next.changed;
+      if (!changed) return prev;
+      return { ...prev, payments: next.payments };
+    });
+    return changed;
+  }, []);
+
+  useEffect(() => {
+    if (!hydrated) return;
+    if (state.academy.id === DEMO_ACADEMY_ID) return;
+    refreshOverdue();
+  }, [hydrated, refreshOverdue, state.academy.id, state.academy.dueDay]);
+
   const updateStudent: Store["updateStudent"] = useCallback((id, patch) => {
     commit((prev) => ({
       ...prev,
@@ -1497,9 +1589,8 @@ export function StoreProvider({ children }: { children: ReactNode }) {
           });
         }
         created = fresh.length;
-        return {
-          ...prev,
-          payments: [
+        const merged = applyOverdueStatus(
+          [
             ...fresh,
             ...prev.payments.map((p) =>
               p.status === "pending" && p.month < month
@@ -1507,6 +1598,11 @@ export function StoreProvider({ children }: { children: ReactNode }) {
                 : p,
             ),
           ],
+          prev.academy,
+        );
+        return {
+          ...prev,
+          payments: merged.payments,
         };
       });
       return created;
@@ -1668,6 +1764,9 @@ export function StoreProvider({ children }: { children: ReactNode }) {
       syncNow,
       pullNow,
       addStudent,
+      importStudents,
+      addInstructor,
+      refreshOverdue,
       updateStudent,
       convertTrial,
       recordPayment,
@@ -1721,6 +1820,9 @@ export function StoreProvider({ children }: { children: ReactNode }) {
       syncNow,
       pullNow,
       addStudent,
+      importStudents,
+      addInstructor,
+      refreshOverdue,
       updateStudent,
       convertTrial,
       recordPayment,

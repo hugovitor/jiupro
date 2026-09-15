@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { AsaasChargeButton } from "@/components/asaas-pix-dialog";
 import { toast } from "sonner";
+import { ChargeWhatsAppQueue } from "@/components/academia/charge-whatsapp-queue";
 import { EmptyState } from "@/components/academia/empty-state";
 import { PersonAvatar } from "@/components/belt-badge";
 import { Button } from "@/components/ui/button";
@@ -30,16 +31,19 @@ export default function CobrancasPage() {
             aluno pagar.
           </p>
         </div>
-        <Button
-          variant="outline"
-          onClick={() => {
-            const n = store.generateMonthCharges(month);
-            if (n === 0) toast.message(`Mensalidades de ${monthLabel(month)} já existem.`);
-            else toast.success(`${n} cobrança(s) de ${monthLabel(month)} geradas.`);
-          }}
-        >
-          Gerar mensalidades
-        </Button>
+        <div className="flex flex-wrap gap-2">
+          <ChargeWhatsAppQueue />
+          <Button
+            variant="outline"
+            onClick={() => {
+              const n = store.generateMonthCharges(month);
+              if (n === 0) toast.message(`Mensalidades de ${monthLabel(month)} já existem.`);
+              else toast.success(`${n} cobrança(s) de ${monthLabel(month)} geradas.`);
+            }}
+          >
+            Gerar mensalidades
+          </Button>
+        </div>
       </div>
 
       {pix ? (

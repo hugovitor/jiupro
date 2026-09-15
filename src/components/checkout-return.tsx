@@ -24,6 +24,9 @@ function ReturnInner() {
     if ((!paid && !demoSignup) || !plan || !PLANS.some((p) => p.id === plan)) return;
     done.current = true;
     store.changePlan(plan as PlanId);
+    store.updateAcademy({
+      billingStatus: "trialing",
+    });
     toast.success(
       demoSignup
         ? "Academia aberta. Vamos deixar a academia pronta."

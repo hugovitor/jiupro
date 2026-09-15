@@ -246,6 +246,12 @@ export async function pushAcademyState(state: AppState, opts?: { refresh?: boole
     const retry = await client.from("academies").update(tables.academy).eq("id", ready.academy.id);
     if (retry.error) return { error: retry.error.message, state: ready };
     ready.academy.joinCode = remoteCode;
+  } else if (academyError && /due_day|billing_status/i.test(academyError.message)) {
+    const slim = { ...tables.academy };
+    delete slim.due_day;
+    delete slim.billing_status;
+    const retry = await client.from("academies").update(slim).eq("id", ready.academy.id);
+    if (retry.error) return { error: retry.error.message, state: ready };
   } else if (academyError) {
     return { error: academyError.message, state: ready };
   } else if (looksLikeHouseCode(localCode)) {
