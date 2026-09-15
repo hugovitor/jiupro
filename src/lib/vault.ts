@@ -89,7 +89,7 @@ function readVault(): Vault {
       if (!parsed.academies[DEMO_ACADEMY_ID] || stale) {
         parsed.academies[DEMO_ACADEMY_ID] = stripSession(createSeed());
       }
-      parsed.credentials = parsed.credentials ?? {};
+      parsed.credentials = isSupabaseConfigured() ? {} : (parsed.credentials ?? {});
       parsed.version = 8;
       try {
         localStorage.setItem(VAULT_KEY, JSON.stringify(parsed));
@@ -147,12 +147,11 @@ export function usesDatabase(academyId?: string | null) {
 export function activeState(): AppState {
   const v = getVault();
   const session = v.session;
-  const liveId =
-    session?.academyId && session.academyId !== DEMO_ACADEMY_ID
-      ? session.academyId
-      : v.activeId !== DEMO_ACADEMY_ID
-        ? v.activeId
-        : "";
+  if (!session) {
+    const demo = v.academies[DEMO_ACADEMY_ID] ?? stripSession(createSeed());
+    return migrateState({ ...demo, session: null });
+  }
+  const liveId = session.academyId !== DEMO_ACADEMY_ID ? session.academyId : "";
   if (liveId && usesDatabase(liveId)) {
     return blankLiveState(
       session ?? { userId: "", academyId: liveId, role: "owner" },
@@ -179,6 +178,11 @@ export function writeActive(next: AppState) {
 export function writeLiveSession(session: Session | null, academyId?: string) {
   const v = getVault();
   v.session = session;
+  if (!session) {
+    v.activeId = DEMO_ACADEMY_ID;
+    saveVault();
+    return;
+  }
   if (academyId && academyId !== DEMO_ACADEMY_ID) {
     v.activeId = academyId;
     delete v.academies[academyId];
@@ -351,6 +355,7 @@ export function hasLocalPassword(email: string) {
 }
 
 export function rememberPassword(email: string, password: string) {
+  if (isSupabaseConfigured()) return;
   getVault().credentials[email.trim().toLowerCase()] = password;
   saveVault();
 }

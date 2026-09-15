@@ -43,14 +43,16 @@ function ConfigInner() {
       params.get("assinatura") === "ok" || params.get("checkout") === "success";
     const demoReturn = params.get("checkout") === "demo";
     if (!paid && !demoReturn) return;
-    const p = params.get("plan");
-    if (!p || !PLANS.some((item) => item.id === p)) {
-      router.replace("/academia/configuracoes");
-      return;
-    }
     appliedCheckout.current = true;
-    changePlan(p as PlanId);
-    toast.success("Assinatura atualizada.");
+    if (demoReturn) {
+      const p = params.get("plan");
+      if (p && PLANS.some((item) => item.id === p)) {
+        changePlan(p as PlanId);
+        toast.success("Assinatura atualizada na demonstração.");
+      }
+    } else {
+      toast.success("Pagamento confirmado. Recarregando o plano do banco.");
+    }
     router.replace("/academia/configuracoes");
   }, [params, changePlan, router]);
 
@@ -63,8 +65,12 @@ function ConfigInner() {
         promoCode,
       });
       if (pay === "demo") {
-        store.changePlan(planId);
-        toast.success("Plano da demonstração alterado.");
+        if (store.isDemo) {
+          store.changePlan(planId);
+          toast.success("Plano da demonstração alterado.");
+        } else {
+          toast.error("O Stripe ainda não está ligado neste ambiente. O plano não muda sozinho.");
+        }
       }
     } catch (error) {
       toast.error(

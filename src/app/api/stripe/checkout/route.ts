@@ -1,5 +1,7 @@
 import { NextResponse } from "next/server";
 import { signupTrialDays, type CheckoutOffer } from "@/lib/billing-offer";
+import { requireUser } from "@/lib/api-auth";
+import { supabaseAdmin } from "@/lib/operator";
 import { planById, PLANS } from "@/lib/plans";
 import {
   checkoutStripeError,
@@ -43,6 +45,40 @@ export async function POST(request: Request) {
     return NextResponse.json({ demo: true });
   }
 
+  const auth = await requireUser(request);
+  if (!auth.ok) {
+    return NextResponse.json({ error: auth.error }, { status: auth.status });
+  }
+
+  const admin = supabaseAdmin();
+  if (!admin) {
+    return NextResponse.json({ error: "Banco não está ligado neste deploy." }, { status: 503 });
+  }
+
+  const profile = await admin
+    .from("profiles")
+    .select("academy_id, role, email")
+    .eq("id", auth.user.id)
+    .maybeSingle();
+  if (profile.data?.role === "student") {
+    return NextResponse.json(
+      { error: "Esta conta é de aluno. A assinatura é do dono da academia." },
+      { status: 403 },
+    );
+  }
+
+  const academyId = String(profile.data?.academy_id ?? "").trim();
+  if (!academyId) {
+    return NextResponse.json(
+      { error: "Academia ainda não foi criada. Cadastre de novo e abra o pagamento em seguida." },
+      { status: 409 },
+    );
+  }
+
+  const email =
+    auth.user.email?.trim().toLowerCase() ||
+    String(profile.data?.email ?? "").trim().toLowerCase();
+
   const price = await stripePriceIdForPlan(planId);
   if (!price) {
     return NextResponse.json(
@@ -52,7 +88,6 @@ export async function POST(request: Request) {
   }
 
   const typedPromo = body.promoCode?.trim();
-  const email = body.email?.trim().toLowerCase();
 
   let discount = typedPromo
     ? await resolveCheckoutDiscount(typedPromo)
@@ -96,11 +131,12 @@ export async function POST(request: Request) {
       phone_number_collection: { enabled: true },
       payment_method_collection: trialDays > 0 || !discount.discounts ? "always" : "if_required",
       customer_email: email || undefined,
+      client_reference_id: academyId,
       metadata: {
         planId,
         email: email ?? "",
         academyName: body.academyName?.trim() ?? "",
-        academyId: body.academyId?.trim() ?? "",
+        academyId,
         offer,
       },
       subscription_data: {
@@ -108,7 +144,7 @@ export async function POST(request: Request) {
         ...(trialDays > 0 ? { trial_period_days: trialDays } : {}),
         metadata: {
           planId,
-          academyId: body.academyId?.trim() ?? "",
+          academyId,
         },
       },
     });

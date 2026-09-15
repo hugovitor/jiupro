@@ -48,13 +48,16 @@ export default function PlanosPage() {
       });
 
       if (pay === "demo") {
-        store.changePlan(planId);
-        toast.success("Plano atualizado na demonstração.");
-
-        if (store.session?.role === "student") {
-          router.push("/aluno");
-        } else if (store.session) {
-          router.push("/academia/configuracoes");
+        if (store.isDemo) {
+          store.changePlan(planId);
+          toast.success("Plano atualizado na demonstração.");
+          if (store.session?.role === "student") {
+            router.push("/aluno");
+          } else if (store.session) {
+            router.push("/academia/configuracoes");
+          }
+        } else {
+          toast.error("O Stripe ainda não está ligado neste ambiente.");
         }
       }
     } catch (error) {

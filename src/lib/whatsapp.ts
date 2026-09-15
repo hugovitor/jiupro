@@ -3,12 +3,20 @@ import type { Academy, AcademyEvent, Payment, Student } from "./types";
 
 export function digitsBR(phone: string) {
   const d = phone.replace(/\D/g, "");
-  if (d.startsWith("55")) return d;
+  if (d.length < 10) return "";
+  if (d.startsWith("55") && d.length >= 12) return d;
+  if (d.startsWith("55")) return "";
   return `55${d}`;
 }
 
+export function canWhatsApp(phone: string) {
+  return digitsBR(phone).length >= 12;
+}
+
 export function waHref(phone: string, text: string) {
-  return `https://wa.me/${digitsBR(phone)}?text=${encodeURIComponent(text)}`;
+  const d = digitsBR(phone);
+  if (!d) return "";
+  return `https://wa.me/${d}?text=${encodeURIComponent(text)}`;
 }
 
 export function firstName(name: string) {

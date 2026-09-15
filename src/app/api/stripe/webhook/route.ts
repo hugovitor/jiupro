@@ -1,7 +1,7 @@
 import { createClient, type SupabaseClient } from "@supabase/supabase-js";
 import { NextResponse } from "next/server";
 import { billingFromStripe } from "@/lib/billing-status";
-import { getStripe } from "@/lib/stripe";
+import { getStripe, STRIPE_PRICE_ENV } from "@/lib/stripe";
 import { PLANS } from "@/lib/plans";
 import type { BillingStatus, PlanId } from "@/lib/types";
 
@@ -31,6 +31,14 @@ function asPlanId(value: string | undefined | null): PlanId | null {
   return PLANS.some((plan) => plan.id === value) ? (value as PlanId) : null;
 }
 
+function planFromPriceId(priceId: string | undefined | null): PlanId | null {
+  if (!priceId) return null;
+  for (const [plan, id] of Object.entries(STRIPE_PRICE_ENV)) {
+    if (id && id === priceId) return asPlanId(plan);
+  }
+  return null;
+}
+
 async function findAcademyId(
   db: SupabaseClient,
   input: {
@@ -40,7 +48,6 @@ async function findAcademyId(
     email?: string | null;
   },
 ) {
-  if (input.academyId) return input.academyId;
   if (input.subscriptionId) {
     const { data } = await db
       .from("academies")
@@ -66,6 +73,18 @@ async function findAcademyId(
       .eq("role", "owner")
       .maybeSingle();
     if (data?.academy_id) return String(data.academy_id);
+  }
+  const claimed = input.academyId?.trim();
+  if (claimed) {
+    const { data } = await db
+      .from("academies")
+      .select("id, stripe_customer_id")
+      .eq("id", claimed)
+      .maybeSingle();
+    const existingCustomer = String(data?.stripe_customer_id ?? "").trim();
+    if (data?.id && (!existingCustomer || existingCustomer === (input.customerId ?? ""))) {
+      return String(data.id);
+    }
   }
   return null;
 }
@@ -97,6 +116,10 @@ export async function POST(request: Request) {
   const stripe = getStripe();
   const secret = process.env.STRIPE_WEBHOOK_SECRET?.trim();
   if (!stripe || !secret) {
+    const hosted = Boolean(process.env.VERCEL || process.env.NODE_ENV === "production");
+    if (hosted) {
+      return NextResponse.json({ error: "Stripe webhook não configurado." }, { status: 500 });
+    }
     return NextResponse.json({ received: true, demo: true });
   }
 
@@ -107,27 +130,30 @@ export async function POST(request: Request) {
   }
 
   const db = supabaseAdmin();
+  if (!db) {
+    return NextResponse.json({ error: "Banco não está ligado neste deploy." }, { status: 500 });
+  }
 
   try {
     const event = stripe.webhooks.constructEvent(body, signature, secret);
 
     if (event.type === "checkout.session.completed") {
       const session = event.data.object;
-      const planId = asPlanId(session.metadata?.planId);
-      const academyId = db
-        ? await findAcademyId(db, {
-            academyId: session.metadata?.academyId,
-            customerId: typeof session.customer === "string" ? session.customer : null,
-            subscriptionId: typeof session.subscription === "string" ? session.subscription : null,
-            email: session.customer_email || session.metadata?.email,
-          })
-        : session.metadata?.academyId;
+      const academyId = await findAcademyId(db, {
+        academyId: session.client_reference_id || session.metadata?.academyId,
+        customerId: typeof session.customer === "string" ? session.customer : null,
+        subscriptionId: typeof session.subscription === "string" ? session.subscription : null,
+        email: session.customer_email || session.metadata?.email,
+      });
       let status: BillingStatus = "active";
+      let planId = asPlanId(session.metadata?.planId);
       if (typeof session.subscription === "string") {
         const sub = await stripe.subscriptions.retrieve(session.subscription);
         status = billingFromStripe(sub.status);
+        const priceId = sub.items.data[0]?.price?.id;
+        planId = planFromPriceId(priceId) ?? planId;
       }
-      if (db && academyId) {
+      if (academyId) {
         await patchAcademy(db, academyId, {
           plan: planId ?? undefined,
           billingStatus: status,
@@ -139,24 +165,24 @@ export async function POST(request: Request) {
 
     if (
       event.type === "customer.subscription.updated" ||
-      event.type === "customer.subscription.deleted"
+      event.type === "customer.subscription.deleted" ||
+      event.type === "customer.subscription.created"
     ) {
       const subscription = event.data.object;
-      const planId = asPlanId(subscription.metadata?.planId);
+      const priceId = subscription.items?.data?.[0]?.price?.id;
+      const planId = planFromPriceId(priceId) ?? asPlanId(subscription.metadata?.planId);
       const status =
         event.type === "customer.subscription.deleted"
           ? ("canceled" as const)
           : billingFromStripe(subscription.status);
-      const academyId = db
-        ? await findAcademyId(db, {
-            academyId: subscription.metadata?.academyId,
-            customerId: typeof subscription.customer === "string" ? subscription.customer : null,
-            subscriptionId: subscription.id,
-          })
-        : subscription.metadata?.academyId;
-      if (db && academyId) {
+      const academyId = await findAcademyId(db, {
+        academyId: subscription.metadata?.academyId,
+        customerId: typeof subscription.customer === "string" ? subscription.customer : null,
+        subscriptionId: subscription.id,
+      });
+      if (academyId) {
         await patchAcademy(db, academyId, {
-          plan: event.type === "customer.subscription.updated" ? planId ?? undefined : undefined,
+          plan: event.type === "customer.subscription.deleted" ? undefined : planId ?? undefined,
           billingStatus: status,
           customerId: typeof subscription.customer === "string" ? subscription.customer : null,
           subscriptionId: subscription.id,
@@ -168,12 +194,19 @@ export async function POST(request: Request) {
       const invoice = event.data.object;
       const customerId = typeof invoice.customer === "string" ? invoice.customer : null;
       const subscriptionId = invoiceSubscriptionId(invoice);
-      const academyId = db
-        ? await findAcademyId(db, { customerId, subscriptionId })
-        : null;
-      if (db && academyId) {
+      let status: BillingStatus = event.type === "invoice.paid" ? "active" : "past_due";
+      let planId: PlanId | undefined;
+      if (subscriptionId) {
+        const sub = await stripe.subscriptions.retrieve(subscriptionId);
+        status = event.type === "invoice.payment_failed" ? "past_due" : billingFromStripe(sub.status);
+        const priceId = sub.items.data[0]?.price?.id;
+        planId = planFromPriceId(priceId) ?? asPlanId(sub.metadata?.planId) ?? undefined;
+      }
+      const academyId = await findAcademyId(db, { customerId, subscriptionId });
+      if (academyId) {
         await patchAcademy(db, academyId, {
-          billingStatus: event.type === "invoice.paid" ? "active" : "past_due",
+          plan: planId,
+          billingStatus: status,
           customerId,
           subscriptionId,
         });

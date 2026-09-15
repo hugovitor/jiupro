@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { createClient } from "@supabase/supabase-js";
-import { isOperatorEmail, supabaseAdmin } from "@/lib/operator";
+import { supabaseAdmin } from "@/lib/operator";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -73,22 +73,6 @@ export async function POST(request: Request) {
 
   let academyId = (byEmail?.academy_id as string | null) ?? null;
   let ownerName = (byEmail?.name as string | null) || email.split("@")[0];
-
-  if (!academyId && isOperatorEmail(email)) {
-    const { data: houses } = await db
-      .from("academies")
-      .select("id, name, created_at")
-      .order("created_at", { ascending: false })
-      .limit(50);
-    const owned = new Set(
-      (owners ?? []).map((row) => row.academy_id as string).filter(Boolean),
-    );
-    const orphan = (houses ?? []).find((house) => !owned.has(house.id as string));
-    if (orphan) {
-      academyId = orphan.id as string;
-      ownerName = (orphan.name as string) || ownerName;
-    }
-  }
 
   if (!academyId) {
     return NextResponse.json({ ok: true, missing: true });

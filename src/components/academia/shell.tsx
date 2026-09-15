@@ -114,6 +114,17 @@ export function AcademiaShell({ children }: { children: React.ReactNode }) {
   const priority = hasFeature(store.academy, "prioritySupport");
 
   useEffect(() => {
+    if (!store.hydrated) return;
+    if (!store.session) {
+      router.replace("/login");
+      return;
+    }
+    if (store.session.role === "student") {
+      router.replace("/aluno");
+    }
+  }, [router, store.hydrated, store.session]);
+
+  useEffect(() => {
     void fetch("/api/health", { cache: "no-store" })
       .then((res) => res.json())
       .then((data: { payments?: { stripe?: boolean } }) => {
@@ -140,7 +151,6 @@ export function AcademiaShell({ children }: { children: React.ReactNode }) {
             slug: academy.slug,
             city: academy.city,
             state: academy.state,
-            plan: academy.plan,
             joinCode: academy.joinCode,
             phone: academy.phone,
           }),
@@ -345,8 +355,12 @@ export function AcademiaShell({ children }: { children: React.ReactNode }) {
               children
             )}
           </main>
-          {stripeLive && academyNeedsPayment(store.academy, stripeLive) ? null : <FirstLoginGuide />}
-          {pathname !== "/academia/configuracoes" ? <BillingLock stripeLive={stripeLive} /> : null}
+          {store.hydrated && stripeLive && academyNeedsPayment(store.academy, stripeLive) ? null : (
+            <FirstLoginGuide />
+          )}
+          {store.hydrated && pathname !== "/academia/configuracoes" ? (
+            <BillingLock stripeLive={stripeLive} />
+          ) : null}
         </div>
       </div>
 

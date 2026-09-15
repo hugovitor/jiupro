@@ -5,20 +5,6 @@ import { supabaseAdmin } from "@/lib/operator";
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
-async function findUserByEmail(
-  admin: NonNullable<ReturnType<typeof supabaseAdmin>>,
-  email: string,
-) {
-  for (let page = 1; page <= 8; page++) {
-    const { data, error } = await admin.auth.admin.listUsers({ page, perPage: 200 });
-    if (error) return null;
-    const hit = (data.users ?? []).find((user) => user.email?.trim().toLowerCase() === email);
-    if (hit) return hit;
-    if ((data.users ?? []).length < 200) break;
-  }
-  return null;
-}
-
 export async function POST(request: Request) {
   let email = "";
   let password = "";
@@ -51,18 +37,6 @@ export async function POST(request: Request) {
 
   if (!/already|registered|exists/i.test(created.error.message)) {
     return NextResponse.json({ error: mapAuthError(created.error.message) }, { status: 400 });
-  }
-
-  const existing = await findUserByEmail(admin, email);
-  if (existing && !existing.email_confirmed_at) {
-    const confirmed = await admin.auth.admin.updateUserById(existing.id, {
-      password,
-      email_confirm: true,
-    });
-    if (confirmed.error) {
-      return NextResponse.json({ error: mapAuthError(confirmed.error.message) }, { status: 400 });
-    }
-    return NextResponse.json({ ok: true, existed: true, confirmed: true });
   }
 
   return NextResponse.json({ ok: true, existed: true });

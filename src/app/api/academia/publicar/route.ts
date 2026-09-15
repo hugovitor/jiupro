@@ -1,49 +1,25 @@
 import { NextResponse } from "next/server";
-import { createClient } from "@supabase/supabase-js";
 import { looksLikeHouseCode } from "@/lib/join-code";
 import { slugify } from "@/lib/empty-academy";
 import { supabaseAdmin } from "@/lib/operator";
-import { findReusableAcademy, repairAcademyHouse } from "@/lib/repair-academy";
+import { requireUser } from "@/lib/api-auth";
 import { ensureStudentJoinSchema } from "@/lib/supabase/ensure-student-join";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
-function bearerToken(request: Request) {
-  const header = request.headers.get("authorization") ?? "";
-  return header.replace(/^Bearer\s+/i, "").trim();
-}
-
-async function userFromToken(token: string) {
-  const url = process.env.NEXT_PUBLIC_SUPABASE_URL?.trim();
-  const anon = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY?.trim();
-  if (!url || !anon) return { missingConfig: true as const };
-  const client = createClient(url, anon, { auth: { persistSession: false } });
-  const { data, error } = await client.auth.getUser(token);
-  if (error || !data.user?.id) return null;
-  return data.user;
-}
-
 export async function POST(request: Request) {
-  const token = bearerToken(request);
-  if (!token) {
-    return NextResponse.json({ error: "Entre de novo." }, { status: 401 });
+  const auth = await requireUser(request);
+  if (!auth.ok) {
+    return NextResponse.json({ error: auth.error }, { status: auth.status });
   }
-
-  const user = await userFromToken(token);
-  if (user && "missingConfig" in user) {
-    return NextResponse.json({ error: "Conta online não está ligada neste deploy." }, { status: 503 });
-  }
-  if (!user?.id) {
-    return NextResponse.json({ error: "Entre de novo." }, { status: 401 });
-  }
+  const user = auth.user;
 
   let body: {
     name?: string;
     slug?: string;
     city?: string;
     state?: string;
-    plan?: string;
     joinCode?: string;
     phone?: string;
   };
@@ -64,7 +40,6 @@ export async function POST(request: Request) {
   const slug = slugify(String(body.slug ?? name));
   const city = String(body.city ?? "").trim();
   const state = String(body.state ?? "").trim().slice(0, 2).toUpperCase();
-  const plan = String(body.plan ?? "academia").trim() || "academia";
   const joinCode = String(body.joinCode ?? "").trim().toUpperCase();
   const phone = String(body.phone ?? "").trim();
   const email = user.email?.trim().toLowerCase() ?? "";
@@ -83,28 +58,18 @@ export async function POST(request: Request) {
   }
 
   let academyId = profile.data?.academy_id ? String(profile.data.academy_id) : "";
-  let joinedExisting = false;
-  if (!academyId) {
-    const reusable = await findReusableAcademy(admin, {
-      joinCode,
-      slug,
-      name,
-      city,
-    });
-    if (reusable?.id) {
-      academyId = reusable.id;
-      joinedExisting = true;
-    }
+  if (!academyId && looksLikeHouseCode(joinCode)) {
+    const existing = await admin.from("academies").select("id").eq("join_code", joinCode).maybeSingle();
+    if (existing.data?.id) academyId = String(existing.data.id);
   }
 
-  if (academyId && !joinedExisting) {
+  if (academyId) {
     const patch: Record<string, unknown> = {
       name,
       city,
       state,
       phone: phone || null,
       pix_name: name,
-      plan,
     };
     if (looksLikeHouseCode(joinCode)) patch.join_code = joinCode;
     const { data: slugTaken } = await admin.from("academies").select("id").eq("slug", slug).maybeSingle();
@@ -113,7 +78,7 @@ export async function POST(request: Request) {
     if (error && !/join_code|duplicate|unique|23505/i.test(error.message)) {
       return NextResponse.json({ error: error.message }, { status: 400 });
     }
-  } else if (!academyId) {
+  } else {
     const insert: Record<string, unknown> = {
       name,
       slug,
@@ -121,22 +86,16 @@ export async function POST(request: Request) {
       state,
       phone: phone || null,
       pix_name: name,
-      plan,
     };
     if (looksLikeHouseCode(joinCode)) insert.join_code = joinCode;
     const created = await admin.from("academies").insert(insert).select("id").single();
     if (created.error) {
-      const reusable = await findReusableAcademy(admin, { joinCode, slug, name, city });
-      if (reusable?.id) {
-        academyId = reusable.id;
-      } else {
-        insert.slug = `${slug}-${user.id.replace(/-/g, "").slice(0, 6)}`;
-        const retry = await admin.from("academies").insert(insert).select("id").single();
-        if (retry.error || !retry.data?.id) {
-          return NextResponse.json({ error: created.error.message }, { status: 400 });
-        }
-        academyId = String(retry.data.id);
+      insert.slug = `${slug}-${user.id.replace(/-/g, "").slice(0, 6)}`;
+      const retry = await admin.from("academies").insert(insert).select("id").single();
+      if (retry.error || !retry.data?.id) {
+        return NextResponse.json({ error: created.error.message }, { status: 400 });
       }
+      academyId = String(retry.data.id);
     } else {
       academyId = String(created.data.id);
     }
@@ -165,22 +124,6 @@ export async function POST(request: Request) {
     if (error) return NextResponse.json({ error: error.message }, { status: 400 });
   }
 
-  const repaired = await repairAcademyHouse(admin, {
-    academyId,
-    name,
-    slug,
-    city,
-    joinCode,
-  }).catch(() => ({ academyId, merged: 0 }));
-  academyId = repaired.academyId;
-
-  if (repaired.academyId !== profile.data?.academy_id) {
-    await admin
-      .from("profiles")
-      .update({ academy_id: academyId, role: "owner" })
-      .eq("id", user.id);
-  }
-
   const house = await admin
     .from("academies")
     .select("id, name, slug, city, state, join_code")
@@ -193,6 +136,6 @@ export async function POST(request: Request) {
     name: house.data?.name ?? name,
     slug: house.data?.slug ?? slug,
     joinCode: house.data?.join_code ?? joinCode,
-    merged: repaired.merged,
+    merged: 0,
   });
 }

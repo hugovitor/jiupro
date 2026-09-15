@@ -69,7 +69,6 @@ function CadastroForm() {
             return;
           }
           setBusy(true);
-          void fetch("/api/aluno/casa", { method: "POST" }).catch(() => undefined);
           const result = await store.registerAcademy({
             ownerName: name,
             academyName: academy,

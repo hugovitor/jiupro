@@ -342,8 +342,6 @@ as $$
 declare
   v_id uuid;
   v_slug text := p_slug;
-  v_name_key text := regexp_replace(lower(trim(coalesce(p_name, ''))), '[^a-z0-9]', '', 'g');
-  v_city_key text := regexp_replace(lower(trim(coalesce(p_city, ''))), '[^a-z0-9]', '', 'g');
   v_profile_academy uuid;
   v_profile_role text;
 begin
@@ -362,37 +360,6 @@ begin
     if v_profile_role = 'student' then
       raise exception 'Este e-mail já é de um aluno. Use outro e-mail para a academia.';
     end if;
-  end if;
-
-  select a.id into v_id
-  from public.academies a
-  where lower(a.slug) = lower(trim(v_slug))
-     or (
-       v_name_key <> ''
-       and regexp_replace(lower(trim(a.name)), '[^a-z0-9]', '', 'g') = v_name_key
-       and (
-         v_city_key = ''
-         or regexp_replace(lower(trim(coalesce(a.city, ''))), '[^a-z0-9]', '', 'g') = v_city_key
-       )
-     )
-  order by a.created_at asc
-  limit 1;
-
-  if v_id is not null then
-    insert into public.profiles (id, academy_id, name, role, email)
-    values (
-      auth.uid(),
-      v_id,
-      p_owner_name,
-      'owner',
-      coalesce(auth.jwt()->>'email', '')
-    )
-    on conflict (id) do update
-      set academy_id = excluded.academy_id,
-          role = 'owner',
-          name = coalesce(nullif(public.profiles.name, ''), excluded.name),
-          email = coalesce(nullif(public.profiles.email, ''), excluded.email);
-    return v_id;
   end if;
 
   if exists (select 1 from public.academies where slug = v_slug) then

@@ -82,6 +82,7 @@ export function FirstLoginGuide() {
   }, [store.academy.pixKey, store.academy.pixName, store.academy.name]);
 
   useEffect(() => {
+    if (!store.hydrated) return;
     if (!session) return;
     const forced = new URLSearchParams(window.location.search).get("guia") === "1";
     if (!forced) {
@@ -102,7 +103,7 @@ export function FirstLoginGuide() {
     }
     const timer = window.setTimeout(() => setOpen(true), forced ? 200 : 450);
     return () => window.clearTimeout(timer);
-  }, [email, session?.role, session?.userId, store.academy.id, store.academy.pixKey, store.isDemo, store.students.length]);
+  }, [email, session?.role, session?.userId, store.academy.id, store.academy.pixKey, store.hydrated, store.isDemo, store.students.length]);
 
   if (!open || !session) return null;
 

@@ -9,6 +9,8 @@ import { Textarea } from "@/components/ui/textarea";
 import { configSource, saveSupabasePublicConfig } from "@/lib/supabase/config";
 import { isDirectSupabaseDbHost } from "@/lib/supabase/database-url";
 import { testSupabaseConnection } from "@/lib/supabase/sync";
+import { createSupabaseBrowserClient } from "@/lib/supabase/client";
+import { ensureBrowserAuthSession } from "@/lib/supabase/session";
 import { useStore } from "@/lib/store";
 
 type Busy = "save" | "test" | "push" | "pull" | "copy" | "sql" | "apply" | null;
@@ -109,9 +111,14 @@ export function SupabaseConnect() {
       if (isDirectSupabaseDbHost(dbUrl.trim())) {
         setStatus("URI Direct: convertendo para o pooler IPv4…");
       }
+      const client = createSupabaseBrowserClient();
+      const token = client ? await ensureBrowserAuthSession(client) : null;
       const res = await fetch("/api/supabase/bootstrap", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: {
+          "Content-Type": "application/json",
+          ...(token ? { Authorization: `Bearer ${token}` } : {}),
+        },
         body: JSON.stringify({ databaseUrl: dbUrl.trim() }),
       });
       const data = (await res.json()) as { ok?: boolean; error?: string };

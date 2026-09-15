@@ -1,10 +1,16 @@
 import { applyJiuProSchema, schemaApplyError } from "@/lib/supabase/apply-schema";
+import { requireUser } from "@/lib/api-auth";
 import { isSupabaseDatabaseUrl } from "@/lib/supabase/database-url";
 import { readJiuProSchema } from "@/lib/supabase/schema-file";
 
 export const runtime = "nodejs";
 
 export async function POST(req: Request) {
+  const auth = await requireUser(req);
+  if (!auth.ok) {
+    return Response.json({ error: auth.error }, { status: auth.status });
+  }
+
   let databaseUrl = "";
   try {
     const body = (await req.json()) as { databaseUrl?: string };

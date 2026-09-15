@@ -13,6 +13,7 @@ import { ensureBrowserAuthSession } from "@/lib/supabase/session";
 export function BillingLock({ stripeLive }: { stripeLive: boolean }) {
   const store = useStore();
   const [busy, setBusy] = useState(false);
+  if (!store.hydrated) return null;
   if (!academyNeedsPayment(store.academy, stripeLive)) return null;
   if (store.session?.role === "student") return null;
 

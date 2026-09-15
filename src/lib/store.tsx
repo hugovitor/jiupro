@@ -203,6 +203,10 @@ let writeEpoch = 0;
 let remoteBootstrapped = false;
 
 function persist(state: AppState, push: boolean): AppState {
+  if (!state.session) {
+    writeLiveSession(null);
+    return state;
+  }
   const next =
     state.academy.id === DEMO_ACADEMY_ID ? state : ensureUuidState(state);
   if (next.academy.id === DEMO_ACADEMY_ID || !usesDatabase(next.academy.id)) {
@@ -558,7 +562,8 @@ export function StoreProvider({ children }: { children: ReactNode }) {
   }, []);
 
   const logout = useCallback(() => {
-    write((prev => ({ ...prev, session: null }))(getSnapshot()), false);
+    const demo = createSeed();
+    write({ ...demo, session: null }, false);
     clearRemoteSnapshot();
     if (typeof window !== "undefined") {
       window.sessionStorage.removeItem("jiupro.operator.jwt");
@@ -632,6 +637,14 @@ export function StoreProvider({ children }: { children: ReactNode }) {
       if (/already|registered|exists/i.test(remote.error)) {
         return resumeExisting();
       }
+      return { ok: false, error: remote.error };
+    }
+
+    if (isSupabaseConfigured() && !remote.academyId) {
+      return {
+        ok: false,
+        error: remote.error || "Não criou a academia no banco. Tente de novo ou fale no WhatsApp.",
+      };
     }
 
     if (remote.academyId) {

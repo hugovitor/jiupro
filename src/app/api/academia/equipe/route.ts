@@ -115,13 +115,17 @@ export async function POST(request: Request) {
   }
 
   const link = await admin.auth.admin.generateLink({
-    type: existing.data ? "recovery" : "invite",
+    type: "recovery",
     email,
     options: { redirectTo },
   });
-  const actionLink =
-    link.data?.properties?.action_link ||
-    `${publicAppUrl()}/recuperar-senha`;
+  const actionLink = link.data?.properties?.action_link?.trim() || "";
+  if (!actionLink) {
+    return NextResponse.json(
+      { error: "Conta criada, mas o link de senha não saiu. Confira o SMTP do Supabase e tente de novo." },
+      { status: 502 },
+    );
+  }
 
   const message = `Fala, ${name.split(" ")[0]}.
 

@@ -23,14 +23,16 @@ function ReturnInner() {
     const plan = params.get("plan");
     if ((!paid && !demoSignup) || !plan || !PLANS.some((p) => p.id === plan)) return;
     done.current = true;
-    store.changePlan(plan as PlanId);
-    store.updateAcademy({
-      billingStatus: "trialing",
-    });
+    if (demoSignup || store.isDemo) {
+      store.changePlan(plan as PlanId);
+      store.updateAcademy({ billingStatus: "trialing" });
+    } else {
+      void store.pullNow().catch(() => undefined);
+    }
     toast.success(
       demoSignup
         ? "Academia aberta. Vamos deixar a academia pronta."
-        : "Pagamento confirmado. Assinatura do TatameX ativa.",
+        : "Pagamento confirmado. A assinatura entra assim que o Stripe avisar o banco.",
     );
     router.replace(`${pathname}?guia=1`);
   }, [params, pathname, router, store]);

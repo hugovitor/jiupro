@@ -108,9 +108,11 @@ STRIPE_PRICE_EQUIPE=
 
 Webhook: `POST /api/stripe/webhook`. Sem chaves, o checkout só troca o plano na demo.
 
-Eventos do webhook: `checkout.session.completed`, `customer.subscription.updated`, `customer.subscription.deleted`, `invoice.paid`, `invoice.payment_failed`. Sem pagamento, o painel da academia real trava até regularizar.
+Eventos do webhook: `checkout.session.completed`, `customer.subscription.created`, `customer.subscription.updated`, `customer.subscription.deleted`, `invoice.paid`, `invoice.payment_failed`. Sem pagamento, o painel da academia real trava até regularizar.
 
 Convite de professor: Configurações → WhatsApp com link mágico (não depende de SMTP). Senha esquecida do dono: Authentication → SMTP no Supabase.
+
+Depois de um deploy com schema novo, rode de novo o `supabase/schema.sql` no SQL Editor (é idempotente). Isso atualiza o RLS: aluno lê a academia; só dono/professor grava financeiro, ficha e Pix. Também impede cadastro com o mesmo nome/cidade de assumir academia alheia.
 
 ## Publicar na Vercel (URL `*.vercel.app`)
 

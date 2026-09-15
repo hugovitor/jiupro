@@ -1,6 +1,6 @@
 import { createClient } from "@supabase/supabase-js";
 import { asaasPaid } from "@/lib/asaas/client";
-import { asaasEnvironment, asaasWebhookToken } from "@/lib/asaas/env";
+import { asaasWebhookToken } from "@/lib/asaas/env";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -35,10 +35,10 @@ export async function GET() {
 export async function POST(req: Request) {
   const expected = asaasWebhookToken();
   const sent = req.headers.get("asaas-access-token") ?? "";
-  if (asaasEnvironment() === "production" && !expected) {
+  if (!expected) {
     return Response.json({ error: "ASAAS_WEBHOOK_TOKEN ausente." }, { status: 500 });
   }
-  if (expected && sent !== expected) {
+  if (sent !== expected) {
     return Response.json({ error: "Token do webhook inválido." }, { status: 401 });
   }
 
@@ -69,10 +69,11 @@ export async function POST(req: Request) {
       paid_at: paidAt,
       asaas_payment_id: payment.id,
     };
-    if (payment.externalReference) {
-      await admin.from("payments").update(patch).eq("id", payment.externalReference);
-    } else {
-      await admin.from("payments").update(patch).eq("asaas_payment_id", payment.id);
+    const updated = payment.externalReference
+      ? await admin.from("payments").update(patch).eq("id", payment.externalReference)
+      : await admin.from("payments").update(patch).eq("asaas_payment_id", payment.id);
+    if (updated.error) {
+      return Response.json({ error: updated.error.message }, { status: 500 });
     }
   }
 

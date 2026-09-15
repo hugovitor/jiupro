@@ -179,7 +179,7 @@ as $$
 $$;
 
 revoke all on function public.current_academy_id() from public;
-grant execute on function public.current_academy_id() to authenticated, anon;
+grant execute on function public.current_academy_id() to authenticated;
 
 drop policy if exists "profiles self" on public.profiles;
 create policy "profiles self" on public.profiles
@@ -398,8 +398,6 @@ as $$
 declare
   v_id uuid;
   v_slug text := p_slug;
-  v_name_key text := regexp_replace(lower(trim(coalesce(p_name, ''))), '[^a-z0-9]', '', 'g');
-  v_city_key text := regexp_replace(lower(trim(coalesce(p_city, ''))), '[^a-z0-9]', '', 'g');
   v_profile_academy uuid;
   v_profile_role text;
 begin
@@ -418,37 +416,6 @@ begin
     if v_profile_role = 'student' then
       raise exception 'Este e-mail já é de um aluno. Use outro e-mail para a academia.';
     end if;
-  end if;
-
-  select a.id into v_id
-  from public.academies a
-  where lower(a.slug) = lower(trim(v_slug))
-     or (
-       v_name_key <> ''
-       and regexp_replace(lower(trim(a.name)), '[^a-z0-9]', '', 'g') = v_name_key
-       and (
-         v_city_key = ''
-         or regexp_replace(lower(trim(coalesce(a.city, ''))), '[^a-z0-9]', '', 'g') = v_city_key
-       )
-     )
-  order by a.created_at asc
-  limit 1;
-
-  if v_id is not null then
-    insert into public.profiles (id, academy_id, name, role, email)
-    values (
-      auth.uid(),
-      v_id,
-      p_owner_name,
-      'owner',
-      coalesce(auth.jwt()->>'email', '')
-    )
-    on conflict (id) do update
-      set academy_id = excluded.academy_id,
-          role = 'owner',
-          name = coalesce(nullif(public.profiles.name, ''), excluded.name),
-          email = coalesce(nullif(public.profiles.email, ''), excluded.email);
-    return v_id;
   end if;
 
   if exists (select 1 from public.academies where slug = v_slug) then
@@ -761,6 +728,176 @@ grant execute on function public.join_academy_as_student(text, text, text) to au
 
 alter table public.academies add column if not exists billing_status text not null default 'none';
 alter table public.academies add column if not exists due_day int not null default 10;
+
+create or replace function public.is_academy_staff()
+returns boolean
+language sql
+stable
+security definer
+set search_path = public
+as $$
+  select exists (
+    select 1 from public.profiles
+    where id = auth.uid()
+      and role in ('owner', 'instructor')
+  )
+$$;
+
+revoke all on function public.is_academy_staff() from public;
+grant execute on function public.is_academy_staff() to authenticated;
+
+create or replace function public.profiles_protect_identity()
+returns trigger
+language plpgsql
+as $$
+begin
+  if auth.role() = 'service_role' then
+    return new;
+  end if;
+  new.role := old.role;
+  new.academy_id := old.academy_id;
+  return new;
+end;
+$$;
+
+drop trigger if exists profiles_protect_identity on public.profiles;
+create trigger profiles_protect_identity
+  before update on public.profiles
+  for each row execute function public.profiles_protect_identity();
+
+create or replace function public.academies_protect_billing()
+returns trigger
+language plpgsql
+as $$
+begin
+  if auth.role() = 'service_role' then
+    return new;
+  end if;
+  new.plan := old.plan;
+  new.billing_status := old.billing_status;
+  new.stripe_customer_id := old.stripe_customer_id;
+  new.stripe_subscription_id := old.stripe_subscription_id;
+  return new;
+end;
+$$;
+
+drop trigger if exists academies_protect_billing on public.academies;
+create trigger academies_protect_billing
+  before update on public.academies
+  for each row execute function public.academies_protect_billing();
+
+drop policy if exists "academy update" on public.academies;
+create policy "academy update" on public.academies
+  for update using (id = public.current_academy_id() and public.is_academy_staff())
+  with check (id = public.current_academy_id() and public.is_academy_staff());
+
+drop policy if exists "students by academy" on public.students;
+drop policy if exists "students read academy" on public.students;
+drop policy if exists "students write staff" on public.students;
+create policy "students read academy" on public.students
+  for select using (academy_id = public.current_academy_id());
+create policy "students write staff" on public.students
+  for all using (academy_id = public.current_academy_id() and public.is_academy_staff())
+  with check (academy_id = public.current_academy_id() and public.is_academy_staff());
+
+drop policy if exists "classes by academy" on public.classes;
+drop policy if exists "classes read academy" on public.classes;
+drop policy if exists "classes write staff" on public.classes;
+create policy "classes read academy" on public.classes
+  for select using (academy_id = public.current_academy_id());
+create policy "classes write staff" on public.classes
+  for all using (academy_id = public.current_academy_id() and public.is_academy_staff())
+  with check (academy_id = public.current_academy_id() and public.is_academy_staff());
+
+drop policy if exists "attendance by academy" on public.attendance;
+drop policy if exists "attendance read academy" on public.attendance;
+drop policy if exists "attendance write staff" on public.attendance;
+create policy "attendance read academy" on public.attendance
+  for select using (academy_id = public.current_academy_id());
+create policy "attendance write staff" on public.attendance
+  for all using (academy_id = public.current_academy_id() and public.is_academy_staff())
+  with check (academy_id = public.current_academy_id() and public.is_academy_staff());
+
+drop policy if exists "payments by academy" on public.payments;
+drop policy if exists "payments read academy" on public.payments;
+drop policy if exists "payments write staff" on public.payments;
+create policy "payments read academy" on public.payments
+  for select using (academy_id = public.current_academy_id());
+create policy "payments write staff" on public.payments
+  for all using (academy_id = public.current_academy_id() and public.is_academy_staff())
+  with check (academy_id = public.current_academy_id() and public.is_academy_staff());
+
+drop policy if exists "expenses by academy" on public.expenses;
+drop policy if exists "expenses read academy" on public.expenses;
+drop policy if exists "expenses write staff" on public.expenses;
+create policy "expenses read academy" on public.expenses
+  for select using (academy_id = public.current_academy_id());
+create policy "expenses write staff" on public.expenses
+  for all using (academy_id = public.current_academy_id() and public.is_academy_staff())
+  with check (academy_id = public.current_academy_id() and public.is_academy_staff());
+
+drop policy if exists "inventory by academy" on public.inventory;
+drop policy if exists "inventory read academy" on public.inventory;
+drop policy if exists "inventory write staff" on public.inventory;
+create policy "inventory read academy" on public.inventory
+  for select using (academy_id = public.current_academy_id());
+create policy "inventory write staff" on public.inventory
+  for all using (academy_id = public.current_academy_id() and public.is_academy_staff())
+  with check (academy_id = public.current_academy_id() and public.is_academy_staff());
+
+drop policy if exists "graduations by academy" on public.graduations;
+drop policy if exists "graduations read academy" on public.graduations;
+drop policy if exists "graduations write staff" on public.graduations;
+create policy "graduations read academy" on public.graduations
+  for select using (academy_id = public.current_academy_id());
+create policy "graduations write staff" on public.graduations
+  for all using (academy_id = public.current_academy_id() and public.is_academy_staff())
+  with check (academy_id = public.current_academy_id() and public.is_academy_staff());
+
+drop policy if exists "evaluations by academy" on public.evaluations;
+drop policy if exists "evaluations read academy" on public.evaluations;
+drop policy if exists "evaluations write staff" on public.evaluations;
+create policy "evaluations read academy" on public.evaluations
+  for select using (academy_id = public.current_academy_id());
+create policy "evaluations write staff" on public.evaluations
+  for all using (academy_id = public.current_academy_id() and public.is_academy_staff())
+  with check (academy_id = public.current_academy_id() and public.is_academy_staff());
+
+drop policy if exists "posts by academy" on public.posts;
+drop policy if exists "posts read academy" on public.posts;
+drop policy if exists "posts write staff" on public.posts;
+create policy "posts read academy" on public.posts
+  for select using (academy_id = public.current_academy_id());
+create policy "posts write staff" on public.posts
+  for all using (academy_id = public.current_academy_id() and public.is_academy_staff())
+  with check (academy_id = public.current_academy_id() and public.is_academy_staff());
+
+drop policy if exists "events by academy" on public.events;
+drop policy if exists "events read academy" on public.events;
+drop policy if exists "events write staff" on public.events;
+create policy "events read academy" on public.events
+  for select using (academy_id = public.current_academy_id());
+create policy "events write staff" on public.events
+  for all using (academy_id = public.current_academy_id() and public.is_academy_staff())
+  with check (academy_id = public.current_academy_id() and public.is_academy_staff());
+
+drop policy if exists "sales by academy" on public.sales;
+drop policy if exists "sales read academy" on public.sales;
+drop policy if exists "sales write staff" on public.sales;
+create policy "sales read academy" on public.sales
+  for select using (academy_id = public.current_academy_id());
+create policy "sales write staff" on public.sales
+  for all using (academy_id = public.current_academy_id() and public.is_academy_staff())
+  with check (academy_id = public.current_academy_id() and public.is_academy_staff());
+
+drop policy if exists "drop ins by academy" on public.drop_ins;
+drop policy if exists "drop ins read academy" on public.drop_ins;
+drop policy if exists "drop ins write staff" on public.drop_ins;
+create policy "drop ins read academy" on public.drop_ins
+  for select using (academy_id = public.current_academy_id());
+create policy "drop ins write staff" on public.drop_ins
+  for all using (academy_id = public.current_academy_id() and public.is_academy_staff())
+  with check (academy_id = public.current_academy_id() and public.is_academy_staff());
 
 -- Faz o PostgREST (API) enxergar as tabelas novas neste projeto vazio.
 notify pgrst, 'reload schema';

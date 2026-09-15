@@ -276,17 +276,6 @@ export async function enrollStudentInAcademy(
   });
   if (!seat.ok) return { error: seat.error, status: 403 };
   await ensureJoinCode(admin, academy);
-  const offered = (input.house.code ?? "").trim().toUpperCase();
-  if (
-    looksLikeHouseCode(offered) &&
-    (academy.join_code ?? "").trim().toUpperCase() !== offered
-  ) {
-    const taken = await admin.from("academies").select("id").eq("join_code", offered).maybeSingle();
-    if (!taken.data) {
-      const { error } = await admin.from("academies").update({ join_code: offered }).eq("id", academy.id);
-      if (!error) academy.join_code = offered;
-    }
-  }
 
   const email = input.email.trim().toLowerCase();
   const label = input.studentName.trim() || email.split("@")[0] || "Aluno";
