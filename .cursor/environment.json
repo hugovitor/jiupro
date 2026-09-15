@@ -1,0 +1,17 @@
+{
+  "name": "TatameX",
+  "install": "npm ci",
+  "terminals": [
+    {
+      "name": "dev",
+      "command": "npm run dev",
+      "description": "Servidor de desenvolvimento Next.js (App Router) em http://localhost:43123. A demo da Equipe Origem roda no navegador (localStorage); Supabase e Stripe são opcionais via env vars."
+    }
+  ],
+  "ports": [
+    {
+      "name": "web",
+      "port": 43123
+    }
+  ]
+}
