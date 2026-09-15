@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { toast } from "sonner";
 import { PlanGate } from "@/components/academia/plan-gate";
+import { EmptyState } from "@/components/academia/empty-state";
 import { FormDialog } from "@/components/form-dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -43,6 +44,13 @@ function EstoquePage() {
         </div>
         <NovoItem />
       </div>
+
+      {store.inventory.length === 0 ? (
+        <EmptyState
+          title="Prateleira vazia"
+          body="Cadastre kimono, faixa e tamanho. A venda no nome do aluno baixa o estoque e entra no financeiro."
+        />
+      ) : null}
 
       <div className="grid gap-3 sm:grid-cols-2">
         {store.inventory.map((item) => {

@@ -19,10 +19,10 @@ export const PLANS: Plan[] = [
     blurb: "Para quem está saindo do caderno e do WhatsApp.",
     features: [
       "Até 50 alunos",
-      "Cadastro e mensalidades",
+      "Cadastro, experimentais e turmas",
+      "Mensalidade no WhatsApp + Pix",
       "Presença nas turmas",
       "Histórico de faixas",
-      "1 unidade",
     ],
   },
   {
@@ -34,11 +34,10 @@ export const PLANS: Plan[] = [
     popular: true,
     features: [
       "Até 200 alunos",
-      "Financeiro completo",
-      "Estoque de kimonos e faixas",
-      "Candidatos a graduação",
-      "Mural da academia",
-      "PWA dos alunos",
+      "Financeiro, cobranças e fechamento",
+      "Estoque e venda no nome do aluno",
+      "Agenda, mural e candidatos a faixa",
+      "Aplicativo do aluno (PWA)",
     ],
   },
   {
@@ -50,9 +49,9 @@ export const PLANS: Plan[] = [
     features: [
       "Alunos ilimitados",
       "Tudo do plano Academia",
-      "Relatórios de evolução",
-      "Prioridade no suporte",
-      "Marca da academia no app",
+      "Relatórios de evolução e retenção",
+      "Marca da academia no app do aluno",
+      "Prioridade no WhatsApp",
     ],
   },
 ];

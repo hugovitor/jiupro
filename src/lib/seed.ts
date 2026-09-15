@@ -51,10 +51,14 @@ export function createSeed(): AppState {
     plan: "equipe",
     monthlyGoal: 18000,
     dropInFee: 40,
+    dueDay: 10,
     createdAt: "2021-03-08T12:00:00.000Z",
     joinCode: "ORIGEM",
     brandLogo: "/origem-mark.svg",
     brandTagline: "Jiu-Jitsu",
+    billingStatus: "active",
+    stripeCustomerId: "",
+    stripeSubscriptionId: "",
   };
 
   const session = {

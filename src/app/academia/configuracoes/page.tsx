@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { Suspense, useEffect, useRef, useState } from "react";
 import { toast } from "sonner";
+import { InviteInstructorForm } from "@/components/academia/invite-instructor-form";
 import { AlunoAppCard } from "@/components/academia/aluno-app-card";
 import { AcademyBrandEditor } from "@/components/academia/brand-editor";
 import { FirstLoginHint } from "@/components/first-login-guide";
@@ -151,6 +152,10 @@ function ConfigInner() {
 
       <PixForm />
 
+      <DueDayForm />
+
+      <InviteInstructorForm />
+
       <section className="border border-border bg-card p-5">
         <h2 className="font-medium">Plano {PRODUCT_NAME} · {plan.name}</h2>
         <p className="mt-1 text-sm text-muted-foreground">
@@ -264,6 +269,10 @@ function ConfigInner() {
             : `Suporte ${PRODUCT_NAME}`}
         </h2>
         <p className="mt-2 text-muted-foreground">
+          E-mail de senha esquecida: no Supabase, Authentication → SMTP (Resend). Convite de
+          professor não precisa disso — vai no WhatsApp com o link.
+        </p>
+        <p className="mt-2 text-muted-foreground">
           {hasFeature(store.academy, "prioritySupport")
             ? "Plano Equipe: sua academia entra na frente na fila do WhatsApp."
             : "Plano, cupom, cadastro, acesso ou LGPD: fale no WhatsApp"}{" "}
@@ -298,13 +307,18 @@ function PixForm() {
   const store = useStore();
   const [pixKey, setPixKey] = useState(store.academy.pixKey);
   const [pixName, setPixName] = useState(store.academy.pixName);
+  const missing = !store.academy.pixKey.trim();
 
   return (
-    <section className="border border-border bg-card p-5">
-        <h2 className="font-medium">Pix da academia</h2>
-        <p className="mt-1 text-sm text-muted-foreground">
-          É a chave que vai na cobrança do WhatsApp para o aluno pagar a mensalidade.
-        </p>
+    <section
+      className={`border bg-card p-5 ${missing ? "border-red-500/40 bg-red-500/5" : "border-border"}`}
+    >
+      <h2 className="font-medium">Pix da academia</h2>
+      <p className="mt-1 text-sm text-muted-foreground">
+        {missing
+          ? "Ainda não tem chave. Sem isso a cobrança no WhatsApp sai vazia."
+          : "É a chave que vai na cobrança do WhatsApp para o aluno pagar a mensalidade."}
+      </p>
       <form
         className="mt-4 grid gap-3"
         onSubmit={(e) => {
@@ -315,13 +329,53 @@ function PixForm() {
       >
         <div className="space-y-1.5">
           <Label>Chave</Label>
-          <Input value={pixKey} onChange={(e) => setPixKey(e.target.value)} />
+          <Input
+            value={pixKey}
+            onChange={(e) => setPixKey(e.target.value)}
+            placeholder="CPF, e-mail, celular ou aleatória"
+          />
         </div>
         <div className="space-y-1.5">
           <Label>Nome no comprovante</Label>
           <Input value={pixName} onChange={(e) => setPixName(e.target.value)} />
         </div>
-        <Button type="submit">Salvar Pix</Button>
+        <Button type="submit">{missing ? "Salvar chave Pix" : "Salvar Pix"}</Button>
+      </form>
+    </section>
+  );
+}
+
+function DueDayForm() {
+  const store = useStore();
+  const [dueDay, setDueDay] = useState(String(store.academy.dueDay || 10));
+
+  return (
+    <section className="border border-border bg-card p-5">
+      <h2 className="font-medium">Vencimento da mensalidade</h2>
+      <p className="mt-1 text-sm text-muted-foreground">
+        No dia {store.academy.dueDay || 10} o pendente vira atraso sozinho. Aí o Zap de cobrança
+        usa o texto de atraso.
+      </p>
+      <form
+        className="mt-4 flex flex-wrap items-end gap-3"
+        onSubmit={(e) => {
+          e.preventDefault();
+          const day = Math.min(28, Math.max(1, Number(dueDay) || 10));
+          store.updateAcademy({ dueDay: day });
+          store.refreshOverdue();
+          toast.success(`Vencimento no dia ${day}.`);
+        }}
+      >
+        <div className="space-y-1.5">
+          <Label>Dia do mês</Label>
+          <Input
+            className="w-24"
+            inputMode="numeric"
+            value={dueDay}
+            onChange={(e) => setDueDay(e.target.value)}
+          />
+        </div>
+        <Button type="submit">Salvar vencimento</Button>
       </form>
     </section>
   );

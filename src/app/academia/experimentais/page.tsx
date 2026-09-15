@@ -9,6 +9,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { brl, isoDate } from "@/lib/format";
+import { EmptyState } from "@/components/academia/empty-state";
 import { canAddStudent, studentCapMessage } from "@/lib/plan-access";
 import { useStore } from "@/lib/store";
 import { trialMessage, waHref } from "@/lib/whatsapp";
@@ -30,9 +31,12 @@ export default function ExperimentaisPage() {
         <NovoExperimental />
       </div>
 
-      {trials.length === 0 && (
-        <p className="text-sm text-muted-foreground">Nenhum experimental aberto.</p>
-      )}
+      {trials.length === 0 ? (
+        <EmptyState
+          title="Nenhum experimental aberto"
+          body="Quem veio treinar uma vez entra aqui. Converta em mensalista no mesmo dia, antes de esfriar."
+        />
+      ) : null}
 
       <div className="space-y-2">
         {trials.map((s) => (
@@ -71,8 +75,8 @@ export default function ExperimentaisPage() {
                 size="sm"
                 variant="outline"
                 onClick={() => {
-                  store.updateStudent(s.id, { status: "active" });
-                  toast.success(`${s.name} virou mensalista.`);
+                  store.convertTrial(s.id);
+                  toast.success(`${s.name} virou mensalista. Mensalidade do mês na cobrança.`);
                 }}
               >
                 Converter

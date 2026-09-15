@@ -4,6 +4,8 @@ import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
 import { toast } from "sonner";
 import { AlunoAppCard } from "@/components/academia/aluno-app-card";
+import { ImportStudentsButton } from "@/components/academia/import-students-button";
+import { EmptyState } from "@/components/academia/empty-state";
 import { SendStudentAccessButton } from "@/components/academia/send-student-access";
 import { BeltBadge, PersonAvatar } from "@/components/belt-badge";
 import { FormDialog } from "@/components/form-dialog";
@@ -71,10 +73,23 @@ export default function AlunosPage() {
             {store.students.filter((s) => s.status === "active").length} no tatame
           </p>
         </div>
-        <NovoAluno />
+        <div className="flex flex-wrap gap-2">
+          <ImportStudentsButton />
+          <NovoAluno />
+        </div>
       </div>
 
       <AlunoAppCard />
+
+        {store.students.length === 0 ? (
+        <EmptyState
+          title="Sua lista ainda está vazia"
+          body="Cadastre a ficha e mande o WhatsApp para criar a senha. Ou o aluno busca o nome da academia no app e entra sozinho."
+          action={
+            <Button render={<Link href="/academia/alunos?novo=1" />}>Cadastrar aluno</Button>
+          }
+        />
+      ) : null}
 
       <div className="flex flex-col gap-3 sm:flex-row">
         <Input

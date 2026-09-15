@@ -92,6 +92,10 @@ export function currentMonth() {
   return `${year}-${String(month).padStart(2, "0")}`;
 }
 
+export function dayOfMonth(now = new Date()) {
+  return civilParts(now).day;
+}
+
 export function monthLabel(month: string) {
   const [y, m] = month.split("-").map(Number);
   return new Intl.DateTimeFormat("pt-BR", {

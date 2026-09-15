@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { toast } from "sonner";
+import { EmptyState } from "@/components/academia/empty-state";
 import { PlanGate } from "@/components/academia/plan-gate";
 import { PersonAvatar } from "@/components/belt-badge";
 import { Button } from "@/components/ui/button";
@@ -169,9 +170,21 @@ function FechamentoPage() {
         </CardHeader>
         <CardContent className="space-y-2">
           {monthPays.length === 0 && (
-            <p className="text-sm text-muted-foreground">
-              Nenhuma cobrança neste mês. Gere as mensalidades para começar.
-            </p>
+            <EmptyState
+              title={`Sem cobrança em ${monthLabel(month)}`}
+              body="Gere as mensalidades das fichas ativas para fechar o mês e exportar a planilha."
+              action={
+                <Button
+                  onClick={() => {
+                    const n = store.generateMonthCharges(month);
+                    if (n === 0) toast.message("Já existem cobranças deste mês.");
+                    else toast.success(`${n} cobrança(s) geradas.`);
+                  }}
+                >
+                  Gerar mensalidades deste mês
+                </Button>
+              }
+            />
           )}
           {monthPays.map((p) => {
             const s = store.students.find((st) => st.id === p.studentId);

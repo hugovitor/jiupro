@@ -759,5 +759,8 @@ $$;
 revoke all on function public.join_academy_as_student(text, text, text) from public;
 grant execute on function public.join_academy_as_student(text, text, text) to authenticated;
 
+alter table public.academies add column if not exists billing_status text not null default 'none';
+alter table public.academies add column if not exists due_day int not null default 10;
+
 -- Faz o PostgREST (API) enxergar as tabelas novas neste projeto vazio.
 notify pgrst, 'reload schema';

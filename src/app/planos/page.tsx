@@ -21,6 +21,7 @@ import { brl } from "@/lib/format";
 import { startPlanCheckout } from "@/lib/billing";
 import { signupTrialLabel } from "@/lib/billing-offer";
 import { PLANS, planCapacityLabel } from "@/lib/plans";
+import { SUPPORT_PHONE_DISPLAY, supportWhatsAppHref } from "@/lib/support";
 import { useStore } from "@/lib/store";
 import type { PlanId } from "@/lib/types";
 
@@ -31,6 +32,7 @@ export default function PlanosPage() {
   const [promoCode, setPromoCode] = useState("");
 
   const currentPlanId = store.academy.plan as PlanId | undefined;
+  const liveOwner = Boolean(store.session && !store.isDemo);
 
   async function subscribe(planId: PlanId) {
     if (loadingPlan) return;
@@ -108,6 +110,15 @@ export default function PlanosPage() {
             : null}{" "}
           Seus alunos continuam pagando as mensalidades diretamente para você.
         </p>
+        {store.isDemo ? (
+          <p className="mx-auto mt-5 max-w-xl rounded-xl border border-red-500/30 bg-red-500/10 px-4 py-3 text-sm text-white/70">
+            Você está na Equipe Origem (demonstração). Para assinar,{" "}
+            <Link href="/cadastro" className="font-bold text-white underline underline-offset-4">
+              abra a sua academia
+            </Link>
+            .
+          </p>
+        ) : null}
 
         <div className="mt-9 flex flex-wrap items-center justify-center gap-x-7 gap-y-3 text-xs font-medium text-white/40">
           {[
@@ -124,7 +135,7 @@ export default function PlanosPage() {
       </section>
 
       <section className="relative mx-auto max-w-7xl px-5 pb-24 lg:px-8 lg:pb-32">
-        {store.session ? (
+        {liveOwner ? (
           <div className="mx-auto mb-8 max-w-md">
             <label htmlFor="promo-code" className="sr-only">
               Código promocional
@@ -143,7 +154,7 @@ export default function PlanosPage() {
           {PLANS.map((plan) => {
             const popular = Boolean(plan.popular);
             const loading = loadingPlan === plan.id;
-            const current = Boolean(store.session && currentPlanId === plan.id);
+            const current = Boolean(liveOwner && currentPlanId === plan.id);
 
             return (
               <article
@@ -225,7 +236,7 @@ export default function PlanosPage() {
                 </ul>
 
                 <div className="mt-8">
-                  {store.session ? (
+                  {liveOwner ? (
                     <button
                       type="button"
                       onClick={() => void subscribe(plan.id)}
@@ -262,7 +273,7 @@ export default function PlanosPage() {
                           : "border border-white/15 bg-white/[0.04] text-white hover:border-red-500 hover:bg-red-600"
                       }`}
                     >
-                      Assinar {plan.name}
+                      {signupTrialLabel() ? `Começar no ${plan.name}` : `Assinar ${plan.name}`}
                       <ArrowRight className="h-4 w-4 transition-transform group-hover/button:translate-x-1" />
                     </Link>
                   )}
@@ -302,6 +313,7 @@ export default function PlanosPage() {
               Experimente o TatameX antes de assinar.
             </h2>
           </div>
+          <div className="flex shrink-0 flex-col gap-3 sm:flex-row">
           <Link
             href="/demo"
             className="inline-flex h-12 shrink-0 items-center gap-2 rounded-xl bg-white px-6 text-sm font-black text-red-700 transition hover:bg-black hover:text-white"
@@ -309,6 +321,15 @@ export default function PlanosPage() {
             Abrir demonstração
             <ArrowRight className="h-4 w-4" />
           </Link>
+          <a
+            href={supportWhatsAppHref("Olá, quero escolher o plano certo para a minha academia.")}
+            target="_blank"
+            rel="noreferrer"
+            className="inline-flex h-12 shrink-0 items-center gap-2 rounded-xl border border-white/30 px-6 text-sm font-black text-white transition hover:bg-black"
+          >
+            WhatsApp {SUPPORT_PHONE_DISPLAY}
+          </a>
+          </div>
         </div>
       </section>
 

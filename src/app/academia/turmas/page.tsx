@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { toast } from "sonner";
+import { EmptyState } from "@/components/academia/empty-state";
 import { BeltBadge } from "@/components/belt-badge";
 import { FormDialog } from "@/components/form-dialog";
 import { Button } from "@/components/ui/button";
@@ -56,6 +57,12 @@ export default function TurmasPage() {
         </div>
         <TurmaDialog />
       </div>
+      {grouped.length === 0 ? (
+        <EmptyState
+          title="Nenhuma turma na grade"
+          body="Monte a semana: nome, horário e quantos cabem. O aluno confirma no app; você valida no tatame."
+        />
+      ) : null}
       <div className="space-y-6">
         {grouped.map((g) => (
           <section key={g.day}>

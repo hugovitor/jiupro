@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo } from "react";
+import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import {
@@ -13,9 +13,11 @@ import {
   Shield,
   Users,
 } from "lucide-react";
+import { BillingLock } from "@/components/academia/billing-lock";
 import { Wordmark } from "@/components/brand";
 import { FirstLoginGuide } from "@/components/first-login-guide";
 import { Button } from "@/components/ui/button";
+import { academyNeedsPayment } from "@/lib/billing-status";
 import { isOperatorEmail } from "@/lib/operator";
 import { hasFeature, type PlanFeature } from "@/lib/plan-access";
 import { planById } from "@/lib/plans";
@@ -94,6 +96,7 @@ export function AcademiaShell({ children }: { children: React.ReactNode }) {
   const store = useStore();
   const router = useRouter();
   const pathname = usePathname();
+  const [stripeLive, setStripeLive] = useState(false);
   const user = store.users.find((u) => u.id === store.session?.userId);
   const groups = useMemo(() => {
     return GROUPS.map((group) => ({
@@ -109,6 +112,15 @@ export function AcademiaShell({ children }: { children: React.ReactNode }) {
     activeGroup.items.find((i) => itemIsActive(i.href, pathname))?.label ?? "Início";
   const plan = planById(store.academy.plan);
   const priority = hasFeature(store.academy, "prioritySupport");
+
+  useEffect(() => {
+    void fetch("/api/health", { cache: "no-store" })
+      .then((res) => res.json())
+      .then((data: { payments?: { stripe?: boolean } }) => {
+        setStripeLive(Boolean(data.payments?.stripe));
+      })
+      .catch(() => undefined);
+  }, []);
 
   useEffect(() => {
     if (!store.hydrated) return;
@@ -134,8 +146,15 @@ export function AcademiaShell({ children }: { children: React.ReactNode }) {
           }),
         }).catch(() => undefined);
       }
-    await store.syncNow().catch(() => undefined);
+      await store.pullNow().catch(() => undefined);
     })();
+    const onVis = () => {
+      if (document.visibilityState === "visible") {
+        void store.pullNow().catch(() => undefined);
+      }
+    };
+    document.addEventListener("visibilitychange", onVis);
+    return () => document.removeEventListener("visibilitychange", onVis);
     // eslint-disable-next-line react-hooks/exhaustive-deps -- once per academy load
   }, [store.hydrated, store.academy.id]);
 
@@ -319,8 +338,15 @@ export function AcademiaShell({ children }: { children: React.ReactNode }) {
             </div>
           )}
 
-          <main className="relative flex-1 p-4 pb-24 lg:p-6">{children}</main>
-          <FirstLoginGuide />
+          <main className="relative flex-1 p-4 pb-24 lg:p-6">
+            {!store.hydrated ? (
+              <p className="text-sm text-white/50">Carregando a academia do banco…</p>
+            ) : (
+              children
+            )}
+          </main>
+          {stripeLive && academyNeedsPayment(store.academy, stripeLive) ? null : <FirstLoginGuide />}
+          {pathname !== "/academia/configuracoes" ? <BillingLock stripeLive={stripeLive} /> : null}
         </div>
       </div>
 
