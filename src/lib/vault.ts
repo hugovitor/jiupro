@@ -1,6 +1,8 @@
 import { defaultAcademyBrand } from "./academy-brand";
+import { blankLiveState } from "./empty-academy";
 import { collapseAcademyKey } from "./join-code";
 import { createSeed, DEMO_ACADEMY_ID } from "./seed";
+import { isSupabaseConfigured } from "./supabase/config";
 import type { AppState, Session } from "./types";
 
 export const VAULT_KEY = "jiupro.vault.v1";
@@ -133,20 +135,57 @@ export function saveVault() {
   }
 }
 
+export function usesDatabase(academyId?: string | null) {
+  if (!academyId || academyId === DEMO_ACADEMY_ID) return false;
+  return isSupabaseConfigured();
+}
+
 export function activeState(): AppState {
   const v = getVault();
+  const session = v.session;
+  const liveId =
+    session?.academyId && session.academyId !== DEMO_ACADEMY_ID
+      ? session.academyId
+      : v.activeId !== DEMO_ACADEMY_ID
+        ? v.activeId
+        : "";
+  if (liveId && usesDatabase(liveId)) {
+    return blankLiveState(
+      session ?? { userId: "", academyId: liveId, role: "owner" },
+    );
+  }
   const row =
+    (session?.academyId ? v.academies[session.academyId] : undefined) ??
     v.academies[v.activeId] ??
     v.academies[DEMO_ACADEMY_ID] ??
     stripSession(createSeed());
-  return migrateState({ ...row, session: v.session });
+  return migrateState({ ...row, session });
 }
 
 export function writeActive(next: AppState) {
   const v = getVault();
   v.session = next.session;
   v.activeId = next.academy.id;
-  v.academies[next.academy.id] = stripSession(migrateState(next));
+  if (next.academy.id === DEMO_ACADEMY_ID || !usesDatabase(next.academy.id)) {
+    v.academies[next.academy.id] = stripSession(migrateState(next));
+  }
+  saveVault();
+}
+
+export function writeLiveSession(session: Session | null, academyId?: string) {
+  const v = getVault();
+  v.session = session;
+  if (academyId && academyId !== DEMO_ACADEMY_ID) {
+    v.activeId = academyId;
+    delete v.academies[academyId];
+  }
+  saveVault();
+}
+
+export function forgetLiveAcademyCache(academyId: string) {
+  if (!academyId || academyId === DEMO_ACADEMY_ID) return;
+  const v = getVault();
+  delete v.academies[academyId];
   saveVault();
 }
 
@@ -191,9 +230,13 @@ export function putAcademy(state: AppState, password?: string, previousId?: stri
   if (previousId && previousId !== state.academy.id) {
     delete v.academies[previousId];
   }
-  v.academies[state.academy.id] = stripSession(state);
   v.activeId = state.academy.id;
   v.session = state.session;
+  if (state.academy.id === DEMO_ACADEMY_ID || !usesDatabase(state.academy.id)) {
+    v.academies[state.academy.id] = stripSession(state);
+  } else {
+    delete v.academies[state.academy.id];
+  }
   if (password) {
     const email = state.users
       .find((u) => u.id === state.session?.userId)

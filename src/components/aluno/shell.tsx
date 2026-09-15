@@ -82,7 +82,13 @@ export function AlunoShell({ children }: { children: React.ReactNode }) {
             <LogOut className="size-4" />
           </button>
         </header>
-        <main className="relative flex-1 p-4 pb-20">{children}</main>
+        <main className="relative flex-1 p-4 pb-20">
+          {!store.hydrated ? (
+            <p className="text-sm text-white/50">Carregando a academia do banco…</p>
+          ) : (
+            children
+          )}
+        </main>
         <FirstLoginGuide />
         <nav
           aria-label="Navegação do aluno"

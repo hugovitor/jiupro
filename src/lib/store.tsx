@@ -16,11 +16,14 @@ import { currentMonth, isoDate, uid, weekdayToday } from "./format";
 import { createSeed, DEMO_ACADEMY_ID, DEMO_ACCOUNTS } from "./seed";
 import {
   attachLocalAcademy,
+  clearRemoteSnapshot,
   createAcademyForCurrentUser,
   joinStudentRemote,
   pullAcademyState,
   pushAcademyState,
   registerRemoteAcademy,
+  rememberRemoteSnapshot,
+  resumeRemoteSession,
   scheduleRemotePush,
   signInRemote,
 } from "./supabase/sync";
@@ -36,6 +39,7 @@ import {
   eraseAcademy,
   findAcademyByJoinCode,
   findUserAcrossAcademies,
+  forgetLiveAcademyCache,
   hasLocalPassword,
   passwordFor,
   putAcademy,
@@ -43,7 +47,9 @@ import {
   resetDemoAcademy,
   switchAcademy,
   takenSlugs,
+  usesDatabase,
   writeActive,
+  writeLiveSession,
 } from "./vault";
 import { attendanceStatus, classHeadcount, isOnRoster, isValidated, studentCanSelfCheckIn } from "./attendance";
 import { academyPortability } from "./lgpd";
@@ -52,7 +58,6 @@ import {
   attendanceDay,
   canonicalStudent,
   classesShareSlot,
-  mergeAcademyState,
   studentAliasIds,
 } from "./roster-identity";
 import type {
@@ -189,14 +194,23 @@ let cached: AppState | null = null;
 let clientReady = false;
 let pushCancel: (() => void) | undefined;
 let writeEpoch = 0;
+let remoteBootstrapped = false;
 
-function persist(state: AppState): AppState {
+function persist(state: AppState, push: boolean): AppState {
   const next =
     state.academy.id === DEMO_ACADEMY_ID ? state : ensureUuidState(state);
-  writeActive(next);
-  writeEpoch += 1;
-  pushCancel?.();
-  pushCancel = scheduleRemotePush(next);
+  if (next.academy.id === DEMO_ACADEMY_ID || !usesDatabase(next.academy.id)) {
+    writeActive(next);
+    return next;
+  }
+  writeLiveSession(next.session, next.academy.id);
+  if (push) {
+    writeEpoch += 1;
+    if (remoteBootstrapped) {
+      pushCancel?.();
+      pushCancel = scheduleRemotePush(next);
+    }
+  }
   return next;
 }
 
@@ -206,7 +220,17 @@ function flushRemotePush() {
   pushCancel = undefined;
   const state = cached;
   if (!state || state.academy.id === DEMO_ACADEMY_ID) return;
+  if (!usesDatabase(state.academy.id)) return;
   void pushAcademyState(state);
+}
+
+function adoptRemote(state: AppState) {
+  rememberRemoteSnapshot(state);
+  forgetLiveAcademyCache(state.academy.id);
+  remoteBootstrapped = true;
+  const next = persist(state, false);
+  cached = next;
+  emit();
 }
 
 async function retractStudentCheckIn(session: ClassSession): Promise<{ ok: boolean; error?: string }> {
@@ -225,6 +249,7 @@ async function retractStudentCheckIn(session: ClassSession): Promise<{ ok: boole
         Authorization: `Bearer ${token}`,
         "Content-Type": "application/json",
       },
+      cache: "no-store",
       body: JSON.stringify({
         classId: session.id,
         weekday: session.weekday,
@@ -258,6 +283,7 @@ async function publishOwnerAttendance(input: {
       Authorization: `Bearer ${token}`,
       "Content-Type": "application/json",
     },
+    cache: "no-store",
     body: JSON.stringify(input),
   }).catch(() => undefined);
 }
@@ -294,6 +320,7 @@ async function publishStudentCheckIn(session: ClassSession): Promise<{
         Authorization: `Bearer ${token}`,
         "Content-Type": "application/json",
       },
+      cache: "no-store",
       body: JSON.stringify({
         classId: session.id,
         weekday: session.weekday,
@@ -353,8 +380,8 @@ function getServerSnapshot(): AppState {
   return serverCached;
 }
 
-function write(next: AppState) {
-  const out = clientReady ? persist(next) : next;
+function write(next: AppState, push = true) {
+  const out = clientReady ? persist(next, push) : next;
   cached = out;
   emit();
 }
@@ -376,7 +403,38 @@ export function StoreProvider({ children }: { children: ReactNode }) {
     clientReady = true;
     cached = load();
     emit();
-    setHydrated(true);
+
+    const explicitDemo =
+      cached.academy.id === DEMO_ACADEMY_ID && cached.session?.academyId === DEMO_ACADEMY_ID;
+    if (explicitDemo || !isSupabaseConfigured()) {
+      remoteBootstrapped = true;
+      setHydrated(true);
+      return;
+    }
+
+    let cancelled = false;
+    void (async () => {
+      const remote = await resumeRemoteSession(cached?.session);
+      if (cancelled) return;
+      if (remote && !("error" in remote) && writeEpoch === 0) {
+        const current = getSnapshot();
+        if (current.academy.id !== DEMO_ACADEMY_ID || current.session?.academyId !== DEMO_ACADEMY_ID) {
+          adoptRemote({ ...remote, session: remote.session ?? current.session });
+        }
+      }
+      remoteBootstrapped = true;
+      setHydrated(true);
+      if (writeEpoch > 0) flushRemotePush();
+    })();
+
+    const onLeave = () => flushRemotePush();
+    window.addEventListener("pagehide", onLeave);
+    window.addEventListener("beforeunload", onLeave);
+    return () => {
+      cancelled = true;
+      window.removeEventListener("pagehide", onLeave);
+      window.removeEventListener("beforeunload", onLeave);
+    };
   }, []);
 
   const login = useCallback(async (email: string, password?: string): Promise<LoginResult> => {
@@ -416,7 +474,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
             if (!attached.error && attached.state) {
               rememberPassword(needle, password);
               putAcademy(attached.state, password);
-              write(attached.state);
+              adoptRemote(attached.state);
               return {
                 ok: true,
                 role: attached.state.session?.role ?? "owner",
@@ -445,7 +503,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
               if (!("error" in pulled)) {
                 rememberPassword(needle, password);
                 putAcademy(pulled, password);
-                write(pulled);
+                adoptRemote(pulled);
                 return { ok: true, role: "owner", academyId: pulled.academy.id };
               }
             }
@@ -461,21 +519,22 @@ export function StoreProvider({ children }: { children: ReactNode }) {
           if (!("error" in pulled)) {
             rememberPassword(needle, password);
             putAcademy(pulled, password);
-            write(pulled);
+            adoptRemote(pulled);
             return {
               ok: true,
               role: remote.session.role,
               academyId: pulled.academy.id,
             };
           }
-          if (!local) {
-            return { ok: false, error: pulled.error };
-          }
+          return { ok: false, error: pulled.error };
+        }
+        if ("error" in remote && remote.error) {
+          return { ok: false, error: remote.error };
         }
       }
     }
 
-    if (local) {
+    if (!isSupabaseConfigured() && local) {
       if (!password || !checkPassword(needle, password)) {
         return { ok: false, error: "E-mail ou senha incorretos." };
       }
@@ -493,7 +552,8 @@ export function StoreProvider({ children }: { children: ReactNode }) {
   }, []);
 
   const logout = useCallback(() => {
-    commit((prev) => ({ ...prev, session: null }));
+    write((prev => ({ ...prev, session: null }))(getSnapshot()), false);
+    clearRemoteSnapshot();
     if (typeof window !== "undefined") {
       window.sessionStorage.removeItem("jiupro.operator.jwt");
     }
@@ -581,10 +641,10 @@ export function StoreProvider({ children }: { children: ReactNode }) {
     }
 
     putAcademy(academy, input.password, originalId);
-    write(academy);
+    write(academy, Boolean(remote.academyId));
     if (remote.academyId) {
       const pushed = await pushAcademyState(academy);
-      if (pushed.state) write(pushed.state);
+      if (pushed.state) adoptRemote(pushed.state);
     }
     return { ok: true, role: "owner", academyId: academy.academy.id };
   }, [login]);
@@ -624,12 +684,16 @@ export function StoreProvider({ children }: { children: ReactNode }) {
           if (!("error" in pulled)) {
             rememberPassword(email, input.password);
             putAcademy(pulled, input.password);
-            write(pulled);
+            adoptRemote(pulled);
             return { ok: true, role: "student", academyId: pulled.academy.id };
           }
           return { ok: false, error: pulled.error };
         }
       }
+    }
+
+    if (isSupabaseConfigured()) {
+      return { ok: false, error: "Academia não encontrada. Busque o nome da sua academia." };
     }
 
     const house =
@@ -739,15 +803,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
     if (!isSupabaseConfigured()) {
       return { ok: false, error: "Ainda não dá para gravar a academia. Tente de novo ou fale com o suporte." };
     }
-    const readyLocal = ensureUuidState(current);
-    let ready = readyLocal;
-    if (current.session) {
-      const pulled = await pullAcademyState(current.session);
-      if (!("error" in pulled)) {
-        ready = ensureUuidState(mergeAcademyState(readyLocal, pulled));
-      }
-    }
-    write(ready);
+    const ready = ensureUuidState(current);
     const epoch = writeEpoch;
     const owner = ready.users.find((u) => u.role === "owner");
     const password = owner ? passwordFor(owner.email) : undefined;
@@ -768,13 +824,13 @@ export function StoreProvider({ children }: { children: ReactNode }) {
       if (attached.error) return { ok: false, error: attached.error };
       if (attached.state && writeEpoch === epoch) {
         putAcademy(attached.state, password, ready.academy.id);
-        write(attached.state);
+        adoptRemote(attached.state);
       }
       return { ok: true };
     }
     if (pushed.error) return { ok: false, error: pushed.error };
     if (pushed.state && writeEpoch === epoch) {
-      write(mergeAcademyState(getSnapshot(), pushed.state));
+      adoptRemote(pushed.state);
     }
     return { ok: true };
   }, []);
@@ -791,9 +847,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
     const pulled = await pullAcademyState(current.session);
     if ("error" in pulled) return { ok: false, error: pulled.error };
     if (writeEpoch !== epoch) return { ok: true };
-    const merged = mergeAcademyState(current, pulled);
-    putAcademy(merged);
-    write(merged);
+    adoptRemote({ ...pulled, session: current.session });
     return { ok: true };
   }, []);
 
@@ -1257,7 +1311,8 @@ export function StoreProvider({ children }: { children: ReactNode }) {
       write(resetDemoAcademy());
       return;
     }
-    write(eraseAcademy(prev.academy.id));
+    write(eraseAcademy(prev.academy.id), false);
+    clearRemoteSnapshot();
     void createSupabaseBrowserClient()?.auth.signOut();
   }, []);
 
@@ -1362,9 +1417,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
         if (current.session) {
           const pulled = await pullAcademyState(current.session);
           if (!("error" in pulled) && writeEpoch === epoch) {
-            const merged = mergeAcademyState(getSnapshot(), pulled);
-            putAcademy(merged);
-            write(merged);
+            adoptRemote({ ...pulled, session: current.session });
           }
         }
         return { ok: true };

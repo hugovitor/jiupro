@@ -134,8 +134,15 @@ export function AcademiaShell({ children }: { children: React.ReactNode }) {
           }),
         }).catch(() => undefined);
       }
-    await store.syncNow().catch(() => undefined);
+      await store.pullNow().catch(() => undefined);
     })();
+    const onVis = () => {
+      if (document.visibilityState === "visible") {
+        void store.pullNow().catch(() => undefined);
+      }
+    };
+    document.addEventListener("visibilitychange", onVis);
+    return () => document.removeEventListener("visibilitychange", onVis);
     // eslint-disable-next-line react-hooks/exhaustive-deps -- once per academy load
   }, [store.hydrated, store.academy.id]);
 
@@ -319,7 +326,13 @@ export function AcademiaShell({ children }: { children: React.ReactNode }) {
             </div>
           )}
 
-          <main className="relative flex-1 p-4 pb-24 lg:p-6">{children}</main>
+          <main className="relative flex-1 p-4 pb-24 lg:p-6">
+            {!store.hydrated ? (
+              <p className="text-sm text-white/50">Carregando a academia do banco…</p>
+            ) : (
+              children
+            )}
+          </main>
           <FirstLoginGuide />
         </div>
       </div>

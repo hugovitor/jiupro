@@ -1,7 +1,7 @@
 import { uid, weekdayToday } from "./format";
 import { generateJoinCode } from "./join-code";
 import { DEMO_ACADEMY_ID } from "./seed";
-import type { AppState, PlanId, User } from "./types";
+import type { AppState, PlanId, Session, User } from "./types";
 
 export function slugify(name: string) {
   const base = name
@@ -21,6 +21,46 @@ export function uniqueSlug(name: string, taken: string[]) {
 
 export function isDemoAcademy(id: string) {
   return id === DEMO_ACADEMY_ID;
+}
+
+/** Estado vazio da academia real enquanto o painel baixa as tabelas. Sem turmas padrão — senão o primeiro push inventa grade. */
+export function blankLiveState(session: Session): AppState {
+  return {
+    version: 7,
+    academy: {
+      id: session.academyId,
+      name: "",
+      slug: "",
+      city: "",
+      state: "SP",
+      address: "",
+      phone: "",
+      instagram: "",
+      pixKey: "",
+      pixName: "",
+      plan: "essencial",
+      monthlyGoal: 0,
+      dropInFee: 40,
+      createdAt: new Date().toISOString(),
+      joinCode: "",
+      brandLogo: "",
+      brandTagline: "",
+    },
+    users: [],
+    students: [],
+    classes: [],
+    attendance: [],
+    payments: [],
+    expenses: [],
+    inventory: [],
+    graduations: [],
+    evaluations: [],
+    posts: [],
+    events: [],
+    sales: [],
+    dropIns: [],
+    session,
+  };
 }
 
 export function createEmptyAcademy(input: {
