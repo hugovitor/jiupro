@@ -1,5 +1,11 @@
 import { NextResponse } from "next/server";
 import { createClient } from "@supabase/supabase-js";
+import {
+  RATE_LIMITS,
+  clientIp,
+  consumeRateLimit,
+  rateLimitExceededResponse,
+} from "@/lib/rate-limit";
 import { requireOperator, supabaseAdmin } from "@/lib/operator";
 import {
   mapPublicHouse,
@@ -90,6 +96,10 @@ async function searchHouses(query: string) {
 }
 
 export async function GET(request: Request) {
+  const ip = clientIp(request);
+  const limited = consumeRateLimit(`search:${ip}`, RATE_LIMITS.search);
+  if (!limited.ok) return rateLimitExceededResponse(limited.retryAfterSec);
+
   const url = new URL(request.url);
   const casa = url.searchParams.get("casa")?.trim() ?? "";
   const q = url.searchParams.get("q")?.trim() ?? "";

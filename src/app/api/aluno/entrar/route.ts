@@ -1,3 +1,4 @@
+import { kidsGuardianRequiredError, resolvedEnrollmentDivision } from "@/lib/kids-enrollment";
 import { NextResponse } from "next/server";
 import { createClient } from "@supabase/supabase-js";
 import { supabaseAdmin } from "@/lib/operator";
@@ -9,6 +10,12 @@ import {
 } from "@/lib/student-enroll";
 import { isStudentJoinNotFound, preferredJoinCode, STUDENT_JOIN_NOT_FOUND, STUDENT_JOIN_SETUP_ERROR } from "@/lib/student-join";
 import { ensureStudentJoinSchema } from "@/lib/supabase/ensure-student-join";
+import {
+  RATE_LIMITS,
+  clientIp,
+  consumeRateLimit,
+  rateLimitExceededResponse,
+} from "@/lib/rate-limit";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -49,16 +56,28 @@ async function joinWithUserToken(
   codes: string[],
   name: string,
   phone: string,
+  extra?: { birthDate?: string; guardianName?: string; division?: "adult" | "kids" },
 ) {
   const client = userDb(token);
   if (!client) return null;
   let lastError = "";
   for (const code of codes.filter(Boolean)) {
-    const { data, error } = await client.rpc("join_academy_as_student", {
+    const payload = {
       p_code: code,
       p_name: name,
       p_phone: phone,
-    });
+      p_birth_date: extra?.birthDate || null,
+      p_guardian_name: extra?.guardianName || null,
+      p_division: extra?.division || null,
+    };
+    let { data, error } = await client.rpc("join_academy_as_student", payload);
+    if (error && /PGRST202|argument|schema cache/i.test(error.message)) {
+      ({ data, error } = await client.rpc("join_academy_as_student", {
+        p_code: code,
+        p_name: name,
+        p_phone: phone,
+      }));
+    }
     if (!error && data) return { academyId: String(data) };
     lastError = error?.message ?? "";
     if (lastError && !isStudentJoinNotFound(lastError)) {
@@ -69,6 +88,9 @@ async function joinWithUserToken(
 }
 
 export async function POST(request: Request) {
+  const limited = consumeRateLimit(`join:${clientIp(request)}`, RATE_LIMITS.join);
+  if (!limited.ok) return rateLimitExceededResponse(limited.retryAfterSec);
+
   const token = bearerToken(request);
   if (!token) {
     return NextResponse.json({ error: "Entre de novo para criar o acesso." }, { status: 401 });
@@ -80,6 +102,9 @@ export async function POST(request: Request) {
     houseName?: string;
     name?: string;
     phone?: string;
+    birthDate?: string;
+    guardianName?: string;
+    division?: "adult" | "kids";
   };
   try {
     body = (await request.json()) as typeof body;
@@ -94,6 +119,20 @@ export async function POST(request: Request) {
   };
   const name = String(body.name ?? "").trim();
   const phone = String(body.phone ?? "").trim();
+  const birthDate = String(body.birthDate ?? "").trim().slice(0, 10);
+  const guardianName = String(body.guardianName ?? "").trim();
+  const division = resolvedEnrollmentDivision({
+    division: body.division,
+    birthDate,
+  });
+  const guardianError = kidsGuardianRequiredError({
+    division,
+    birthDate,
+    guardianName,
+  });
+  if (guardianError) {
+    return NextResponse.json({ error: guardianError }, { status: 400 });
+  }
 
   if (!house.code && !house.slug && !house.houseName) {
     return NextResponse.json({ error: STUDENT_JOIN_NOT_FOUND }, { status: 400 });
@@ -142,7 +181,11 @@ export async function POST(request: Request) {
     }
   }
 
-  const viaRpc = await joinWithUserToken(token, joinCodes, name, phone);
+  const viaRpc = await joinWithUserToken(token, joinCodes, name, phone, {
+    birthDate,
+    guardianName,
+    division,
+  });
   if (viaRpc && "academyId" in viaRpc && viaRpc.academyId) {
     const admin = supabaseAdmin();
     if (admin) {
@@ -152,6 +195,9 @@ export async function POST(request: Request) {
         email: user.email ?? "",
         name,
         phone,
+        birthDate,
+        guardianName,
+        division,
       });
     }
     return NextResponse.json({ ok: true, academyId: viaRpc.academyId });
@@ -174,6 +220,9 @@ export async function POST(request: Request) {
     email: user.email ?? "",
     studentName: name,
     phone,
+    birthDate,
+    guardianName,
+    division,
     house: {
       code: house.code,
       slug: remoteHouse?.slug || house.slug,

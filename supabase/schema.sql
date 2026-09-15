@@ -505,12 +505,12 @@ as $$
      or lower(a.slug) = lower(trim(p_code))
      or lower(trim(a.name)) = lower(trim(p_code))
      or (
-       length(regexp_replace(lower(trim(p_code)), '[^a-z0-9]', '', 'g')) >= 2
+       length(regexp_replace(lower(trim(p_code)), '[^a-z0-9]', '', 'g')) >= 4
        and regexp_replace(lower(a.name), '[^a-z0-9]', '', 'g')
          = regexp_replace(lower(trim(p_code)), '[^a-z0-9]', '', 'g')
      )
      or (
-       length(regexp_replace(lower(trim(p_code)), '[^a-z0-9]', '', 'g')) >= 2
+       length(regexp_replace(lower(trim(p_code)), '[^a-z0-9]', '', 'g')) >= 4
        and regexp_replace(lower(a.slug), '[^a-z0-9]', '', 'g')
          = regexp_replace(lower(trim(p_code)), '[^a-z0-9]', '', 'g')
      )
@@ -538,7 +538,7 @@ declare
   v_q text := trim(p_query);
   v_like text;
 begin
-  if v_q is null or length(v_q) < 2 then
+  if v_q is null or length(v_q) < 3 then
     return;
   end if;
   v_like := '%' || replace(replace(v_q, '%', ''), '_', '') || '%';
@@ -550,7 +550,7 @@ begin
      or a.name ilike v_like
      or coalesce(a.city, '') ilike v_like
      or (
-       length(regexp_replace(lower(v_q), '[^a-z0-9]', '', 'g')) >= 2
+       length(regexp_replace(lower(v_q), '[^a-z0-9]', '', 'g')) >= 4
        and regexp_replace(lower(a.name), '[^a-z0-9]', '', 'g')
          like '%' || regexp_replace(lower(v_q), '[^a-z0-9]', '', 'g') || '%'
      )
@@ -571,10 +571,16 @@ $$;
 revoke all on function public.search_academy_join(text) from public;
 grant execute on function public.search_academy_join(text) to anon, authenticated;
 
+drop function if exists public.join_academy_as_student(text, text, text);
+drop function if exists public.join_academy_as_student(text, text, text, date, text, text);
+
 create or replace function public.join_academy_as_student(
   p_code text,
   p_name text,
-  p_phone text
+  p_phone text,
+  p_birth_date date default null,
+  p_guardian_name text default null,
+  p_division text default null
 ) returns uuid
 language plpgsql
 security definer
@@ -591,6 +597,12 @@ declare
   v_profile_academy uuid;
   v_profile_role text;
   v_label text;
+  v_plan text;
+  v_limit int;
+  v_count int;
+  v_division text;
+  v_guardian text := nullif(trim(p_guardian_name), '');
+  v_birth date := p_birth_date;
 begin
   if v_uid is null then
     raise exception 'Entre de novo para criar o acesso.';
@@ -606,12 +618,12 @@ begin
      or lower(a.slug) = lower(v_q)
      or lower(trim(a.name)) = lower(v_q)
      or (
-       length(regexp_replace(lower(v_q), '[^a-z0-9]', '', 'g')) >= 2
+       length(regexp_replace(lower(v_q), '[^a-z0-9]', '', 'g')) >= 4
        and regexp_replace(lower(a.name), '[^a-z0-9]', '', 'g')
          = regexp_replace(lower(v_q), '[^a-z0-9]', '', 'g')
      )
      or (
-       length(regexp_replace(lower(v_q), '[^a-z0-9]', '', 'g')) >= 2
+       length(regexp_replace(lower(v_q), '[^a-z0-9]', '', 'g')) >= 4
        and regexp_replace(lower(a.slug), '[^a-z0-9]', '', 'g')
          = regexp_replace(lower(v_q), '[^a-z0-9]', '', 'g')
      )
@@ -647,6 +659,15 @@ begin
 
   v_phone := regexp_replace(coalesce(p_phone, ''), '\D', '', 'g');
   v_label := nullif(trim(p_name), '');
+  v_division := case
+    when lower(trim(coalesce(p_division, ''))) = 'kids' then 'kids'
+    when v_birth is not null and v_birth > (current_date - interval '16 years') then 'kids'
+    else 'adult'
+  end;
+
+  if v_division = 'kids' and v_guardian is null then
+    raise exception 'No kids, informe o nome do responsável (LGPD, art. 14).';
+  end if;
 
   select s.id, s.user_id into v_student, v_claimed
   from public.students s
@@ -675,6 +696,21 @@ begin
     raise exception 'Essa ficha já tem acesso. Entre com o e-mail e a senha que você criou.';
   end if;
 
+  if v_student is null then
+    select a.plan into v_plan from public.academies a where a.id = v_academy;
+    v_limit := case
+      when v_plan = 'essencial' then 50
+      when v_plan = 'equipe' then null
+      else 200
+    end;
+    if v_limit is not null then
+      select count(*)::int into v_count from public.students s where s.academy_id = v_academy;
+      if v_count >= v_limit then
+        raise exception 'Esta academia chegou ao limite de % alunos do plano atual. Fale com a secretaria.', v_limit;
+      end if;
+    end if;
+  end if;
+
   if exists (select 1 from public.profiles where id = v_uid) then
     update public.profiles
     set
@@ -701,18 +737,23 @@ begin
     set
       user_id = v_uid,
       email = case when email is null or email = '' then v_email else email end,
-      phone = case when phone is null or phone = '' then nullif(trim(p_phone), '') else phone end
+      phone = case when phone is null or phone = '' then nullif(trim(p_phone), '') else phone end,
+      guardian_name = coalesce(v_guardian, guardian_name),
+      birth_date = coalesce(v_birth, birth_date),
+      division = case when v_division = 'kids' then 'kids' else division end
     where id = v_student;
   else
     insert into public.students (
-      academy_id, user_id, name, email, phone, division, belt, status, monthly_fee
+      academy_id, user_id, name, email, phone, birth_date, guardian_name, division, belt, status, monthly_fee
     ) values (
       v_academy,
       v_uid,
       coalesce(v_label, split_part(v_email, '@', 1), 'Aluno'),
       nullif(v_email, ''),
       nullif(trim(p_phone), ''),
-      'adult',
+      v_birth,
+      v_guardian,
+      v_division,
       'white',
       'active',
       0
@@ -723,8 +764,8 @@ begin
 end;
 $$;
 
-revoke all on function public.join_academy_as_student(text, text, text) from public;
-grant execute on function public.join_academy_as_student(text, text, text) to authenticated;
+revoke all on function public.join_academy_as_student(text, text, text, date, text, text) from public;
+grant execute on function public.join_academy_as_student(text, text, text, date, text, text) to authenticated;
 
 alter table public.academies add column if not exists billing_status text not null default 'none';
 alter table public.academies add column if not exists due_day int not null default 10;
@@ -745,6 +786,48 @@ $$;
 
 revoke all on function public.is_academy_staff() from public;
 grant execute on function public.is_academy_staff() to authenticated;
+
+create or replace function public.current_student_id()
+returns uuid
+language sql
+stable
+security definer
+set search_path = public
+as $$
+  select s.id
+  from public.students s
+  where s.user_id = auth.uid()
+    and s.academy_id = public.current_academy_id()
+  order by s.created_at asc
+  limit 1
+$$;
+
+revoke all on function public.current_student_id() from public;
+grant execute on function public.current_student_id() to authenticated;
+
+create or replace function public.student_class_directory()
+returns table (
+  id uuid,
+  name text,
+  belt text,
+  stripes int,
+  division text,
+  status text,
+  avatar_hue int
+)
+language sql
+stable
+security definer
+set search_path = public
+as $$
+  select s.id, s.name, s.belt, s.stripes, s.division, s.status, s.avatar_hue
+  from public.students s
+  where s.academy_id = public.current_academy_id()
+    and s.status in ('active', 'trial')
+$$;
+
+revoke all on function public.student_class_directory() from public;
+grant execute on function public.student_class_directory() to authenticated;
 
 create or replace function public.profiles_protect_identity()
 returns trigger
@@ -791,11 +874,22 @@ create policy "academy update" on public.academies
   for update using (id = public.current_academy_id() and public.is_academy_staff())
   with check (id = public.current_academy_id() and public.is_academy_staff());
 
+drop policy if exists "profiles self" on public.profiles;
+create policy "profiles self" on public.profiles
+  for select using (
+    id = auth.uid()
+    or (academy_id = public.current_academy_id() and public.is_academy_staff())
+  );
+
 drop policy if exists "students by academy" on public.students;
 drop policy if exists "students read academy" on public.students;
+drop policy if exists "students read self" on public.students;
+drop policy if exists "students read staff" on public.students;
 drop policy if exists "students write staff" on public.students;
-create policy "students read academy" on public.students
-  for select using (academy_id = public.current_academy_id());
+create policy "students read staff" on public.students
+  for select using (academy_id = public.current_academy_id() and public.is_academy_staff());
+create policy "students read self" on public.students
+  for select using (user_id = auth.uid());
 create policy "students write staff" on public.students
   for all using (academy_id = public.current_academy_id() and public.is_academy_staff())
   with check (academy_id = public.current_academy_id() and public.is_academy_staff());
@@ -820,9 +914,13 @@ create policy "attendance write staff" on public.attendance
 
 drop policy if exists "payments by academy" on public.payments;
 drop policy if exists "payments read academy" on public.payments;
+drop policy if exists "payments read self" on public.payments;
+drop policy if exists "payments read staff" on public.payments;
 drop policy if exists "payments write staff" on public.payments;
-create policy "payments read academy" on public.payments
-  for select using (academy_id = public.current_academy_id());
+create policy "payments read staff" on public.payments
+  for select using (academy_id = public.current_academy_id() and public.is_academy_staff());
+create policy "payments read self" on public.payments
+  for select using (student_id = public.current_student_id());
 create policy "payments write staff" on public.payments
   for all using (academy_id = public.current_academy_id() and public.is_academy_staff())
   with check (academy_id = public.current_academy_id() and public.is_academy_staff());
@@ -830,8 +928,6 @@ create policy "payments write staff" on public.payments
 drop policy if exists "expenses by academy" on public.expenses;
 drop policy if exists "expenses read academy" on public.expenses;
 drop policy if exists "expenses write staff" on public.expenses;
-create policy "expenses read academy" on public.expenses
-  for select using (academy_id = public.current_academy_id());
 create policy "expenses write staff" on public.expenses
   for all using (academy_id = public.current_academy_id() and public.is_academy_staff())
   with check (academy_id = public.current_academy_id() and public.is_academy_staff());
@@ -839,26 +935,32 @@ create policy "expenses write staff" on public.expenses
 drop policy if exists "inventory by academy" on public.inventory;
 drop policy if exists "inventory read academy" on public.inventory;
 drop policy if exists "inventory write staff" on public.inventory;
-create policy "inventory read academy" on public.inventory
-  for select using (academy_id = public.current_academy_id());
 create policy "inventory write staff" on public.inventory
   for all using (academy_id = public.current_academy_id() and public.is_academy_staff())
   with check (academy_id = public.current_academy_id() and public.is_academy_staff());
 
 drop policy if exists "graduations by academy" on public.graduations;
 drop policy if exists "graduations read academy" on public.graduations;
+drop policy if exists "graduations read self" on public.graduations;
 drop policy if exists "graduations write staff" on public.graduations;
 create policy "graduations read academy" on public.graduations
-  for select using (academy_id = public.current_academy_id());
+  for select using (
+    academy_id = public.current_academy_id()
+    and (public.is_academy_staff() or student_id = public.current_student_id())
+  );
 create policy "graduations write staff" on public.graduations
   for all using (academy_id = public.current_academy_id() and public.is_academy_staff())
   with check (academy_id = public.current_academy_id() and public.is_academy_staff());
 
 drop policy if exists "evaluations by academy" on public.evaluations;
 drop policy if exists "evaluations read academy" on public.evaluations;
+drop policy if exists "evaluations read self" on public.evaluations;
 drop policy if exists "evaluations write staff" on public.evaluations;
 create policy "evaluations read academy" on public.evaluations
-  for select using (academy_id = public.current_academy_id());
+  for select using (
+    academy_id = public.current_academy_id()
+    and (public.is_academy_staff() or student_id = public.current_student_id())
+  );
 create policy "evaluations write staff" on public.evaluations
   for all using (academy_id = public.current_academy_id() and public.is_academy_staff())
   with check (academy_id = public.current_academy_id() and public.is_academy_staff());
@@ -884,8 +986,6 @@ create policy "events write staff" on public.events
 drop policy if exists "sales by academy" on public.sales;
 drop policy if exists "sales read academy" on public.sales;
 drop policy if exists "sales write staff" on public.sales;
-create policy "sales read academy" on public.sales
-  for select using (academy_id = public.current_academy_id());
 create policy "sales write staff" on public.sales
   for all using (academy_id = public.current_academy_id() and public.is_academy_staff())
   with check (academy_id = public.current_academy_id() and public.is_academy_staff());
@@ -893,8 +993,6 @@ create policy "sales write staff" on public.sales
 drop policy if exists "drop ins by academy" on public.drop_ins;
 drop policy if exists "drop ins read academy" on public.drop_ins;
 drop policy if exists "drop ins write staff" on public.drop_ins;
-create policy "drop ins read academy" on public.drop_ins
-  for select using (academy_id = public.current_academy_id());
 create policy "drop ins write staff" on public.drop_ins
   for all using (academy_id = public.current_academy_id() and public.is_academy_staff())
   with check (academy_id = public.current_academy_id() and public.is_academy_staff());

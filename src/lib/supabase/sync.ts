@@ -143,21 +143,14 @@ async function syncTable(
   await upsertRows(client, table, rows);
 }
 
-async function replaceJoin(
+async function upsertJoin(
   client: SupabaseClient,
   table: string,
-  filterColumn: string,
-  parentIds: string[],
   rows: Record<string, unknown>[],
 ) {
-  if (parentIds.length) {
-    const { error } = await client.from(table).delete().in(filterColumn, parentIds);
-    if (error) throw error;
-  }
-  if (rows.length) {
-    const { error } = await client.from(table).upsert(rows);
-    if (error) throw error;
-  }
+  if (!rows.length) return;
+  const { error } = await client.from(table).upsert(rows);
+  if (error) throw error;
 }
 
 export async function pushAcademyState(state: AppState, opts?: { refresh?: boolean }) {
@@ -237,6 +230,14 @@ export async function pushAcademyState(state: AppState, opts?: { refresh?: boole
     return { state: ready };
   }
 
+  if (!remoteSnapshot || remoteSnapshot.academyId !== ready.academy.id) {
+    return {
+      error: "A academia ainda não carregou deste aparelho. Atualize a página.",
+      needsPull: true as const,
+      state: ready,
+    };
+  }
+
   const { error: academyError } = await client
     .from("academies")
     .update(tables.academy)
@@ -269,21 +270,9 @@ export async function pushAcademyState(state: AppState, opts?: { refresh?: boole
     await syncTable(client, "graduations", tables.graduations, previousIds("graduations", academyId));
     await syncTable(client, "evaluations", tables.evaluations, previousIds("evaluations", academyId));
     await syncTable(client, "posts", tables.posts, previousIds("posts", academyId));
-    await replaceJoin(
-      client,
-      "post_likes",
-      "post_id",
-      tables.posts.map((p) => String(p.id)),
-      tables.postLikes,
-    );
+    await upsertJoin(client, "post_likes", tables.postLikes);
     await syncTable(client, "events", tables.events, previousIds("events", academyId));
-    await replaceJoin(
-      client,
-      "event_rsvps",
-      "event_id",
-      tables.events.map((e) => String(e.id)),
-      tables.eventRsvps,
-    );
+    await upsertJoin(client, "event_rsvps", tables.eventRsvps);
     await syncTable(client, "sales", tables.sales, previousIds("sales", academyId));
     await syncTable(client, "drop_ins", tables.dropIns, previousIds("dropIns", academyId));
   } catch (err) {
@@ -310,7 +299,7 @@ export function scheduleRemotePush(state: AppState) {
   if (!createSupabaseBrowserClient()) return;
   const handle = window.setTimeout(() => {
     void pushAcademyState(state).then((result) => {
-      if (result.error && !("missingAcademy" in result && result.missingAcademy)) {
+      if (result.error && !("missingAcademy" in result && result.missingAcademy) && !("needsPull" in result && result.needsPull)) {
         console.warn("TatameX: sync Supabase —", result.error);
       }
     });
@@ -322,6 +311,7 @@ export async function pullAcademyState(session: Session): Promise<AppState | { e
   const client = createSupabaseBrowserClient();
   if (!client) return { error: "Não foi possível abrir a academia." };
   const academyId = session.academyId;
+  const isStudent = session.role === "student";
   const [
     academy,
     profiles,
@@ -344,14 +334,22 @@ export async function pullAcademyState(session: Session): Promise<AppState | { e
     client.from("classes").select("*").eq("academy_id", academyId),
     client.from("attendance").select("*").eq("academy_id", academyId),
     client.from("payments").select("*").eq("academy_id", academyId),
-    client.from("expenses").select("*").eq("academy_id", academyId),
-    client.from("inventory").select("*").eq("academy_id", academyId),
+    isStudent
+      ? Promise.resolve({ data: [], error: null })
+      : client.from("expenses").select("*").eq("academy_id", academyId),
+    isStudent
+      ? Promise.resolve({ data: [], error: null })
+      : client.from("inventory").select("*").eq("academy_id", academyId),
     client.from("graduations").select("*").eq("academy_id", academyId),
     client.from("evaluations").select("*").eq("academy_id", academyId),
     client.from("posts").select("*").eq("academy_id", academyId),
     client.from("events").select("*").eq("academy_id", academyId),
-    client.from("sales").select("*").eq("academy_id", academyId),
-    client.from("drop_ins").select("*").eq("academy_id", academyId),
+    isStudent
+      ? Promise.resolve({ data: [], error: null })
+      : client.from("sales").select("*").eq("academy_id", academyId),
+    isStudent
+      ? Promise.resolve({ data: [], error: null })
+      : client.from("drop_ins").select("*").eq("academy_id", academyId),
   ]);
 
   if (academy.error) return { error: academy.error.message };
@@ -362,15 +360,19 @@ export async function pullAcademyState(session: Session): Promise<AppState | { e
     ["turmas", classes],
     ["presença", attendance],
     ["cobranças", payments],
-    ["lançamentos", expenses],
-    ["estoque", inventory],
     ["graduações", graduations],
     ["avaliações", evaluations],
     ["mural", posts],
     ["agenda", events],
-    ["vendas", sales],
-    ["experimentais avulsos", dropIns],
   ];
+  if (!isStudent) {
+    required.push(
+      ["lançamentos", expenses],
+      ["estoque", inventory],
+      ["vendas", sales],
+      ["experimentais avulsos", dropIns],
+    );
+  }
   for (const [label, result] of required) {
     if (result.error && !isMissingRelation(result.error)) {
       return { error: `Não deu para ler ${label}: ${result.error.message}` };
@@ -396,10 +398,38 @@ export async function pullAcademyState(session: Session): Promise<AppState | { e
     return { error: eventRsvps.error.message };
   }
 
+  let studentRows = (students.data ?? []) as Record<string, unknown>[];
+  if (isStudent) {
+    const directory = await client.rpc("student_class_directory");
+    if (directory.error && !isMissingRelation(directory.error) && !/PGRST202|does not exist/i.test(directory.error.message)) {
+      return { error: directory.error.message };
+    }
+    const mine = new Map(studentRows.map((row) => [String(row.id), row]));
+    for (const row of (directory.data ?? []) as Record<string, unknown>[]) {
+      const id = String(row.id ?? "");
+      if (!id || mine.has(id)) continue;
+      mine.set(id, {
+        id,
+        academy_id: academyId,
+        name: row.name,
+        belt: row.belt,
+        stripes: row.stripes,
+        division: row.division,
+        status: row.status,
+        avatar_hue: row.avatar_hue,
+        email: "",
+        phone: "",
+        monthly_fee: 0,
+        notes: "",
+      });
+    }
+    studentRows = [...mine.values()];
+  }
+
   return tablesToState({
     academy: academy.data,
     profiles: profiles.data ?? [],
-    students: students.data ?? [],
+    students: studentRows,
     classes: classes.data ?? [],
     attendance: attendance.data ?? [],
     payments: payments.data ?? [],
@@ -463,14 +493,23 @@ export async function testSupabaseConnection() {
   return { ok: false as const, error: msg };
 }
 
-async function provisionAndSignIn(email: string, password: string) {
+async function provisionAndSignIn(email: string, password: string, captchaToken?: string) {
   const client = createSupabaseBrowserClient();
   if (!client) return { error: "offline" as const };
+
+  const guard = await fetch("/api/auth/guard", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ action: "signup", email }),
+  }).catch(() => null);
+  if (guard?.status === 429) {
+    return { error: "Muitas tentativas. Espere um pouco e tente de novo." };
+  }
 
   const provisioned = await fetch("/api/auth/signup", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ email, password }),
+    body: JSON.stringify({ email, password, captchaToken }),
   }).catch(() => null);
   const payload = provisioned
     ? ((await provisioned.json().catch(() => ({}))) as { error?: string })
@@ -510,8 +549,9 @@ export async function registerRemoteAcademy(input: {
   plan: string;
   ownerName: string;
   joinCode?: string;
+  captchaToken?: string;
 }): Promise<{ academyId?: string; ownerId?: string; error?: string; pendingEmail?: boolean }> {
-  const auth = await provisionAndSignIn(input.email, input.password);
+  const auth = await provisionAndSignIn(input.email, input.password, input.captchaToken);
   if ("error" in auth) {
     if (auth.error === "offline") return {};
     return { error: auth.error };
@@ -540,6 +580,15 @@ export async function registerRemoteAcademy(input: {
 export async function signInRemote(email: string, password: string) {
   const client = createSupabaseBrowserClient();
   if (!client) return { error: "offline" as const };
+
+  const guard = await fetch("/api/auth/guard", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ action: "login", email }),
+  }).catch(() => null);
+  if (guard?.status === 429) {
+    return { error: "Muitas tentativas. Espere um pouco e tente de novo." };
+  }
 
   const { data, error } = await client.auth.signInWithPassword({ email, password });
   if (error || !data.user) return { error: mapAuthError(error?.message ?? "login") };
@@ -653,6 +702,14 @@ export async function requestPasswordReset(email: string) {
   if (!client) {
     return { error: "Não dá para enviar e-mail agora. Fale no WhatsApp do suporte." };
   }
+  const guard = await fetch("/api/auth/guard", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ action: "reset", email }),
+  }).catch(() => null);
+  if (guard?.status === 429) {
+    return { error: "Muitas tentativas. Espere um pouco e tente de novo." };
+  }
   const redirectTo = isLocalOrigin(publicAppUrl())
     ? `${window.location.origin}/atualizar-senha`
     : passwordResetUrl();
@@ -670,23 +727,43 @@ export async function establishRecoverySession() {
   if (!client) return { error: "Não dá para abrir a recuperação neste navegador." };
 
   const params = new URLSearchParams(window.location.search);
+  const hash = new URLSearchParams(window.location.hash.replace(/^#/, ""));
   const code = params.get("code");
-  if (code) {
+  const tokenHash = params.get("token_hash") || hash.get("token_hash");
+  const type = (params.get("type") || hash.get("type") || "").toLowerCase();
+  const accessToken = hash.get("access_token");
+  const refreshToken = hash.get("refresh_token");
+  const isRecovery =
+    type === "recovery" || Boolean(tokenHash) || Boolean(code) || Boolean(accessToken);
+
+  if (!isRecovery) {
+    return { error: "Este link é inválido ou já foi usado. Peça outro e-mail." };
+  }
+
+  if (tokenHash) {
+    await client.auth.signOut({ scope: "local" });
+    const { error } = await client.auth.verifyOtp({
+      token_hash: tokenHash,
+      type: "recovery",
+    });
+    if (error) return { error: "Este link expirou ou já foi usado. Peça outro." };
+  } else if (accessToken && (type === "recovery" || hash.get("type") === "recovery")) {
+    await client.auth.signOut({ scope: "local" });
+    const { error } = await client.auth.setSession({
+      access_token: accessToken,
+      refresh_token: refreshToken || "",
+    });
+    if (error) return { error: "Este link expirou ou já foi usado. Peça outro." };
+  } else if (code) {
     const { error } = await client.auth.exchangeCodeForSession(code);
     if (error) return { error: "Este link expirou ou já foi usado. Peça outro." };
+  } else {
+    return { error: "Este link é inválido ou já foi usado. Peça outro e-mail." };
   }
 
-  const first = await client.auth.getSession();
-  if (first.data.session) {
-    return { email: first.data.session.user.email ?? "" };
-  }
-
-  if (window.location.hash.includes("access_token") || window.location.hash.includes("type=recovery")) {
-    await new Promise((resolve) => window.setTimeout(resolve, 400));
-    const second = await client.auth.getSession();
-    if (second.data.session) {
-      return { email: second.data.session.user.email ?? "" };
-    }
+  const session = (await client.auth.getSession()).data.session;
+  if (session?.user) {
+    return { email: session.user.email ?? "" };
   }
 
   return { error: "Este link é inválido ou já foi usado. Peça outro e-mail." };
@@ -735,9 +812,13 @@ export async function joinStudentRemote(input: {
   phone: string;
   email: string;
   password: string;
+  birthDate?: string;
+  guardianName?: string;
+  division?: "adult" | "kids";
+  captchaToken?: string;
 }) {
   const email = input.email.trim().toLowerCase();
-  const auth = await provisionAndSignIn(email, input.password);
+  const auth = await provisionAndSignIn(email, input.password, input.captchaToken);
   if ("error" in auth) {
     if (auth.error === "offline") return { error: "offline" as const };
     return { error: auth.error };
@@ -765,6 +846,9 @@ export async function joinStudentRemote(input: {
         ...house,
         name: input.name,
         phone: input.phone,
+        birthDate: input.birthDate,
+        guardianName: input.guardianName,
+        division: input.division,
       }),
     }).catch(() => null);
     if (!enrolled) return null;
@@ -812,8 +896,29 @@ export async function joinStudentRemote(input: {
       p_code: resolved.code,
       p_name: input.name,
       p_phone: input.phone,
+      p_birth_date: input.birthDate || null,
+      p_guardian_name: input.guardianName || null,
+      p_division: input.division || null,
     });
-    if (!rpc.error && rpc.data) {
+    if (rpc.error && /PGRST202|argument|schema cache/i.test(rpc.error.message)) {
+      const fallback = await client.rpc("join_academy_as_student", {
+        p_code: resolved.code,
+        p_name: input.name,
+        p_phone: input.phone,
+      });
+      if (!fallback.error && fallback.data) {
+        return {
+          session: {
+            userId: accessUser.id,
+            academyId: String(fallback.data),
+            role: "student" as const,
+          } satisfies Session,
+        };
+      }
+      if (fallback.error && !isStudentJoinNotFound(fallback.error.message)) {
+        return { error: fallback.error.message };
+      }
+    } else if (!rpc.error && rpc.data) {
       return {
         session: {
           userId: accessUser.id,

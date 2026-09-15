@@ -56,10 +56,11 @@ Projeto **novo e vazio** é o esperado. O Dashboard não cria as tabelas do Tata
    - **Copiar SQL** → SQL Editor → **Run** (não usa a porta 5432), ou
    - Colar a URI Direct ou Session pooler em **Aplicar schema pela URI**. Direct (`db.…supabase.co`) é IPv6; o app reescreve para o pooler IPv4.
 5. Authentication → Providers → Email: desligue **Confirm email** (o cadastro do aluno não manda e-mail; a cota grátis do Supabase estoura rápido).
-6. Authentication → URL Configuration: Redirect URLs deve incluir `https://tatamex.vercel.app/atualizar-senha` (senha esquecida)
+6. Authentication → URL Configuration: Redirect URLs deve incluir `https://tatamex.vercel.app/atualizar-senha` (senha esquecida). Em Email Templates → Reset password, use o link com `token_hash` para o aluno abrir noutro aparelho.
 7. Opcional, mas recomendado: Authentication → SMTP Settings com Resend/SES. Sem isso, “esqueci a senha” também cai na cota de 2–4 e-mails/hora.
-7. Na sua academia (não na demo): **Enviar esta academia**
-8. App do aluno: o dono cadastra a ficha e manda o WhatsApp, ou o aluno busca o nome da academia em `/entrar`. **O dono não vê SQL.** Se `DATABASE_URL` (ou `SUPABASE_DB_URL`) estiver no servidor, o app aplica o SQL do convite sozinho.
+8. **Rode de novo o `supabase/schema.sql`** no SQL Editor depois de atualizar o app (teto do plano, responsável no kids, aluno só lê a própria ficha).
+9. Na sua academia (não na demo): **Enviar esta academia**
+10. App do aluno: o dono cadastra a ficha e manda o WhatsApp, ou o aluno busca o nome da academia em `/entrar`. **O dono não vê SQL.** Se `DATABASE_URL` (ou `SUPABASE_DB_URL`) estiver no servidor, o app aplica o SQL do convite sozinho.
 
 Também dá para colocar no `.env.local`:
 

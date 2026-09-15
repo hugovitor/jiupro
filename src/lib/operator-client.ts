@@ -1,4 +1,3 @@
-import { isOperatorEmail } from "@/lib/operator";
 import { createSupabaseBrowserClient } from "@/lib/supabase/client";
 import { ensureBrowserAuthSession } from "@/lib/supabase/session";
 import { passwordFor } from "@/lib/vault";
@@ -77,13 +76,10 @@ export async function operatorAccessToken(email?: string | null, password?: stri
     }
   }
 
+  const secret = password?.trim() || (email ? passwordFor(email) : "") || "";
   const needle = email?.trim().toLowerCase() ?? "";
-  if (!needle || !isOperatorEmail(needle)) {
-    return { token: null, error: "Entre com o e-mail da operação." };
-  }
-  const secret = password?.trim() || passwordFor(needle) || "";
-  if (!secret) {
-    return { token: null, error: "Digite a senha da conta para abrir a planilha." };
+  if (!needle || !secret) {
+    return { token: null, error: "Entre de novo para abrir a planilha." };
   }
 
   const issued = await requestOperatorSession(needle, secret);

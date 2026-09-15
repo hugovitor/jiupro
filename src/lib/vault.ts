@@ -245,7 +245,7 @@ export function putAcademy(state: AppState, password?: string, previousId?: stri
   } else {
     delete v.academies[state.academy.id];
   }
-  if (password) {
+  if (password && !isSupabaseConfigured()) {
     const email = state.users
       .find((u) => u.id === state.session?.userId)
       ?.email.toLowerCase();
@@ -269,7 +269,7 @@ export function findAcademyByJoinCode(code: string) {
     const join = (state.academy.joinCode ?? "").toUpperCase();
     const slug = state.academy.slug.toLowerCase();
     const nameKey = collapseAcademyKey(state.academy.name);
-    if (join === upper || slug === lower || (collapsed.length >= 2 && nameKey === collapsed)) {
+    if (join === upper || slug === lower || (collapsed.length >= 3 && nameKey === collapsed)) {
       return state;
     }
   }
@@ -278,7 +278,7 @@ export function findAcademyByJoinCode(code: string) {
 
 export function searchAcademiesForJoin(query: string) {
   const needle = query.trim().toLowerCase();
-  if (needle.length < 2) return [];
+  if (needle.length < 3) return [];
   const v = getVault();
   const hits: {
     name: string;
@@ -300,7 +300,7 @@ export function searchAcademiesForJoin(query: string) {
       .toLowerCase();
     const collapsedHay = collapseAcademyKey(hay);
     const collapsedNeedle = collapseAcademyKey(query);
-    if (!hay.includes(needle) && !(collapsedNeedle.length >= 2 && collapsedHay.includes(collapsedNeedle))) {
+    if (!hay.includes(needle) && !(collapsedNeedle.length >= 3 && collapsedHay.includes(collapsedNeedle))) {
       continue;
     }
     hits.push({

@@ -17,7 +17,7 @@ export function postgresUriFromEnv() {
   return "";
 }
 
-const SCHEMA_VERSION = "2026-09-11-academy-brand";
+const SCHEMA_VERSION = "2026-09-15-join-cap-rls";
 let appliedVersion = "";
 let inFlight: Promise<boolean> | null = null;
 

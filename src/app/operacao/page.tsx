@@ -17,7 +17,6 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { NativeSelect } from "@/components/ui/native-select";
-import { isOperatorEmail } from "@/lib/operator";
 import { operatorHeaders } from "@/lib/operator-client";
 import { RESET_CONFIRMATION } from "@/lib/reset-confirm";
 import { createSupabaseBrowserClient } from "@/lib/supabase/client";
@@ -60,7 +59,7 @@ export default function OperacaoPage() {
   const storeEmail = store.users.find((user) => user.id === store.session?.userId)?.email;
   const [authEmail, setAuthEmail] = useState<string | null>(null);
   const email = storeEmail || authEmail || undefined;
-  const allowed = isOperatorEmail(email);
+  const [forbidden, setForbidden] = useState(false);
 
   const [overview, setOverview] = useState<Overview | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -88,8 +87,10 @@ export default function OperacaoPage() {
       if (!res.ok) {
         setError(data.error ?? "Não carregou o painel.");
         setOverview(null);
+        setForbidden(res.status === 403);
         return;
       }
+      setForbidden(false);
       setOverview(data);
     } catch {
       setError("Não carregou o painel.");
@@ -115,12 +116,8 @@ export default function OperacaoPage() {
       router.replace("/login?next=/operacao");
       return;
     }
-    if (!allowed) {
-      setLoading(false);
-      return;
-    }
     void load();
-  }, [allowed, router, store.session]);
+  }, [router, store.session]);
 
   async function createGrant() {
     setBusy(true);
@@ -224,7 +221,7 @@ export default function OperacaoPage() {
     );
   }
 
-  if (!allowed) {
+  if (forbidden) {
     return (
       <DarkCanvas className="flex min-h-screen flex-col items-center justify-center px-5">
         <Wordmark href="/" />
