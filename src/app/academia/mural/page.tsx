@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { toast } from "sonner";
 import { PlanGate } from "@/components/academia/plan-gate";
+import { EmptyState } from "@/components/academia/empty-state";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { formatDate, formatTime } from "@/lib/format";
@@ -46,6 +47,13 @@ function MuralPage() {
         />
         <Button type="submit">Publicar</Button>
       </form>
+
+      {store.posts.length === 0 ? (
+        <EmptyState
+          title="Mural em silêncio"
+          body="Aviso de seminário, mudança de horário, resultado do campeonato. O aluno vê a mesma timeline no app."
+        />
+      ) : null}
 
       <div className="space-y-3">
         {store.posts.map((p) => (

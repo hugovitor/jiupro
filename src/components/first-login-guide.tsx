@@ -18,7 +18,7 @@ import {
   skipFirstLoginThisVisit,
   type FirstLoginIdentity,
 } from "@/lib/first-login";
-import { isoDate } from "@/lib/format";
+import { currentMonth, isoDate } from "@/lib/format";
 import { studentCapMessage } from "@/lib/plan-access";
 import { currentStudent, useStore } from "@/lib/store";
 import { studentAppInviteHref } from "@/lib/student-join";
@@ -265,6 +265,32 @@ export function FirstLoginGuide() {
             </div>
           ) : null}
 
+          {role === "owner" && current.id === "pronto" ? (
+            <div className="space-y-3">
+              <Button
+                className="w-full"
+                variant="outline"
+                onClick={() => {
+                  const n = store.generateMonthCharges(currentMonth());
+                  if (n === 0) toast.message("Mensalidades deste mês já existem.");
+                  else toast.success(`${n} cobrança(s) do mês geradas.`);
+                }}
+              >
+                Gerar mensalidades do mês
+              </Button>
+              <Button
+                className="w-full"
+                variant="outline"
+                onClick={() => {
+                  closeThisVisit();
+                  router.push("/academia/cobrancas");
+                }}
+              >
+                Abrir cobranças
+              </Button>
+            </div>
+          ) : null}
+
           {role === "student" && current.id === "casa" ? (
             <div className="rounded-2xl border border-white/10 bg-white/[0.03] p-4">
               <p className="text-lg font-black tracking-tight">{store.academy.name}</p>
@@ -386,7 +412,7 @@ const OWNER_STEPS: Step[] = [
     title: "Na aula: dois toques.",
     body: "O aluno toca em Confirmar que vou. No tatame você aceita quem treinou. Adultos Gi e Kids já vêm na grade — mude em Turmas se quiser.",
     tips: [
-      "Cobrança: WhatsApp + Pix da academia.",
+      "Gere as mensalidades do mês e mande no WhatsApp com o Pix da academia.",
       "Faixa usa tempo e presença, não chute.",
     ],
   },

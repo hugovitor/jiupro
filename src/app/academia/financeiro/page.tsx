@@ -3,6 +3,7 @@
 import { useState } from "react";
 import Link from "next/link";
 import { toast } from "sonner";
+import { EmptyState } from "@/components/academia/empty-state";
 import { PlanGate } from "@/components/academia/plan-gate";
 import { AsaasChargeButton } from "@/components/asaas-pix-dialog";
 import { PersonAvatar } from "@/components/belt-badge";
@@ -74,6 +75,29 @@ function FinanceiroPage() {
           }
         />
       </div>
+
+      {store.payments.length === 0 && store.expenses.length === 0 ? (
+        <EmptyState
+          title="Caixa ainda zerado"
+          body="Gere as mensalidades do mês e lance aluguel, professor e contas. O saldo aparece aqui."
+          action={
+            <>
+              <Button
+                onClick={() => {
+                  const n = store.generateMonthCharges(month);
+                  if (n === 0) toast.message("Já existem cobranças deste mês.");
+                  else toast.success(`${n} cobrança(s) geradas.`);
+                }}
+              >
+                Gerar mensalidades
+              </Button>
+              <Button variant="outline" render={<Link href="/academia/cobrancas" />}>
+                Ir para cobranças
+              </Button>
+            </>
+          }
+        />
+      ) : null}
 
       <Card>
         <CardHeader>

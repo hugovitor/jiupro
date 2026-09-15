@@ -2,7 +2,9 @@
 
 import Link from "next/link";
 import { BeltBadge, PersonAvatar } from "@/components/belt-badge";
+import { EmptyState } from "@/components/academia/empty-state";
 import { PlanGate } from "@/components/academia/plan-gate";
+import { Button } from "@/components/ui/button";
 import { beltLabel } from "@/lib/belts";
 import { daysSince, formatDay } from "@/lib/format";
 import {
@@ -49,6 +51,16 @@ function EvolucaoBody() {
           Presença dos últimos 30 dias, quem sumiu e quem está na fila de faixa.
         </p>
       </div>
+
+      {active.length === 0 ? (
+        <EmptyState
+          title="Relatório espera a turma"
+          body="Com alunos ativos e presença validada, aqui aparece retenção, faixa e quem está pronto para graduar."
+          action={
+            <Button render={<Link href="/academia/alunos?novo=1" />}>Cadastrar aluno</Button>
+          }
+        />
+      ) : null}
 
       <div className="grid gap-3 sm:grid-cols-3">
         <Stat k="Ativos" v={String(active.length)} />

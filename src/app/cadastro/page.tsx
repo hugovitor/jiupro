@@ -30,6 +30,7 @@ function CadastroForm() {
   const [city, setCity] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [phone, setPhone] = useState("");
   const [busy, setBusy] = useState(false);
   const [promoCode, setPromoCode] = useState(presetCoupon);
   const [accepted, setAccepted] = useState(false);
@@ -75,6 +76,7 @@ function CadastroForm() {
             city,
             email,
             password,
+            phone,
             plan,
           });
           if (!result.ok) {
@@ -148,6 +150,23 @@ function CadastroForm() {
             placeholder="Campinas, SP"
             disabled={busy}
           />
+        </div>
+        <div className="space-y-2">
+          <label htmlFor="phone" className="text-xs font-bold text-white/70">
+            WhatsApp da academia
+          </label>
+          <input
+            id="phone"
+            className={fieldClass}
+            value={phone}
+            onChange={(e) => setPhone(e.target.value)}
+            placeholder="(11) 99999-0000"
+            autoComplete="tel"
+            disabled={busy}
+          />
+          <p className="text-[11px] leading-5 text-white/30">
+            Opcional. Serve para mandar o convite do app para o aluno.
+          </p>
         </div>
         <div className="space-y-2">
           <label htmlFor="email" className="text-xs font-bold text-white/70">
@@ -230,14 +249,14 @@ function CadastroForm() {
             className={fieldClass}
             value={promoCode}
             onChange={(e) => setPromoCode(e.target.value)}
-            placeholder="Opcional — o código que você criou, não o ID"
+            placeholder="Opcional"
             autoComplete="off"
             disabled={busy}
           />
           <p className="text-[11px] leading-5 text-white/30">
             {trialLabel
-              ? "Se preencher, vale o cupom no lugar do mês grátis. No Stripe: Produtos → Cupons → Códigos promocionais."
-              : "Opcional. Use o código promocional, não o ID interno do cupom."}
+              ? "Se preencher, vale o desconto no lugar do mês grátis."
+              : "Se você recebeu um código de desconto, cole aqui."}
           </p>
         </div>
 

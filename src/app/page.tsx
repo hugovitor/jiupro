@@ -7,13 +7,14 @@ import {
   Check,
   CheckCircle2,
   ChevronRight,
+  CalendarDays,
   CircleDollarSign,
   ClipboardCheck,
   GraduationCap,
   Package,
   ShieldCheck,
-  Smartphone,
   Users,
+  Wallet,
 } from "lucide-react";
 import {
   BeltMark,
@@ -29,40 +30,46 @@ import { SUPPORT_PHONE_DISPLAY, supportWhatsAppHref } from "@/lib/support";
 
 const modules = [
   {
-    title: "Cadastro completo",
-    body: "Alunos, responsáveis, turmas, contatos e situação da matrícula.",
+    title: "Alunos e experimentais",
+    body: "Ficha completa, responsável no kids e quem veio treinar uma vez — converter antes de esfriar.",
     icon: Users,
     href: "/demo?next=/academia/alunos",
   },
   {
-    title: "Gestão financeira",
-    body: "Mensalidades, atrasos, isenções, cobranças e fechamento mensal.",
+    title: "Cobrança no Pix",
+    body: "Mensalidade no WhatsApp com a chave da academia. Você baixa na mão quando cair.",
     icon: CircleDollarSign,
-    href: "/demo?next=/academia/financeiro",
+    href: "/demo?next=/academia/cobrancas",
   },
   {
     title: "Presença no tatame",
-    body: "O aluno confirma, a turma acompanha e o professor valida a presença.",
+    body: "O aluno confirma, a turma acompanha e o professor valida quem treinou.",
     icon: ClipboardCheck,
     href: "/demo?next=/academia/presenca",
   },
   {
     title: "Faixas e graduações",
-    body: "Acompanhe tempo de faixa, graus, frequência e alunos preparados.",
+    body: "Tempo de faixa, graus, frequência e a fila de quem está pronto.",
     icon: GraduationCap,
     href: "/demo?next=/academia/graduacoes",
   },
   {
-    title: "Estoque da academia",
-    body: "Controle kimonos, faixas, tamanhos, vendas e retiradas por aluno.",
+    title: "Agenda e mural",
+    body: "Seminário, campeonato, open mat. Aviso no mural que o aluno vê no app.",
+    icon: CalendarDays,
+    href: "/demo?next=/academia/agenda",
+  },
+  {
+    title: "Estoque e loja",
+    body: "Kimono, faixa, tamanho. Venda no nome do aluno, baixa o estoque, entra no caixa.",
     icon: Package,
     href: "/demo?next=/academia/estoque",
   },
   {
-    title: "Aplicativo do aluno",
-    body: "Aulas, presença, graduação e mensalidades em um único lugar.",
-    icon: Smartphone,
-    href: "/demo?as=aluno",
+    title: "Financeiro e fechamento",
+    body: "Recebido, despesa e atraso. Gera o mês, baixa o Pix, exporta a planilha.",
+    icon: Wallet,
+    href: "/demo?next=/academia/financeiro",
   },
 ];
 
@@ -82,14 +89,44 @@ export default function HomePage() {
             <a href="#planos" className="transition hover:text-white">
               Planos
             </a>
+            <a href="#duvidas" className="transition hover:text-white">
+              Dúvidas
+            </a>
+          </>
+        }
+        actions={
+          <>
+            <a
+              href={supportWhatsAppHref("Olá, quero o TatameX na minha academia.")}
+              target="_blank"
+              rel="noreferrer"
+              className="hidden rounded-xl px-4 py-2 text-sm font-medium text-white/70 transition hover:bg-white/5 hover:text-white sm:inline-flex"
+            >
+              WhatsApp
+            </a>
+            <Link
+              href="/login"
+              className="hidden rounded-xl px-4 py-2 text-sm font-medium text-white/70 transition hover:bg-white/5 hover:text-white sm:inline-flex"
+            >
+              Entrar
+            </Link>
+            <Link
+              href="/cadastro"
+              className="inline-flex items-center gap-2 rounded-xl bg-red-600 px-4 py-2.5 text-sm font-bold text-white shadow-lg shadow-red-950/30 transition hover:bg-red-500"
+            >
+              {signupTrialLabel() ?? "Começar"}
+              <ArrowRight className="h-4 w-4" />
+            </Link>
           </>
         }
       />
       <Hero />
       <TrustBar />
+      <HowItWorks />
       <ProductSection />
       <AppSection />
       <PlansSection />
+      <FaqSection />
       <FinalCTA />
       <SiteFooter />
     </main>
@@ -205,6 +242,53 @@ function TrustBar() {
   );
 }
 
+function HowItWorks() {
+  const steps = [
+    {
+      n: "01",
+      title: "Abra a academia",
+      body: "Nome, cidade e plano. Em minutos o painel está pronto — vazio, só da sua casa.",
+    },
+    {
+      n: "02",
+      title: "Chame a turma",
+      body: "Cadastre a ficha e mande o WhatsApp, ou o aluno busca o nome da academia no celular.",
+    },
+    {
+      n: "03",
+      title: "Cobre e valide",
+      body: "Mensalidade no Pix da academia. Presença: o aluno confirma, você aceita no tatame.",
+    },
+  ];
+
+  return (
+    <section className="bg-[#080808] py-20 lg:py-24">
+      <div className="mx-auto max-w-7xl px-5 lg:px-8">
+        <SectionHeading
+          eyebrow="Como começa"
+          title="Três passos. Sem planilha."
+          description="O TatameX cobra a assinatura da academia no cartão. A mensalidade do aluno continua no seu Pix."
+          dark
+        />
+        <div className="mt-12 grid gap-4 md:grid-cols-3">
+          {steps.map((step) => (
+            <article
+              key={step.n}
+              className="rounded-2xl border border-white/10 bg-white/[0.03] p-6"
+            >
+              <p className="font-mono text-xs font-black tracking-[0.2em] text-red-500">
+                {step.n}
+              </p>
+              <h3 className="mt-4 text-lg font-extrabold tracking-tight">{step.title}</h3>
+              <p className="mt-3 text-sm leading-6 text-white/50">{step.body}</p>
+            </article>
+          ))}
+        </div>
+      </div>
+    </section>
+  );
+}
+
 function ProductSection() {
   return (
     <section id="produto" className="relative bg-[#f5f5f3] py-24 text-[#101010] lg:py-32">
@@ -313,8 +397,8 @@ function PlansSection() {
           title="Um plano para cada fase da sua academia."
           description={
             signupTrialDays() > 0
-              ? `${signupTrialLabel()}. Cartão na hora, cobrança do plano depois. Alunos continuam no Pix da academia.`
-              : "Sem taxa de implantação. Escolha o plano, cadastre sua equipe e comece a organizar a operação."
+              ? `${signupTrialLabel()}. Cartão na hora, cobrança do plano depois. Alunos continuam no Pix da academia — o dinheiro não passa pelo TatameX.`
+              : "Sem taxa de implantação. Escolha o plano, cadastre sua equipe e comece a organizar a operação. A mensalidade do aluno fica no seu Pix."
           }
           dark={false}
           centered
@@ -385,6 +469,76 @@ function PlansSection() {
             </article>
           ))}
         </div>
+      </div>
+    </section>
+  );
+}
+
+function FaqSection() {
+  const items = [
+    {
+      q: "A mensalidade do aluno entra na minha conta?",
+      a: "Sim. O aluno paga no Pix da academia. O TatameX é a assinatura do sistema, no cartão, para o dono.",
+    },
+    {
+      q: "Preciso de máquina ou boleto?",
+      a: "Não. Você manda a chave Pix no WhatsApp e baixa na mão quando cair. Asaas (Pix dinâmico) entra depois, se quiser.",
+    },
+    {
+      q: "Consigo testar antes de pagar?",
+      a: `${signupTrialLabel() ?? "Abra a academia"} e a demonstração da Equipe Origem já está no site. Sem taxa de implantação.`,
+    },
+    {
+      q: "O aluno precisa instalar app da loja?",
+      a: "Não. Ele abre o link, confirma a academia e coloca na tela inicial. No plano Equipe, o app leva a marca da casa.",
+    },
+    {
+      q: "O plano Essencial já dá para operar?",
+      a: "Sim. Cadastro, experimental, turma, presença, Pix no WhatsApp e histórico de faixa. Financeiro completo, estoque, mural e app do aluno entram no Academia.",
+    },
+    {
+      q: "Os dados de uma academia misturam com outra?",
+      a: "Não. Cada academia tem a sua conta. Quem entra vê só a própria turma.",
+    },
+    {
+      q: "E se eu travar no começo?",
+      a: `WhatsApp ${SUPPORT_PHONE_DISPLAY}. No plano Equipe a fila é prioritária.`,
+    },
+  ];
+
+  return (
+    <section id="duvidas" className="bg-[#0b0b0b] py-24 lg:py-32">
+      <div className="mx-auto max-w-3xl px-5 lg:px-8">
+        <SectionHeading
+          eyebrow="Antes de assinar"
+          title="Dúvidas que o dono pergunta"
+          description="Resposta curta, do jeito que se fala no tatame."
+          dark
+          centered
+        />
+        <dl className="mt-12 space-y-3">
+          {items.map((item) => (
+            <div
+              key={item.q}
+              className="rounded-2xl border border-white/10 bg-white/[0.03] px-5 py-5"
+            >
+              <dt className="text-sm font-extrabold">{item.q}</dt>
+              <dd className="mt-2 text-sm leading-6 text-white/50">{item.a}</dd>
+            </div>
+          ))}
+        </dl>
+        <p className="mt-8 text-center text-sm text-white/40">
+          Ainda na dúvida?{" "}
+          <a
+            href={supportWhatsAppHref("Olá, quero entender o TatameX para a minha academia.")}
+            target="_blank"
+            rel="noreferrer"
+            className="font-bold text-red-400 hover:text-red-300"
+          >
+            Chama no WhatsApp
+          </a>
+          .
+        </p>
       </div>
     </section>
   );

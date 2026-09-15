@@ -298,13 +298,18 @@ function PixForm() {
   const store = useStore();
   const [pixKey, setPixKey] = useState(store.academy.pixKey);
   const [pixName, setPixName] = useState(store.academy.pixName);
+  const missing = !store.academy.pixKey.trim();
 
   return (
-    <section className="border border-border bg-card p-5">
-        <h2 className="font-medium">Pix da academia</h2>
-        <p className="mt-1 text-sm text-muted-foreground">
-          É a chave que vai na cobrança do WhatsApp para o aluno pagar a mensalidade.
-        </p>
+    <section
+      className={`border bg-card p-5 ${missing ? "border-red-500/40 bg-red-500/5" : "border-border"}`}
+    >
+      <h2 className="font-medium">Pix da academia</h2>
+      <p className="mt-1 text-sm text-muted-foreground">
+        {missing
+          ? "Ainda não tem chave. Sem isso a cobrança no WhatsApp sai vazia."
+          : "É a chave que vai na cobrança do WhatsApp para o aluno pagar a mensalidade."}
+      </p>
       <form
         className="mt-4 grid gap-3"
         onSubmit={(e) => {
@@ -315,13 +320,17 @@ function PixForm() {
       >
         <div className="space-y-1.5">
           <Label>Chave</Label>
-          <Input value={pixKey} onChange={(e) => setPixKey(e.target.value)} />
+          <Input
+            value={pixKey}
+            onChange={(e) => setPixKey(e.target.value)}
+            placeholder="CPF, e-mail, celular ou aleatória"
+          />
         </div>
         <div className="space-y-1.5">
           <Label>Nome no comprovante</Label>
           <Input value={pixName} onChange={(e) => setPixName(e.target.value)} />
         </div>
-        <Button type="submit">Salvar Pix</Button>
+        <Button type="submit">{missing ? "Salvar chave Pix" : "Salvar Pix"}</Button>
       </form>
     </section>
   );
