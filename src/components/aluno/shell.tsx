@@ -36,6 +36,11 @@ export function AlunoShell({ children }: { children: React.ReactNode }) {
   );
 
   useEffect(() => {
+    if (!store.hydrated) return;
+    if (!store.session || store.session.role !== "student") {
+      router.replace("/entrar");
+      return;
+    }
     if (store.academy.id === DEMO_ACADEMY_ID) return;
     void store.pullNow().then(() => store.republishPendingCheckIns()).catch(() => undefined);
     const onVis = () => {
@@ -45,7 +50,7 @@ export function AlunoShell({ children }: { children: React.ReactNode }) {
     };
     document.addEventListener("visibilitychange", onVis);
     return () => document.removeEventListener("visibilitychange", onVis);
-  }, [store.academy.id, store.pullNow, store.republishPendingCheckIns]);
+  }, [router, store.academy.id, store.hydrated, store.pullNow, store.republishPendingCheckIns, store.session]);
 
   return (
     <div className="flex min-h-screen justify-center bg-[#070707] text-white selection:bg-red-600 selection:text-white">

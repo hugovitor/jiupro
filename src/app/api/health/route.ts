@@ -18,10 +18,10 @@ export async function GET() {
       env: deploymentEnv(),
       url: publicAppUrl(),
       persistence: supabase ? "supabase" : "browser",
-      payments: {
-        asaas: Boolean(process.env.ASAAS_API_KEY?.trim()),
-        stripe: Boolean(process.env.STRIPE_SECRET_KEY?.trim()),
-      },
+      billing: Boolean(
+        process.env.STRIPE_SECRET_KEY?.trim() ||
+          process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY?.trim(),
+      ),
     },
     {
       headers: {

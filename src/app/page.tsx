@@ -343,7 +343,7 @@ function AppSection() {
           <SectionHeading
             eyebrow="Aplicativo do aluno"
             title="Confirmar. Encontrar a equipe. Treinar."
-            description="A experiência do aluno também representa a sua academia. Simples, rápida e com tudo o que ele precisa."
+            description="No plano Academia o aluno confirma a aula no celular e coloca o atalho na tela inicial. No Essencial, o mesmo fluxo abre no navegador."
             dark
           />
 
@@ -490,7 +490,7 @@ function FaqSection() {
     },
     {
       q: "O aluno precisa instalar app da loja?",
-      a: "Não. Ele abre o link, confirma a academia e coloca na tela inicial. No plano Equipe, o app leva a marca da casa.",
+      a: "Não. No plano Academia ele abre o link e coloca na tela inicial. No Essencial o aluno usa o navegador. No Equipe, o app leva a marca da casa.",
     },
     {
       q: "O plano Essencial já dá para operar?",

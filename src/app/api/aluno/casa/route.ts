@@ -1,6 +1,12 @@
 import { NextResponse } from "next/server";
 import { createClient } from "@supabase/supabase-js";
-import { supabaseAdmin } from "@/lib/operator";
+import {
+  RATE_LIMITS,
+  clientIp,
+  consumeRateLimit,
+  rateLimitExceededResponse,
+} from "@/lib/rate-limit";
+import { requireOperator, supabaseAdmin } from "@/lib/operator";
 import {
   mapPublicHouse,
   STUDENT_JOIN_NOT_FOUND,
@@ -90,6 +96,10 @@ async function searchHouses(query: string) {
 }
 
 export async function GET(request: Request) {
+  const ip = clientIp(request);
+  const limited = await consumeRateLimit(`search:${ip}`, RATE_LIMITS.search);
+  if (!limited.ok) return rateLimitExceededResponse(limited.retryAfterSec);
+
   const url = new URL(request.url);
   const casa = url.searchParams.get("casa")?.trim() ?? "";
   const q = url.searchParams.get("q")?.trim() ?? "";
@@ -110,7 +120,11 @@ export async function GET(request: Request) {
   return NextResponse.json({ error: result.error }, { status: result.status });
 }
 
-export async function POST() {
+export async function POST(request: Request) {
+  const auth = await requireOperator(request);
+  if ("error" in auth) {
+    return NextResponse.json({ error: auth.error }, { status: auth.status });
+  }
   const result = await ensureStudentJoinSchema();
   if (result.ok) return NextResponse.json({ ok: true, applied: result.applied });
   return NextResponse.json(

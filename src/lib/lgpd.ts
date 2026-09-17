@@ -43,7 +43,12 @@ export function studentPortability(student: Student, state: AppState) {
       amount: p.amount,
       status: p.status,
     })),
-    attendanceCount: attendance.length,
+      attendanceCount: attendance.length,
+      attendance: attendance.map((a) => ({
+        classId: a.classId,
+        date: a.date,
+        status: a.status,
+      })),
   };
 }
 
@@ -67,6 +72,29 @@ export function academyPortability(state: AppState) {
       phone: u.phone,
     })),
     students: state.students.map((s) => studentPortability(s, state).student),
+    payments: state.payments.map((p) => ({
+      month: p.month,
+      amount: p.amount,
+      status: p.status,
+      studentId: p.studentId,
+    })),
+    attendance: state.attendance.map((a) => ({
+      studentId: a.studentId,
+      classId: a.classId,
+      date: a.date,
+      status: a.status,
+    })),
+    expenses: state.expenses.map((e) => ({
+      description: e.description,
+      amount: e.amount,
+      date: e.date,
+      category: e.category,
+    })),
+    events: state.events.map((e) => ({
+      title: e.title,
+      date: e.date,
+      kind: e.kind,
+    })),
     classes: state.classes.map((c) => ({
       name: c.name,
       weekday: c.weekday,
@@ -82,8 +110,11 @@ export function downloadJson(filename: string, data: unknown) {
   const a = document.createElement("a");
   a.href = url;
   a.download = filename;
+  a.rel = "noopener";
+  document.body.appendChild(a);
   a.click();
-  URL.revokeObjectURL(url);
+  a.remove();
+  window.setTimeout(() => URL.revokeObjectURL(url), 1000);
 }
 
 export function deletionWhatsAppText(kind: "academy" | "student", label: string) {

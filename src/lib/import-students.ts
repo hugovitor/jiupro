@@ -20,8 +20,13 @@ function normalizeKey(value: string) {
 
 function cell(row: Record<string, string>, ...keys: string[]) {
   for (const key of keys) {
-    const hit = row[key];
-    if (hit?.trim()) return hit.trim();
+    const want = normalizeKey(key);
+    const direct = row[want];
+    if (direct?.trim()) return direct.trim();
+    const hit = Object.entries(row).find(
+      ([header, value]) => header.includes(want) && Boolean(value?.trim()),
+    );
+    if (hit) return hit[1].trim();
   }
   return "";
 }
@@ -40,13 +45,24 @@ function parseBelt(raw: string, division: Student["division"]): BeltId {
 }
 
 function parseFee(raw: string) {
+  if (!raw.trim()) return 0;
   const n = Number(raw.replace(/\./g, "").replace(",", ".").replace(/[^\d.-]/g, ""));
-  return Number.isFinite(n) && n >= 0 ? n : 180;
+  return Number.isFinite(n) && n >= 0 ? n : 0;
 }
 
 function parseStatus(raw: string): Student["status"] {
   const key = normalizeKey(raw);
-  if (key.includes("inativ") || key.includes("paus")) return "inactive";
+  if (!key) return "active";
+  if (key === "i" || key === "n") return "inactive";
+  if (
+    key.includes("inativ") ||
+    key.includes("paus") ||
+    key.includes("tranc") ||
+    key.includes("cancel") ||
+    key.includes("exaluno")
+  ) {
+    return "inactive";
+  }
   if (key.includes("exp") || key.includes("trial") || key.includes("aula")) return "trial";
   return "active";
 }
@@ -114,12 +130,17 @@ export function parseStudentCsv(text: string): { rows: ImportedStudent[]; errors
     const divisionRaw = cell(row, "divisao", "division", "turma");
     const belt = parseBelt(beltRaw, divisionRaw.toLowerCase().includes("kid") ? "kids" : "adult");
     const division = parseDivision(divisionRaw, belt);
+    const guardianName = cell(row, "responsavel", "guardian", "mae", "pai") || undefined;
+    if (division === "kids" && !guardianName) {
+      errors.push(`Linha ${index + 2}: kids precisa do responsável (LGPD).`);
+      return;
+    }
     rows.push({
       name,
       email: cell(row, "email", "e-mail", "mail"),
       phone: cell(row, "whatsapp", "telefone", "phone", "celular"),
-      birthDate: cell(row, "nascimento", "birthdate", "data") || "2000-01-01",
-      guardianName: cell(row, "responsavel", "guardian", "mae", "pai") || undefined,
+      birthDate: cell(row, "nascimento", "birthdate", "datanascimento"),
+      guardianName,
       division,
       belt,
       stripes: Number(cell(row, "graus", "stripes")) || 0,

@@ -13,7 +13,7 @@ export function applyOverdueStatus(
   let changed = 0;
   const next = payments.map((payment) => {
     if (payment.status !== "pending") return payment;
-    const late = payment.month < month || (payment.month === month && day >= due);
+    const late = payment.month < month || (payment.month === month && day > due);
     if (!late) return payment;
     changed += 1;
     return { ...payment, status: "overdue" as const };

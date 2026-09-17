@@ -3,7 +3,7 @@
 import { useMemo, useState } from "react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
-import { overdueMessage, waHref } from "@/lib/whatsapp";
+import { canWhatsApp, overdueMessage, waHref } from "@/lib/whatsapp";
 import { useStore } from "@/lib/store";
 
 export function ChargeWhatsAppQueue() {
@@ -11,10 +11,10 @@ export function ChargeWhatsAppQueue() {
   const [index, setIndex] = useState(0);
   const queue = useMemo(() => {
     return store.payments
-      .filter((p) => p.status === "overdue" || p.status === "pending")
+      .filter((p) => p.status === "overdue")
       .map((p) => {
         const student = store.students.find((s) => s.id === p.studentId);
-        if (!student?.phone.trim()) return null;
+        if (!student || !canWhatsApp(student.phone)) return null;
         return {
           id: p.id,
           href: waHref(student.phone, overdueMessage(store.academy, student, p)),
@@ -34,7 +34,7 @@ export function ChargeWhatsAppQueue() {
         variant="outline"
         render={<a href={current.href} target="_blank" rel="noreferrer" />}
         onClick={() => {
-          setIndex((n) => Math.min(n + 1, queue.length - 1));
+          window.setTimeout(() => setIndex((n) => Math.min(n + 1, queue.length - 1)), 500);
         }}
       >
         Zap o próximo ({Math.min(index + 1, queue.length)}/{queue.length})
@@ -42,9 +42,7 @@ export function ChargeWhatsAppQueue() {
       <Button
         variant="ghost"
         onClick={async () => {
-          const block = queue
-            .map((row) => row.name)
-            .join("\n");
+          const block = queue.map((row) => row.name).join("\n");
           await navigator.clipboard.writeText(
             `Cobrar no WhatsApp (${queue.length}):\n${block}`,
           );

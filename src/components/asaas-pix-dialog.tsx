@@ -10,8 +10,10 @@ import { getAsaasBrowserConfig } from "@/lib/asaas/config";
 import { formatCpf, isCpf } from "@/lib/cpf";
 import { brl, monthLabel } from "@/lib/format";
 import { useStore } from "@/lib/store";
+import { createSupabaseBrowserClient } from "@/lib/supabase/client";
+import { ensureBrowserAuthSession } from "@/lib/supabase/session";
 import type { Payment, Student } from "@/lib/types";
-import { overdueMessage, waHref } from "@/lib/whatsapp";
+import { canWhatsApp, overdueMessage, waHref } from "@/lib/whatsapp";
 
 type ChargeResult = {
   ok?: boolean;
@@ -29,6 +31,15 @@ type ChargeResult = {
 
 function apiKeyHeader() {
   return getAsaasBrowserConfig()?.apiKey;
+}
+
+async function asaasHeaders(extra?: Record<string, string>) {
+  const client = createSupabaseBrowserClient();
+  const token = client ? await ensureBrowserAuthSession(client) : null;
+  return {
+    ...(extra ?? {}),
+    ...(token ? { Authorization: `Bearer ${token}` } : {}),
+  };
 }
 
 export function AsaasChargeButton({
@@ -68,7 +79,7 @@ export function AsaasChargeButton({
   async function refresh(asaasPaymentId: string) {
     const res = await fetch(
       `/api/asaas/charge?id=${encodeURIComponent(asaasPaymentId)}`,
-      { headers: { "x-asaas-key": apiKeyHeader() ?? "" } },
+      { headers: await asaasHeaders({ "x-asaas-key": apiKeyHeader() ?? "" }) },
     );
     const data = (await res.json()) as ChargeResult;
     if (!res.ok) return;
@@ -87,7 +98,7 @@ export function AsaasChargeButton({
       }
       const res = await fetch("/api/asaas/charge", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: await asaasHeaders({ "Content-Type": "application/json" }),
         body: JSON.stringify({
           apiKey: apiKeyHeader() || undefined,
           paymentId: payment.id,
@@ -234,12 +245,14 @@ export function AsaasChargeButton({
                   Conferir
                 </Button>
               )}
+              {canWhatsApp(student.phone) ? (
               <Button
                 type="button"
                 render={<a href={waHref(student.phone, text)} target="_blank" rel="noreferrer" />}
               >
                 WhatsApp
               </Button>
+              ) : null}
             </div>
             <p className="text-xs text-muted-foreground">
               Depois que o aluno pagar, use Conferir para baixar a mensalidade.

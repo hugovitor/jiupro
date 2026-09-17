@@ -215,7 +215,6 @@ export function academyToRow(a: Academy): Row {
     instagram: a.instagram,
     pix_key: a.pixKey,
     pix_name: a.pixName,
-    plan: a.plan,
     monthly_goal: a.monthlyGoal,
     drop_in_fee: a.dropInFee,
     due_day: a.dueDay || 10,
@@ -463,6 +462,7 @@ export function tablesToState(input: {
       : "none") as Academy["billingStatus"],
     stripeCustomerId: str(a.stripe_customer_id),
     stripeSubscriptionId: str(a.stripe_subscription_id),
+    updatedAt: str(a.updated_at),
   };
 
   const users: User[] = input.profiles.map((p) => ({

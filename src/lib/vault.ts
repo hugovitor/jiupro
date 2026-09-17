@@ -39,6 +39,7 @@ function migrateState(state: AppState): AppState {
       billingStatus: state.academy.billingStatus ?? "none",
       stripeCustomerId: state.academy.stripeCustomerId ?? "",
       stripeSubscriptionId: state.academy.stripeSubscriptionId ?? "",
+      updatedAt: state.academy.updatedAt ?? "",
     },
     evaluations: state.evaluations ?? [],
     events: state.events ?? [],
@@ -89,7 +90,7 @@ function readVault(): Vault {
       if (!parsed.academies[DEMO_ACADEMY_ID] || stale) {
         parsed.academies[DEMO_ACADEMY_ID] = stripSession(createSeed());
       }
-      parsed.credentials = parsed.credentials ?? {};
+      parsed.credentials = isSupabaseConfigured() ? {} : (parsed.credentials ?? {});
       parsed.version = 8;
       try {
         localStorage.setItem(VAULT_KEY, JSON.stringify(parsed));
@@ -147,12 +148,11 @@ export function usesDatabase(academyId?: string | null) {
 export function activeState(): AppState {
   const v = getVault();
   const session = v.session;
-  const liveId =
-    session?.academyId && session.academyId !== DEMO_ACADEMY_ID
-      ? session.academyId
-      : v.activeId !== DEMO_ACADEMY_ID
-        ? v.activeId
-        : "";
+  if (!session) {
+    const demo = v.academies[DEMO_ACADEMY_ID] ?? stripSession(createSeed());
+    return migrateState({ ...demo, session: null });
+  }
+  const liveId = session.academyId !== DEMO_ACADEMY_ID ? session.academyId : "";
   if (liveId && usesDatabase(liveId)) {
     return blankLiveState(
       session ?? { userId: "", academyId: liveId, role: "owner" },
@@ -179,6 +179,11 @@ export function writeActive(next: AppState) {
 export function writeLiveSession(session: Session | null, academyId?: string) {
   const v = getVault();
   v.session = session;
+  if (!session) {
+    v.activeId = DEMO_ACADEMY_ID;
+    saveVault();
+    return;
+  }
   if (academyId && academyId !== DEMO_ACADEMY_ID) {
     v.activeId = academyId;
     delete v.academies[academyId];
@@ -241,7 +246,7 @@ export function putAcademy(state: AppState, password?: string, previousId?: stri
   } else {
     delete v.academies[state.academy.id];
   }
-  if (password) {
+  if (password && !isSupabaseConfigured()) {
     const email = state.users
       .find((u) => u.id === state.session?.userId)
       ?.email.toLowerCase();
@@ -265,7 +270,7 @@ export function findAcademyByJoinCode(code: string) {
     const join = (state.academy.joinCode ?? "").toUpperCase();
     const slug = state.academy.slug.toLowerCase();
     const nameKey = collapseAcademyKey(state.academy.name);
-    if (join === upper || slug === lower || (collapsed.length >= 2 && nameKey === collapsed)) {
+    if (join === upper || slug === lower || (collapsed.length >= 3 && nameKey === collapsed)) {
       return state;
     }
   }
@@ -274,7 +279,7 @@ export function findAcademyByJoinCode(code: string) {
 
 export function searchAcademiesForJoin(query: string) {
   const needle = query.trim().toLowerCase();
-  if (needle.length < 2) return [];
+  if (needle.length < 3) return [];
   const v = getVault();
   const hits: {
     name: string;
@@ -296,7 +301,7 @@ export function searchAcademiesForJoin(query: string) {
       .toLowerCase();
     const collapsedHay = collapseAcademyKey(hay);
     const collapsedNeedle = collapseAcademyKey(query);
-    if (!hay.includes(needle) && !(collapsedNeedle.length >= 2 && collapsedHay.includes(collapsedNeedle))) {
+    if (!hay.includes(needle) && !(collapsedNeedle.length >= 3 && collapsedHay.includes(collapsedNeedle))) {
       continue;
     }
     hits.push({
@@ -351,6 +356,7 @@ export function hasLocalPassword(email: string) {
 }
 
 export function rememberPassword(email: string, password: string) {
+  if (isSupabaseConfigured()) return;
   getVault().credentials[email.trim().toLowerCase()] = password;
   saveVault();
 }

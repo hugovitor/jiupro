@@ -17,7 +17,7 @@ export function postgresUriFromEnv() {
   return "";
 }
 
-const SCHEMA_VERSION = "2026-09-11-academy-brand";
+const SCHEMA_VERSION = "2026-09-15-member-academy-cas";
 let appliedVersion = "";
 let inFlight: Promise<boolean> | null = null;
 
@@ -48,7 +48,7 @@ export async function ensureStudentJoinSchema(): Promise<{
 }
 
 export function isMissingStudentJoinRpc(message?: string) {
-  return /lookup_academy_join|search_academy_join|join_academy_as_student|PGRST202|does not exist|schema cache/i.test(
+  return /lookup_academy_join|search_academy_join|join_academy_as_student|academy_for_member|PGRST202|does not exist|schema cache/i.test(
     message ?? "",
   );
 }

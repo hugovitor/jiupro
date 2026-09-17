@@ -59,6 +59,7 @@ export function createSeed(): AppState {
     billingStatus: "active",
     stripeCustomerId: "",
     stripeSubscriptionId: "",
+    updatedAt: "2021-03-08T12:00:00.000Z",
   };
 
   const session = {

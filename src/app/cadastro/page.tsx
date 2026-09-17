@@ -13,6 +13,7 @@ import { PLANS, planById, planCapacityLabel } from "@/lib/plans";
 import { useStore } from "@/lib/store";
 import { SUPPORT_PHONE_DISPLAY, supportWhatsAppHref } from "@/lib/support";
 import { LgpdConsent } from "@/components/lgpd-consent";
+import { TurnstileField, turnstileEnabled } from "@/components/turnstile-field";
 import { PRODUCT_NAME } from "@/lib/brand";
 import type { PlanId } from "@/lib/types";
 
@@ -34,6 +35,7 @@ function CadastroForm() {
   const [busy, setBusy] = useState(false);
   const [promoCode, setPromoCode] = useState(presetCoupon);
   const [accepted, setAccepted] = useState(false);
+  const [captchaToken, setCaptchaToken] = useState("");
   const [plan, setPlan] = useState<PlanId>(
     PLANS.some((p) => p.id === preset) ? preset : "academia",
   );
@@ -68,8 +70,11 @@ function CadastroForm() {
             toast.error("Aceite os Termos e a Política de privacidade para continuar.");
             return;
           }
+          if (turnstileEnabled() && !captchaToken) {
+            toast.error("Confirme que você não é um robô.");
+            return;
+          }
           setBusy(true);
-          void fetch("/api/aluno/casa", { method: "POST" }).catch(() => undefined);
           const result = await store.registerAcademy({
             ownerName: name,
             academyName: academy,
@@ -78,6 +83,7 @@ function CadastroForm() {
             password,
             phone,
             plan,
+            captchaToken,
           });
           if (!result.ok) {
             setBusy(false);
@@ -260,6 +266,7 @@ function CadastroForm() {
           </p>
         </div>
 
+        <TurnstileField onToken={setCaptchaToken} />
         <LgpdConsent checked={accepted} onChange={setAccepted} />
         <button
           type="submit"

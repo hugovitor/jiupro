@@ -18,7 +18,7 @@ import { Wordmark } from "@/components/brand";
 import { FirstLoginGuide } from "@/components/first-login-guide";
 import { Button } from "@/components/ui/button";
 import { academyNeedsPayment } from "@/lib/billing-status";
-import { isOperatorEmail } from "@/lib/operator";
+import { operatorHeaders } from "@/lib/operator-client";
 import { hasFeature, type PlanFeature } from "@/lib/plan-access";
 import { planById } from "@/lib/plans";
 import { DEMO_ACADEMY_ID } from "@/lib/seed";
@@ -97,6 +97,7 @@ export function AcademiaShell({ children }: { children: React.ReactNode }) {
   const router = useRouter();
   const pathname = usePathname();
   const [stripeLive, setStripeLive] = useState(false);
+  const [isOperator, setIsOperator] = useState(false);
   const user = store.users.find((u) => u.id === store.session?.userId);
   const groups = useMemo(() => {
     return GROUPS.map((group) => ({
@@ -114,10 +115,30 @@ export function AcademiaShell({ children }: { children: React.ReactNode }) {
   const priority = hasFeature(store.academy, "prioritySupport");
 
   useEffect(() => {
+    if (!store.hydrated) return;
+    if (!store.session) {
+      router.replace("/login");
+      return;
+    }
+    if (store.session.role === "student") {
+      router.replace("/aluno");
+    }
+  }, [router, store.hydrated, store.session]);
+
+  useEffect(() => {
+    if (!store.session) return;
+    void operatorHeaders(user?.email).then((headers) =>
+      fetch("/api/operacao/me", { credentials: "include", headers })
+        .then((res) => setIsOperator(res.ok))
+        .catch(() => setIsOperator(false)),
+    );
+  }, [store.session, user?.email]);
+
+  useEffect(() => {
     void fetch("/api/health", { cache: "no-store" })
       .then((res) => res.json())
-      .then((data: { payments?: { stripe?: boolean } }) => {
-        setStripeLive(Boolean(data.payments?.stripe));
+      .then((data: { billing?: boolean }) => {
+        setStripeLive(Boolean(data.billing));
       })
       .catch(() => undefined);
   }, []);
@@ -140,7 +161,6 @@ export function AcademiaShell({ children }: { children: React.ReactNode }) {
             slug: academy.slug,
             city: academy.city,
             state: academy.state,
-            plan: academy.plan,
             joinCode: academy.joinCode,
             phone: academy.phone,
           }),
@@ -209,7 +229,7 @@ export function AcademiaShell({ children }: { children: React.ReactNode }) {
               Prioridade
             </Button>
           ) : null}
-          {isOperatorEmail(user?.email) ? (
+          {isOperator ? (
             <Button
               variant="outline"
               size="sm"
@@ -345,8 +365,12 @@ export function AcademiaShell({ children }: { children: React.ReactNode }) {
               children
             )}
           </main>
-          {stripeLive && academyNeedsPayment(store.academy, stripeLive) ? null : <FirstLoginGuide />}
-          {pathname !== "/academia/configuracoes" ? <BillingLock stripeLive={stripeLive} /> : null}
+          {store.hydrated && stripeLive && academyNeedsPayment(store.academy, stripeLive) ? null : (
+            <FirstLoginGuide />
+          )}
+          {store.hydrated ? (
+            <BillingLock stripeLive={stripeLive} />
+          ) : null}
         </div>
       </div>
 

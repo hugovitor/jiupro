@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -9,6 +9,8 @@ import { Textarea } from "@/components/ui/textarea";
 import { configSource, saveSupabasePublicConfig } from "@/lib/supabase/config";
 import { isDirectSupabaseDbHost } from "@/lib/supabase/database-url";
 import { testSupabaseConnection } from "@/lib/supabase/sync";
+import { createSupabaseBrowserClient } from "@/lib/supabase/client";
+import { ensureBrowserAuthSession } from "@/lib/supabase/session";
 import { useStore } from "@/lib/store";
 
 type Busy = "save" | "test" | "push" | "pull" | "copy" | "sql" | "apply" | null;
@@ -23,6 +25,14 @@ export function SupabaseConnect() {
   const [busy, setBusy] = useState<Busy>(null);
   const [status, setStatus] = useState<string | null>(null);
   const [needsSchema, setNeedsSchema] = useState(false);
+  const [localDev, setLocalDev] = useState(false);
+
+  useEffect(() => {
+    void fetch("/api/health")
+      .then((r) => r.json())
+      .then((data: { env?: string }) => setLocalDev(data.env === "development"))
+      .catch(() => undefined);
+  }, []);
 
   async function save() {
     setBusy("save");
@@ -58,7 +68,7 @@ export function SupabaseConnect() {
       setNeedsSchema(Boolean(result.needsSchema));
       setStatus(result.error);
       if (result.needsSchema) {
-        await loadSql();
+        if (localDev) await loadSql();
         toast.message("Projeto alcançado, ainda vazio. Aplique o schema abaixo.");
       } else {
         toast.error(result.error);
@@ -106,19 +116,24 @@ export function SupabaseConnect() {
   async function applySchema() {
     setBusy("apply");
     try {
-      if (isDirectSupabaseDbHost(dbUrl.trim())) {
+      if (localDev && isDirectSupabaseDbHost(dbUrl.trim())) {
         setStatus("URI Direct: convertendo para o pooler IPv4…");
       }
+      const client = createSupabaseBrowserClient();
+      const token = client ? await ensureBrowserAuthSession(client) : null;
       const res = await fetch("/api/supabase/bootstrap", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ databaseUrl: dbUrl.trim() }),
+        headers: {
+          "Content-Type": "application/json",
+          ...(token ? { Authorization: `Bearer ${token}` } : {}),
+        },
+        body: JSON.stringify(localDev && dbUrl.trim() ? { databaseUrl: dbUrl.trim() } : {}),
       });
       const data = (await res.json()) as { ok?: boolean; error?: string };
       if (!res.ok || !data.ok) {
         setStatus(data.error ?? "Não aplicou o schema.");
         toast.error(data.error ?? "Não aplicou o schema.");
-        await loadSql();
+        if (localDev) await loadSql();
         return;
       }
       setDbUrl("");
@@ -254,27 +269,29 @@ export function SupabaseConnect() {
         <li className="space-y-3">
           <p className="text-sm font-medium">2. Criar as tabelas</p>
           <p className="text-sm text-muted-foreground">
-            O caminho que sempre funciona: copie o SQL, cole no SQL Editor do
-            projeto e clique{" "}
-            <strong className="font-medium text-foreground">Run</strong>. A
-            porta 5432 daqui não alcança o host Direct (IPv6).
+            Em produção o schema aplica com <code>DATABASE_URL</code> no servidor, ou no SQL
+            Editor do Supabase. A URI do Postgres não entra no navegador.
           </p>
           <div className="flex flex-wrap gap-2">
-            <Button
-              type="button"
-              disabled={busy !== null}
-              onClick={() => void copySchema()}
-            >
-              {busy === "copy" ? "Copiando…" : "Copiar SQL"}
-            </Button>
-            <Button
-              type="button"
-              variant="outline"
-              disabled={busy !== null}
-              onClick={() => void showSql()}
-            >
-              {busy === "sql" ? "Carregando…" : "Mostrar SQL"}
-            </Button>
+            {localDev ? (
+              <>
+                <Button
+                  type="button"
+                  disabled={busy !== null}
+                  onClick={() => void copySchema()}
+                >
+                  {busy === "copy" ? "Copiando…" : "Copiar SQL"}
+                </Button>
+                <Button
+                  type="button"
+                  variant="outline"
+                  disabled={busy !== null}
+                  onClick={() => void showSql()}
+                >
+                  {busy === "sql" ? "Carregando…" : "Mostrar SQL"}
+                </Button>
+              </>
+            ) : null}
             <Button
               variant="outline"
               render={
@@ -288,37 +305,47 @@ export function SupabaseConnect() {
               Abrir SQL Editor
             </Button>
           </div>
-          <form
-            className="grid gap-3"
-            onSubmit={(e) => {
-              e.preventDefault();
-              void applySchema();
-            }}
-          >
-            <div className="space-y-1.5">
-              <Label htmlFor="sb-db">URI do banco (opcional)</Label>
-              <Input
-                id="sb-db"
-                type="password"
-                value={dbUrl}
-                onChange={(e) => setDbUrl(e.target.value)}
-                placeholder="postgresql://postgres:…@db.xxxx.supabase.co:5432/postgres"
-                autoComplete="off"
-              />
-              <p className="text-xs text-muted-foreground">
-                Direct ou Session pooler. Direct é convertido para IPv4. A URI
-                não fica salva neste navegador.
-              </p>
-            </div>
-            <Button
-              type="submit"
-              variant="outline"
-              disabled={busy !== null || !dbUrl.trim()}
+          {localDev ? (
+            <form
+              className="grid gap-3"
+              onSubmit={(e) => {
+                e.preventDefault();
+                void applySchema();
+              }}
             >
-              {busy === "apply" ? "Criando tabelas…" : "Aplicar schema pela URI"}
+              <div className="space-y-1.5">
+                <Label htmlFor="sb-db">URI do banco (só neste computador)</Label>
+                <Input
+                  id="sb-db"
+                  type="password"
+                  value={dbUrl}
+                  onChange={(e) => setDbUrl(e.target.value)}
+                  placeholder="postgresql://postgres:…@db.xxxx.supabase.co:5432/postgres"
+                  autoComplete="off"
+                />
+                <p className="text-xs text-muted-foreground">
+                  Direct ou Session pooler. A URI não fica salva neste navegador.
+                </p>
+              </div>
+              <Button
+                type="submit"
+                variant="outline"
+                disabled={busy !== null || !dbUrl.trim()}
+              >
+                {busy === "apply" ? "Criando tabelas…" : "Aplicar schema pela URI"}
+              </Button>
+            </form>
+          ) : (
+            <Button
+              type="button"
+              variant="outline"
+              disabled={busy !== null}
+              onClick={() => void applySchema()}
+            >
+              {busy === "apply" ? "Criando tabelas…" : "Aplicar schema no servidor"}
             </Button>
-          </form>
-          {sql ? (
+          )}
+          {localDev && sql ? (
             <Textarea
               value={sql}
               readOnly
@@ -327,8 +354,9 @@ export function SupabaseConnect() {
             />
           ) : needsSchema ? (
             <p className="text-sm text-muted-foreground">
-              O projeto foi alcançado, mas ainda não tem as tabelas. Mostre ou
-              copie o SQL e rode uma vez.
+              {localDev
+                ? "O projeto foi alcançado, mas ainda não tem as tabelas. Mostre ou copie o SQL e rode uma vez."
+                : "O projeto foi alcançado, mas ainda não tem as tabelas. Aplique no servidor ou no SQL Editor do Supabase."}
             </p>
           ) : null}
         </li>
@@ -336,10 +364,11 @@ export function SupabaseConnect() {
         <li className="space-y-3">
           <p className="text-sm font-medium">3. Auth e a sua academia</p>
           <p className="text-sm text-muted-foreground">
-            Authentication → Sign In / Providers → Email: desligue{" "}
+            Authentication → Sign In / Providers → Email: deixe{" "}
             <strong className="font-medium text-foreground">Confirm email</strong>{" "}
-            para entrar na hora. Depois cadastre a academia neste app e use
-            Enviar esta academia — a Equipe Origem não sobe.
+            ligado. O cadastro da academia e do aluno confirma no servidor. Depois
+            cadastre a academia neste app e use Enviar esta academia — a Equipe
+            Origem não sobe.
           </p>
           {!store.isDemo && (
             <div className="flex flex-wrap gap-2">

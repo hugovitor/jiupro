@@ -1,4 +1,5 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
+import { kidsGuardianRequiredError, resolvedEnrollmentDivision } from "@/lib/kids-enrollment";
 import { pickCanonicalHouse, type HouseRow } from "@/lib/academy-canonical";
 import { joinStudentCapMessage, studentLimitForPlan } from "@/lib/plan-access";
 import { collapseAcademyKey, generateJoinCode, looksLikeHouseCode } from "@/lib/join-code";
@@ -37,8 +38,8 @@ function scoreHouse(row: AcademyHit, raw: string) {
   if (slugKey && slugKey === key) return 1;
   if ((row.name ?? "").trim().toLowerCase() === raw.trim().toLowerCase()) return 2;
   if (nameKey && nameKey === key) return 2;
-  if (key.length >= 2 && (nameKey.startsWith(key) || nameKey.includes(key))) return 3;
-  if (key.length >= 2 && cityKey.includes(key)) return 4;
+  if (key.length >= 3 && (nameKey.startsWith(key) || nameKey.includes(key))) return 3;
+  if (key.length >= 3 && cityKey.includes(key)) return 4;
   return 99;
 }
 
@@ -66,7 +67,7 @@ function createdMs(row: AcademyHit) {
 
 export function rankHouses(rows: AcademyHit[], query: string): AcademyHit[] {
   const needle = query.trim();
-  if (needle.length < 2) return [];
+  if (needle.length < 3) return [];
   return rows
     .map((row) => ({ row, score: scoreHouse(row, needle) }))
     .filter((item) => item.score < 99)
@@ -85,7 +86,7 @@ function safeIlike(value: string) {
 
 export async function searchAcademiesAdmin(admin: SupabaseClient, query: string) {
   const needle = query.trim();
-  if (needle.length < 2) return { houses: [] as PublicAcademyJoin[] };
+  if (needle.length < 3) return { houses: [] as PublicAcademyJoin[] };
 
   const hits = new Map<string, AcademyHit>();
   const add = (rows: AcademyHit[] | null | undefined) => {
@@ -109,7 +110,7 @@ export async function searchAcademiesAdmin(admin: SupabaseClient, query: string)
     const byCode = await admin.from("academies").select(HOUSE_COLUMNS).eq("join_code", needle.toUpperCase()).limit(5);
     if (!byCode.error) add(byCode.data as AcademyHit[]);
   }
-  for (const token of needle.split(/\s+/).filter((part) => part.length >= 2)) {
+  for (const token of needle.split(/\s+/).filter((part) => part.length >= 3)) {
     const byToken = await admin.from("academies").select(HOUSE_COLUMNS).ilike("name", safeIlike(token)).limit(20);
     if (!byToken.error) add(byToken.data as AcademyHit[]);
   }
@@ -170,7 +171,7 @@ export async function resolveAcademy(admin: SupabaseClient, input: JoinHouseInpu
   }
 
   const combined = needles(input).join(" ");
-  if (combined.trim().length >= 2) {
+  if (combined.trim().length >= 3) {
     const ranked = rankHouses(rows, combined);
     if (ranked.length === 1) return { academy: ranked[0] };
   }
@@ -195,7 +196,7 @@ export async function resolveHouseViaJoinRpc(db: SupabaseClient, input: JoinHous
   }
 
   const searchQuery = input.houseName || input.slug || input.code || "";
-  if (searchQuery.trim().length < 2) return null;
+  if (searchQuery.trim().length < 3) return null;
   const search = await db.rpc("search_academy_join", { p_query: searchQuery.trim() });
   const rows = Array.isArray(search.data) ? search.data : search.data ? [search.data] : [];
   const houses = rows.map((row) => mapPublicHouse(row as Record<string, unknown>));
@@ -220,10 +221,6 @@ async function ensureJoinCode(admin: SupabaseClient, academy: AcademyHit) {
     }
   }
   return academy.slug ?? "";
-}
-
-function phoneDigits(value: string) {
-  return value.replace(/\D/g, "");
 }
 
 export async function guardNewStudentSeat(
@@ -263,6 +260,9 @@ export async function enrollStudentInAcademy(
     studentName: string;
     phone: string;
     house: JoinHouseInput;
+    birthDate?: string;
+    guardianName?: string;
+    division?: "adult" | "kids";
   },
 ): Promise<{ academyId: string } | { error: string; status: number }> {
   const resolved = await resolveAcademy(admin, input.house);
@@ -276,17 +276,6 @@ export async function enrollStudentInAcademy(
   });
   if (!seat.ok) return { error: seat.error, status: 403 };
   await ensureJoinCode(admin, academy);
-  const offered = (input.house.code ?? "").trim().toUpperCase();
-  if (
-    looksLikeHouseCode(offered) &&
-    (academy.join_code ?? "").trim().toUpperCase() !== offered
-  ) {
-    const taken = await admin.from("academies").select("id").eq("join_code", offered).maybeSingle();
-    if (!taken.data) {
-      const { error } = await admin.from("academies").update({ join_code: offered }).eq("id", academy.id);
-      if (!error) academy.join_code = offered;
-    }
-  }
 
   const email = input.email.trim().toLowerCase();
   const label = input.studentName.trim() || email.split("@")[0] || "Aluno";
@@ -341,6 +330,9 @@ export async function enrollStudentInAcademy(
     email,
     name: label,
     phone,
+    birthDate: input.birthDate,
+    guardianName: input.guardianName,
+    division: input.division,
   });
   if ("error" in roster) return { error: roster.error, status: 400 };
 
@@ -355,12 +347,26 @@ export async function ensureStudentRosterRow(
     email: string;
     name: string;
     phone: string;
+    birthDate?: string;
+    guardianName?: string;
+    division?: "adult" | "kids";
   },
 ): Promise<{ studentId: string } | { error: string }> {
   const email = input.email.trim().toLowerCase();
   const phone = input.phone.trim();
-  const digits = phoneDigits(phone);
   const label = input.name.trim() || email.split("@")[0] || "Aluno";
+  const division = resolvedEnrollmentDivision({
+    division: input.division,
+    birthDate: input.birthDate,
+  });
+  const guardianError = kidsGuardianRequiredError({
+    division,
+    birthDate: input.birthDate,
+    guardianName: input.guardianName,
+  });
+  if (guardianError) return { error: guardianError };
+  const birthDate = input.birthDate?.slice(0, 10) || null;
+  const guardianName = input.guardianName?.trim() || null;
 
   const { data: roster, error: rosterError } = await admin
     .from("students")
@@ -389,18 +395,6 @@ export async function ensureStudentRosterRow(
     }
   }
 
-  if (!studentId && digits.length >= 10) {
-    const hit = (roster ?? []).find((row) => {
-      const phoneKey = phoneDigits(String(row.phone ?? ""));
-      if (phoneKey.length < 10) return false;
-      return phoneKey === digits || phoneKey === `55${digits}` || `55${phoneKey}` === digits;
-    });
-    if (hit?.id) {
-      studentId = String(hit.id);
-      claimed = hit.user_id ? String(hit.user_id) : null;
-    }
-  }
-
   if (claimed && claimed !== input.userId) {
     return { error: "Essa ficha já tem acesso. Entre com o e-mail e a senha que você criou." };
   }
@@ -413,6 +407,9 @@ export async function ensureStudentRosterRow(
         email: email || undefined,
         phone: phone || undefined,
         name: label,
+        ...(guardianName ? { guardian_name: guardianName } : {}),
+        ...(birthDate ? { birth_date: birthDate } : {}),
+        ...(division === "kids" ? { division: "kids" } : {}),
       })
       .eq("id", studentId);
     if (error) return { error: error.message };
@@ -433,7 +430,9 @@ export async function ensureStudentRosterRow(
       name: label,
       email: email || null,
       phone: phone || null,
-      division: "adult",
+      birth_date: birthDate,
+      guardian_name: guardianName,
+      division,
       belt: "white",
       status: "active",
       monthly_fee: 0,

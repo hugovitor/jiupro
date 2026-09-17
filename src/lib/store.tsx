@@ -12,6 +12,7 @@ import {
   type ReactNode,
 } from "react";
 import { nextGraduation } from "./belts";
+import { toast } from "sonner";
 import { createEmptyAcademy, uniqueSlug } from "./empty-academy";
 import { currentMonth, isoDate, uid, weekdayToday } from "./format";
 import { createSeed, DEMO_ACADEMY_ID, DEMO_ACCOUNTS } from "./seed";
@@ -30,7 +31,6 @@ import {
 } from "./supabase/sync";
 import { createSupabaseBrowserClient } from "./supabase/client";
 import { ensureBrowserAuthSession } from "./supabase/session";
-import { isOperatorEmail } from "./operator";
 import { ensureUuidState, rehomeAcademy } from "./supabase/mapper";
 import { isSupabaseConfigured } from "./supabase/config";
 import {
@@ -56,6 +56,7 @@ import { attendanceStatus, classHeadcount, isOnRoster, isValidated, studentCanSe
 import { academyPortability } from "./lgpd";
 import { applyOverdueStatus } from "./payment-overdue";
 import { canAddStudent, studentCapMessage } from "./plan-access";
+import { kidsGuardianRequiredError, resolvedEnrollmentDivision } from "./kids-enrollment";
 import {
   attendanceDay,
   canonicalStudent,
@@ -97,6 +98,7 @@ export type RegisterInput = {
   password: string;
   phone?: string;
   plan: PlanId;
+  captchaToken?: string;
 };
 
 type Store = AppState & {
@@ -115,6 +117,10 @@ type Store = AppState & {
     phone: string;
     email: string;
     password: string;
+    birthDate?: string;
+    guardianName?: string;
+    division?: "adult" | "kids";
+    captchaToken?: string;
   }) => Promise<LoginResult>;
   syncNow: () => Promise<SyncResult>;
   pullNow: () => Promise<SyncResult>;
@@ -203,6 +209,10 @@ let writeEpoch = 0;
 let remoteBootstrapped = false;
 
 function persist(state: AppState, push: boolean): AppState {
+  if (!state.session) {
+    writeLiveSession(null);
+    return state;
+  }
   const next =
     state.academy.id === DEMO_ACADEMY_ID ? state : ensureUuidState(state);
   if (next.academy.id === DEMO_ACADEMY_ID || !usesDatabase(next.academy.id)) {
@@ -227,7 +237,21 @@ function flushRemotePush() {
   const state = cached;
   if (!state || state.academy.id === DEMO_ACADEMY_ID) return;
   if (!usesDatabase(state.academy.id)) return;
-  void pushAcademyState(state);
+  void pushAcademyState(state).then((result) => {
+    if ("conflict" in result && result.conflict) {
+      window.dispatchEvent(new CustomEvent("jiupro-sync-conflict"));
+    }
+  });
+}
+
+async function reloadRemoteAfterConflict() {
+  const current = getSnapshot();
+  if (!current.session || current.academy.id === DEMO_ACADEMY_ID) return;
+  if (!usesDatabase(current.academy.id)) return;
+  const pulled = await pullAcademyState(current.session);
+  if ("error" in pulled) return;
+  adoptRemote({ ...pulled, session: current.session });
+  toast.message("Outra aba já tinha gravado esta ficha. Recarregamos o que está no banco.");
 }
 
 function adoptRemote(state: AppState) {
@@ -434,12 +458,17 @@ export function StoreProvider({ children }: { children: ReactNode }) {
     })();
 
     const onLeave = () => flushRemotePush();
+    const onConflict = () => {
+      void reloadRemoteAfterConflict();
+    };
     window.addEventListener("pagehide", onLeave);
     window.addEventListener("beforeunload", onLeave);
+    window.addEventListener("jiupro-sync-conflict", onConflict);
     return () => {
       cancelled = true;
       window.removeEventListener("pagehide", onLeave);
       window.removeEventListener("beforeunload", onLeave);
+      window.removeEventListener("jiupro-sync-conflict", onConflict);
     };
   }, []);
 
@@ -489,28 +518,36 @@ export function StoreProvider({ children }: { children: ReactNode }) {
             }
           }
 
-          if (isOperatorEmail(needle)) {
-            const ownerName =
-              local?.state.users.find((user) => user.role === "owner")?.name || "Hugo Vitor";
-            const created = await createAcademyForCurrentUser({
-              name: local?.state.academy.name || "Academia",
-              slug: local?.state.academy.slug || "academia",
-              city: local?.state.academy.city || "Brasil",
-              state: local?.state.academy.state || "SP",
-              plan: local?.state.academy.plan || "academia",
-              ownerName,
-            });
-            if (created.academyId) {
-              const pulled = await pullAcademyState({
-                userId: remote.userId,
-                academyId: created.academyId,
-                role: "owner",
+          const token = (await createSupabaseBrowserClient()?.auth.getSession())?.data.session
+            ?.access_token;
+          if (token) {
+            const me = await fetch("/api/operacao/me", {
+              credentials: "include",
+              headers: { Authorization: `Bearer ${token}` },
+            }).catch(() => null);
+            if (me?.ok) {
+              const ownerName =
+                local?.state.users.find((user) => user.role === "owner")?.name || "Operação";
+              const created = await createAcademyForCurrentUser({
+                name: local?.state.academy.name || "Academia",
+                slug: local?.state.academy.slug || "academia",
+                city: local?.state.academy.city || "Brasil",
+                state: local?.state.academy.state || "SP",
+                plan: local?.state.academy.plan || "academia",
+                ownerName,
               });
-              if (!("error" in pulled)) {
-                rememberPassword(needle, password);
-                putAcademy(pulled, password);
-                adoptRemote(pulled);
-                return { ok: true, role: "owner", academyId: pulled.academy.id };
+              if (created.academyId) {
+                const pulled = await pullAcademyState({
+                  userId: remote.userId,
+                  academyId: created.academyId,
+                  role: "owner",
+                });
+                if (!("error" in pulled)) {
+                  rememberPassword(needle, password);
+                  putAcademy(pulled, password);
+                  adoptRemote(pulled);
+                  return { ok: true, role: "owner", academyId: pulled.academy.id };
+                }
               }
             }
           }
@@ -558,7 +595,8 @@ export function StoreProvider({ children }: { children: ReactNode }) {
   }, []);
 
   const logout = useCallback(() => {
-    write((prev => ({ ...prev, session: null }))(getSnapshot()), false);
+    const demo = createSeed();
+    write({ ...demo, session: null }, false);
     clearRemoteSnapshot();
     if (typeof window !== "undefined") {
       window.sessionStorage.removeItem("jiupro.operator.jwt");
@@ -626,12 +664,21 @@ export function StoreProvider({ children }: { children: ReactNode }) {
       plan: academy.academy.plan,
       ownerName: input.ownerName.trim(),
       joinCode: academy.academy.joinCode,
+      captchaToken: input.captchaToken,
     });
 
     if (remote.error && remote.error !== "offline") {
       if (/already|registered|exists/i.test(remote.error)) {
         return resumeExisting();
       }
+      return { ok: false, error: remote.error };
+    }
+
+    if (isSupabaseConfigured() && !remote.academyId) {
+      return {
+        ok: false,
+        error: remote.error || "Não criou a academia no banco. Tente de novo ou fale no WhatsApp.",
+      };
     }
 
     if (remote.academyId) {
@@ -663,6 +710,10 @@ export function StoreProvider({ children }: { children: ReactNode }) {
     phone: string;
     email: string;
     password: string;
+    birthDate?: string;
+    guardianName?: string;
+    division?: "adult" | "kids";
+    captchaToken?: string;
   }): Promise<LoginResult> => {
     const email = input.email.trim().toLowerCase();
     const code = input.code.trim();
@@ -672,6 +723,16 @@ export function StoreProvider({ children }: { children: ReactNode }) {
     if ((!code && !slug && !houseName) || !name || !email.includes("@") || input.password.length < 6) {
       return { ok: false, error: "Preencha nome da academia, seu nome, e-mail e senha (mínimo 6)." };
     }
+    const division = resolvedEnrollmentDivision({
+      division: input.division,
+      birthDate: input.birthDate,
+    });
+    const guardianError = kidsGuardianRequiredError({
+      division,
+      birthDate: input.birthDate,
+      guardianName: input.guardianName,
+    });
+    if (guardianError) return { ok: false, error: guardianError };
 
     if (isSupabaseConfigured()) {
       const remote = await joinStudentRemote({
@@ -682,6 +743,10 @@ export function StoreProvider({ children }: { children: ReactNode }) {
         phone: input.phone,
         email,
         password: input.password,
+        birthDate: input.birthDate,
+        guardianName: input.guardianName,
+        division,
+        captchaToken: input.captchaToken,
       });
       if (!("error" in remote && remote.error === "offline")) {
         if ("error" in remote && remote.error) return { ok: false, error: remote.error };
@@ -724,13 +789,9 @@ export function StoreProvider({ children }: { children: ReactNode }) {
       return { ok: false, error: "Este e-mail já tem senha. Entre no login." };
     }
 
-    const digits = input.phone.replace(/\D/g, "");
-    const claimed = house.students.find((student) => {
-      if (student.email.trim().toLowerCase() === email) return true;
-      const phone = student.phone.replace(/\D/g, "");
-      if (digits.length < 10 || phone.length < 10) return false;
-      return phone === digits || phone === `55${digits}` || `55${phone}` === digits;
-    });
+    const claimed = house.students.find(
+      (student) => student.email.trim().toLowerCase() === email,
+    );
     if (claimed?.userId && existingUser && claimed.userId !== existingUser.id) {
       return { ok: false, error: "Essa ficha já tem acesso. Entre com o e-mail e a senha." };
     }
@@ -770,8 +831,8 @@ export function StoreProvider({ children }: { children: ReactNode }) {
             name,
             email,
             phone: input.phone.trim(),
-            birthDate: "2000-01-01",
-            division: "adult" as const,
+            birthDate: input.birthDate?.slice(0, 10) || (division === "kids" ? "" : "2000-01-01"),
+            division,
             belt: "white" as const,
             stripes: 0,
             joinDate: isoDate(0),
@@ -780,6 +841,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
             monthlyFee: 0,
             notes: "",
             avatarHue: Math.floor(Math.random() * 360),
+            guardianName: input.guardianName?.trim() || undefined,
           },
           ...house.students,
         ];
@@ -834,7 +896,15 @@ export function StoreProvider({ children }: { children: ReactNode }) {
       }
       return { ok: true };
     }
-    if (pushed.error) return { ok: false, error: pushed.error };
+    if (pushed.error) {
+      if ("conflict" in pushed && pushed.conflict && current.session) {
+        const pulled = await pullAcademyState(current.session);
+        if (!("error" in pulled) && writeEpoch === epoch) {
+          adoptRemote({ ...pulled, session: current.session });
+        }
+      }
+      return { ok: false, error: pushed.error };
+    }
     if (pushed.state && writeEpoch === epoch) {
       adoptRemote(pushed.state);
     }
@@ -860,6 +930,15 @@ export function StoreProvider({ children }: { children: ReactNode }) {
   const addStudent: Store["addStudent"] = useCallback((input) => {
     const prev = getSnapshot();
     if (!canAddStudent(prev.academy, prev.students.length)) return false;
+    if (
+      kidsGuardianRequiredError({
+        division: input.division,
+        birthDate: input.birthDate,
+        guardianName: input.guardianName,
+      })
+    ) {
+      return false;
+    }
     commit((prev) => {
       const id = uid("s");
       const student: Student = {

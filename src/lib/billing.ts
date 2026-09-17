@@ -1,6 +1,8 @@
 "use client";
 
 import type { PlanId } from "@/lib/types";
+import { createSupabaseBrowserClient } from "@/lib/supabase/client";
+import { ensureBrowserAuthSession } from "@/lib/supabase/session";
 
 export async function startPlanCheckout(
   planId: PlanId,
@@ -12,9 +14,14 @@ export async function startPlanCheckout(
     offer?: "signup" | "change";
   },
 ) {
+  const client = createSupabaseBrowserClient();
+  const token = client ? await ensureBrowserAuthSession(client) : null;
   const res = await fetch("/api/stripe/checkout", {
     method: "POST",
-    headers: { "Content-Type": "application/json" },
+    headers: {
+      "Content-Type": "application/json",
+      ...(token ? { Authorization: `Bearer ${token}` } : {}),
+    },
     body: JSON.stringify({ planId, ...extra }),
   });
   const data = (await res.json()) as {

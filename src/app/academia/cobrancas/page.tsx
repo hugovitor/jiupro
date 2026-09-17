@@ -10,7 +10,7 @@ import { Button } from "@/components/ui/button";
 import { brl, currentMonth, monthLabel } from "@/lib/format";
 import { overdueTotal } from "@/lib/insights";
 import { useStore } from "@/lib/store";
-import { overdueMessage, waHref } from "@/lib/whatsapp";
+import { canWhatsApp, overdueMessage, waHref } from "@/lib/whatsapp";
 
 export default function CobrancasPage() {
   const store = useStore();
@@ -122,9 +122,11 @@ export default function CobrancasPage() {
               </div>
               <div className="flex flex-wrap gap-2">
                 <AsaasChargeButton payment={p} student={s} />
-                <Button size="sm" render={<a href={waHref(s.phone, text)} target="_blank" rel="noreferrer" />}>
-                  WhatsApp
-                </Button>
+                {canWhatsApp(s.phone) ? (
+                  <Button size="sm" render={<a href={waHref(s.phone, text)} target="_blank" rel="noreferrer" />}>
+                    WhatsApp
+                  </Button>
+                ) : null}
                 <Button
                   size="sm"
                   onClick={() => {

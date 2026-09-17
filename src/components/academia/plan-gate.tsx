@@ -8,6 +8,7 @@ import {
   hasFeature,
   type PlanFeature,
 } from "@/lib/plan-access";
+import { signupTrialLabel } from "@/lib/billing-offer";
 import { planById } from "@/lib/plans";
 import { useStore } from "@/lib/store";
 
@@ -29,7 +30,9 @@ export function UpgradeWall({ feature }: { feature: PlanFeature }) {
         <h1 className="mt-2 font-display text-3xl">{copy.title}</h1>
         <p className="mt-3 text-sm leading-6 text-muted-foreground">{copy.body}</p>
         <p className="mt-3 text-xs text-muted-foreground">
-          Você está no {current.name}. Primeiro mês grátis, depois {target.price.toLocaleString("pt-BR", { style: "currency", currency: "BRL" })}/mês.
+          Você está no {current.name}.
+          {signupTrialLabel() ? ` ${signupTrialLabel()}, depois ` : " Depois "}
+          {target.price.toLocaleString("pt-BR", { style: "currency", currency: "BRL" })}/mês.
         </p>
         <div className="mt-6 flex flex-col gap-2 sm:flex-row">
           <Button render={<Link href="/planos" />}>Ver planos</Button>

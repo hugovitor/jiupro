@@ -55,7 +55,7 @@ export function housesSharePlace(a: HouseRow, b: HouseNeedle) {
   if (!nameA || !nameB || nameA !== nameB) return false;
   const cityA = cityKey(a.city);
   const cityB = cityKey(b.city);
-  return !cityA || !cityB || cityA === cityB;
+  return Boolean(cityA && cityB && cityA === cityB);
 }
 
 function createdMs(row: HouseRow) {

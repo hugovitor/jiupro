@@ -10,6 +10,8 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { brl, isoDate } from "@/lib/format";
 import { EmptyState } from "@/components/academia/empty-state";
+import { NativeSelect } from "@/components/ui/native-select";
+import { kidsGuardianRequiredError } from "@/lib/kids-enrollment";
 import { canAddStudent, studentCapMessage } from "@/lib/plan-access";
 import { useStore } from "@/lib/store";
 import { trialMessage, waHref } from "@/lib/whatsapp";
@@ -95,6 +97,9 @@ function NovoExperimental() {
   const [name, setName] = useState("");
   const [phone, setPhone] = useState("");
   const [fee, setFee] = useState("180");
+  const [division, setDivision] = useState<"adult" | "kids">("adult");
+  const [guardianName, setGuardianName] = useState("");
+  const [birthDate, setBirthDate] = useState("");
 
   return (
     <>
@@ -111,14 +116,23 @@ function NovoExperimental() {
           onSubmit={(e) => {
             e.preventDefault();
             if (!name.trim()) return;
+            const guardianError = kidsGuardianRequiredError({
+              division,
+              birthDate,
+              guardianName,
+            });
+            if (guardianError) {
+              toast.error(guardianError);
+              return;
+            }
             if (
               !canAddStudent(store.academy, store.students.length) ||
               !store.addStudent({
               name: name.trim(),
               email: "",
               phone,
-              birthDate: "2000-01-01",
-              division: "adult",
+              birthDate: birthDate || "2000-01-01",
+              division,
               belt: "white",
               stripes: 0,
               joinDate: isoDate(0),
@@ -126,15 +140,22 @@ function NovoExperimental() {
               status: "trial",
               monthlyFee: Number(fee) || 180,
               notes: "Aula experimental. Converter esta semana.",
+              guardianName: guardianName.trim() || undefined,
             } satisfies Omit<Student, "id" | "academyId" | "userId" | "avatarHue">)
             ) {
-              toast.error(studentCapMessage(store.academy));
+              toast.error(
+                kidsGuardianRequiredError({ division, birthDate, guardianName }) ||
+                  studentCapMessage(store.academy),
+              );
               return;
             }
             toast.success("Experimental na lista.");
             setOpen(false);
             setName("");
             setPhone("");
+            setDivision("adult");
+            setGuardianName("");
+            setBirthDate("");
           }}
         >
           <div className="space-y-1.5">
@@ -151,6 +172,32 @@ function NovoExperimental() {
               <Input value={fee} onChange={(e) => setFee(e.target.value)} />
             </div>
           </div>
+          <div className="grid grid-cols-2 gap-2">
+            <div className="space-y-1.5">
+              <Label>Turma</Label>
+              <NativeSelect
+                value={division}
+                onChange={(e) => setDivision(e.target.value === "kids" ? "kids" : "adult")}
+              >
+                <option value="adult">Adulto</option>
+                <option value="kids">Kids</option>
+              </NativeSelect>
+            </div>
+            <div className="space-y-1.5">
+              <Label>Nascimento</Label>
+              <Input type="date" value={birthDate} onChange={(e) => setBirthDate(e.target.value)} />
+            </div>
+          </div>
+          {division === "kids" ? (
+            <div className="space-y-1.5">
+              <Label>Responsável</Label>
+              <Input
+                value={guardianName}
+                onChange={(e) => setGuardianName(e.target.value)}
+                placeholder="Nome do pai, mãe ou responsável"
+              />
+            </div>
+          ) : null}
           <Button type="submit">Salvar</Button>
         </form>
       </FormDialog>

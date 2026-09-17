@@ -22,6 +22,7 @@ import { DarkCanvas, Eyebrow, Wordmark } from "@/components/brand";
 import { DEMO_ACCOUNTS } from "@/lib/seed";
 import { ownerDestination } from "@/lib/auth-redirect";
 import { useStore } from "@/lib/store";
+import { isSupabaseConfigured } from "@/lib/supabase/config";
 import { SUPPORT_PHONE_DISPLAY, supportWhatsAppHref } from "@/lib/support";
 
 export default function LoginPage() {
@@ -236,6 +237,8 @@ export default function LoginPage() {
                 </button>
               </form>
 
+              {!isSupabaseConfigured() ? (
+                <>
               <div className="my-8 flex items-center gap-4">
                 <span className="h-px flex-1 bg-white/8" />
                 <span className="text-[10px] font-bold uppercase tracking-[0.16em] text-white/25">Acessos de demonstração</span>
@@ -271,6 +274,15 @@ export default function LoginPage() {
                   );
                 })}
               </div>
+                </>
+              ) : (
+                <p className="mt-8 text-center text-xs text-white/35">
+                  Quer só olhar o sistema?{" "}
+                  <Link href="/demo" className="font-extrabold text-white underline decoration-red-600 decoration-2 underline-offset-4 transition hover:text-red-400">
+                    Abrir a demonstração
+                  </Link>
+                </p>
+              )}
 
               <p className="mt-8 text-center text-xs text-white/35">
                 Sou aluno da academia?{" "}

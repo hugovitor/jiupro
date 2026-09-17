@@ -1,7 +1,9 @@
 import { isoDate, monthLabel } from "@/lib/format";
 import { isCpf } from "@/lib/cpf";
 import { AsaasApiError, asaasPaid, createAsaasClient } from "@/lib/asaas/client";
-import { resolveAsaasKey } from "@/lib/asaas/env";
+import { asaasApiKeyFromEnv, resolveAsaasKey } from "@/lib/asaas/env";
+import { requireAcademyStaff } from "@/lib/api-auth";
+import { normalizeDueDay } from "@/lib/billing-status";
 
 export const runtime = "nodejs";
 
@@ -22,11 +24,24 @@ type ChargeBody = {
   month?: string;
 };
 
-function dueDate() {
-  return isoDate(5);
+function dueDate(dueDay: number) {
+  const now = new Date();
+  const year = now.getFullYear();
+  const month = now.getMonth();
+  const day = Math.min(normalizeDueDay(dueDay), 28);
+  const target = new Date(year, month, day);
+  if (target.getTime() <= now.getTime()) {
+    return isoDate(5);
+  }
+  return `${year}-${String(month + 1).padStart(2, "0")}-${String(day).padStart(2, "0")}`;
 }
 
 export async function POST(req: Request) {
+  const auth = await requireAcademyStaff(req);
+  if (!auth.ok) {
+    return Response.json({ error: auth.error }, { status: auth.status });
+  }
+
   let body: ChargeBody;
   try {
     body = (await req.json()) as ChargeBody;
@@ -34,7 +49,8 @@ export async function POST(req: Request) {
     return Response.json({ error: "Pedido inválido." }, { status: 400 });
   }
 
-  const key = resolveAsaasKey(body.apiKey);
+  const serverKey = asaasApiKeyFromEnv();
+  const key = serverKey || resolveAsaasKey(body.apiKey);
   if (!key) {
     return Response.json(
       { error: "Asaas não configurado. Cole a API key sandbox em Configurações." },
@@ -59,6 +75,14 @@ export async function POST(req: Request) {
     );
   }
 
+  const house = await auth.admin
+    .from("academies")
+    .select("name, due_day")
+    .eq("id", auth.academyId)
+    .maybeSingle();
+  const academyName = String(house.data?.name ?? body.academyName ?? "TatameX");
+  const due = dueDate(Number(house.data?.due_day ?? 10));
+
   const client = createAsaasClient(key);
   try {
     let customerId = student.asaasCustomerId?.trim() || "";
@@ -81,8 +105,8 @@ export async function POST(req: Request) {
     const charge = await client.createPixCharge({
       customer: customerId,
       value: Math.round(amount * 100) / 100,
-      dueDate: dueDate(),
-      description: `Mensalidade ${month ? monthLabel(month) : ""} — ${student.name} — ${body.academyName ?? "TatameX"}`.trim(),
+      dueDate: due,
+      description: `Mensalidade ${month ? monthLabel(month) : ""} — ${student.name} — ${academyName}`.trim(),
       externalReference: paymentId,
     });
     const pix = await client.pixQrCode(charge.id);
@@ -106,9 +130,14 @@ export async function POST(req: Request) {
 }
 
 export async function GET(req: Request) {
+  const auth = await requireAcademyStaff(req);
+  if (!auth.ok) {
+    return Response.json({ error: auth.error }, { status: auth.status });
+  }
   const url = new URL(req.url);
   const id = url.searchParams.get("id")?.trim() ?? "";
-  const key = resolveAsaasKey(req.headers.get("x-asaas-key") ?? undefined);
+  const serverKey = asaasApiKeyFromEnv();
+  const key = serverKey || resolveAsaasKey(req.headers.get("x-asaas-key") ?? undefined);
   if (!id) return Response.json({ error: "Informe o id da cobrança." }, { status: 400 });
   if (!key) {
     return Response.json({ error: "Asaas não configurado." }, { status: 400 });

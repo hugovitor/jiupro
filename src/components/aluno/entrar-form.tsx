@@ -19,6 +19,8 @@ import { normalizeJoinInput } from "@/lib/join-code";
 import { SUPPORT_PHONE_DISPLAY, supportWhatsAppHref } from "@/lib/support";
 import { PRODUCT_NAME } from "@/lib/brand";
 import { isSupabaseConfigured } from "@/lib/supabase/config";
+import { kidsGuardianRequiredError, resolvedEnrollmentDivision } from "@/lib/kids-enrollment";
+import { TurnstileField, turnstileEnabled } from "@/components/turnstile-field";
 
 const fieldClass =
   "h-12 w-full rounded-xl border border-white/10 bg-white/[0.035] px-4 text-sm text-white outline-none transition placeholder:text-white/20 hover:border-white/20 focus:border-red-500 focus:bg-white/[0.05] focus:ring-4 focus:ring-red-600/10";
@@ -80,6 +82,10 @@ export function EntrarAlunoForm({ initialCode = "" }: { initialCode?: string }) 
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [accepted, setAccepted] = useState(false);
+  const [birthDate, setBirthDate] = useState("");
+  const [division, setDivision] = useState<"adult" | "kids">("adult");
+  const [guardianName, setGuardianName] = useState("");
+  const [captchaToken, setCaptchaToken] = useState("");
 
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
@@ -89,8 +95,8 @@ export function EntrarAlunoForm({ initialCode = "" }: { initialCode?: string }) 
 
   async function lookup(nextQuery: string) {
     const needle = normalizeJoinInput(nextQuery);
-    if (needle.length < 2) {
-      toast.error("Digite o nome da sua academia.");
+    if (needle.length < 3) {
+      toast.error("Digite pelo menos 3 letras do nome da academia.");
       return;
     }
     setLooking(true);
@@ -177,7 +183,7 @@ export function EntrarAlunoForm({ initialCode = "" }: { initialCode?: string }) 
     <AuthScreen
       kicker="App do aluno"
       title="Encontre a sua academia."
-      subtitle="Se a academia já te cadastrou, confirma o nome e cria a senha. Se ainda não te cadastrou, escolhe a academia — sua ficha entra na lista."
+      subtitle="Se a academia já te cadastrou, entra com o e-mail da ficha e cria a senha. Se ainda não te cadastrou, escolhe a academia — sua ficha entra na lista."
       switchHref="/login"
       switchLabel="Já tenho senha"
     >
@@ -310,6 +316,20 @@ export function EntrarAlunoForm({ initialCode = "" }: { initialCode?: string }) 
               toast.error("Aceite os Termos e a Política de privacidade para continuar.");
               return;
             }
+            const resolvedDivision = resolvedEnrollmentDivision({ division, birthDate });
+            const guardianError = kidsGuardianRequiredError({
+              division: resolvedDivision,
+              birthDate,
+              guardianName,
+            });
+            if (guardianError) {
+              toast.error(guardianError);
+              return;
+            }
+            if (turnstileEnabled() && !captchaToken) {
+              toast.error("Confirme que você não é um robô.");
+              return;
+            }
             setBusy(true);
             const result = await store.registerStudent({
               code: preferredJoinCode(house),
@@ -319,6 +339,10 @@ export function EntrarAlunoForm({ initialCode = "" }: { initialCode?: string }) 
               phone,
               email,
               password,
+              birthDate,
+              guardianName,
+              division: resolvedDivision,
+              captchaToken,
             });
             setBusy(false);
             if (!result.ok) {
@@ -331,8 +355,8 @@ export function EntrarAlunoForm({ initialCode = "" }: { initialCode?: string }) 
         >
           <p className="text-sm text-white/45">
             Acesso em <strong className="text-white">{house.name}</strong>. Se a academia já te
-            cadastrou, use o mesmo e-mail ou WhatsApp — puxamos a ficha. Se ainda não, você entra
-            na lista da academia agora.
+            cadastrou, use o mesmo e-mail da ficha. O WhatsApp não puxa a ficha — só o e-mail que o
+            dono cadastrou. Se ainda não, você entra na lista da academia agora.
           </p>
           <div className="space-y-1.5">
             <Label>Seu nome</Label>
@@ -347,6 +371,39 @@ export function EntrarAlunoForm({ initialCode = "" }: { initialCode?: string }) 
               className={fieldClass}
             />
           </div>
+          <div className="grid grid-cols-2 gap-3">
+            <div className="space-y-1.5">
+              <Label>Nascimento</Label>
+              <Input
+                type="date"
+                value={birthDate}
+                onChange={(e) => setBirthDate(e.target.value)}
+                className={fieldClass}
+              />
+            </div>
+            <div className="space-y-1.5">
+              <Label>Turma</Label>
+              <select
+                value={division}
+                onChange={(e) => setDivision(e.target.value === "kids" ? "kids" : "adult")}
+                className={fieldClass}
+              >
+                <option value="adult">Adulto</option>
+                <option value="kids">Kids</option>
+              </select>
+            </div>
+          </div>
+          {resolvedEnrollmentDivision({ division, birthDate }) === "kids" ? (
+            <div className="space-y-1.5">
+              <Label>Nome do responsável</Label>
+              <Input
+                value={guardianName}
+                onChange={(e) => setGuardianName(e.target.value)}
+                placeholder="Pai, mãe ou responsável"
+                className={fieldClass}
+              />
+            </div>
+          ) : null}
           <div className="space-y-1.5">
             <Label>E-mail</Label>
             <Input
@@ -365,6 +422,7 @@ export function EntrarAlunoForm({ initialCode = "" }: { initialCode?: string }) 
               className={fieldClass}
             />
           </div>
+          <TurnstileField onToken={setCaptchaToken} />
           <LgpdConsent checked={accepted} onChange={setAccepted} student />
           <Button className="h-12 w-full" disabled={busy} type="submit">
             {busy ? (
