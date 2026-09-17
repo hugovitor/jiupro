@@ -235,8 +235,8 @@ export function FirstLoginGuide() {
                 </div>
               </div>
               <p className="text-xs text-white/40">
-                Quer cadastrar a ficha agora? O aluno depois cria a senha no mesmo e-mail ou
-                WhatsApp.
+                Quer cadastrar a ficha agora? O aluno depois cria a senha no mesmo e-mail da
+                ficha. O WhatsApp não puxa a ficha.
               </p>
               <div className="space-y-2">
                 <Input

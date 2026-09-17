@@ -6,7 +6,14 @@ export function mapAuthError(message?: string) {
       msg,
     )
   ) {
-    return "Muitos cadastros neste momento. Espere uns minutos e tente de novo. Se continuar, fale no WhatsApp da academia.";
+    return "Muitos e-mails neste momento. Espere uns minutos e tente de novo. Se continuar, fale no WhatsApp de suporte.";
+  }
+  if (
+    /error sending recovery email|unexpected_failure|error sending.*email|smtp|unable to send|failed to send/.test(
+      msg,
+    )
+  ) {
+    return "O e-mail de senha não saiu. Sem domínio no Resend o Supabase manda só uns poucos por hora — espere 1 hora ou fale no WhatsApp de suporte.";
   }
   if (/already|registered|exists/.test(msg)) {
     return "Este e-mail já tem senha. Entre no login.";
