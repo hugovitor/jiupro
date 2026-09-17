@@ -14,6 +14,7 @@ import {
   Users,
 } from "lucide-react";
 import { BillingLock } from "@/components/academia/billing-lock";
+import { HouseSwitcher } from "@/components/academia/house-switcher";
 import { Wordmark } from "@/components/brand";
 import { FirstLoginGuide } from "@/components/first-login-guide";
 import { Button } from "@/components/ui/button";
@@ -206,10 +207,22 @@ export function AcademiaShell({ children }: { children: React.ReactNode }) {
             <Wordmark href={null} kicker={false} />
           </Link>
           <div className="hidden min-w-0 sm:block">
-            <p className="truncate text-[13px] font-bold">{store.academy.name}</p>
-            <p className="truncate text-[11px] text-white/40">
-              {store.academy.city}/{store.academy.state} · {plan.name}
-            </p>
+            <HouseSwitcher />
+            {store.houses.length < 2 ? (
+              <>
+                <p className="truncate text-[13px] font-bold">{store.academy.name}</p>
+                <p className="truncate text-[11px] text-white/40">
+                  {store.academy.city}/{store.academy.state} · {plan.name}
+                </p>
+              </>
+            ) : (
+              <p className="truncate text-[11px] text-white/40">
+                {store.academy.city}/{store.academy.state} · {plan.name}
+              </p>
+            )}
+          </div>
+          <div className="min-w-0 sm:hidden">
+            <HouseSwitcher compact />
           </div>
         </div>
         <div className="flex items-center gap-3">
@@ -272,6 +285,11 @@ export function AcademiaShell({ children }: { children: React.ReactNode }) {
               </p>
             </div>
           </div>
+          {store.houses.length > 1 ? (
+            <div className="px-3 pb-3">
+              <HouseSwitcher compact className="w-full" />
+            </div>
+          ) : null}
           <nav className="flex-1 overflow-y-auto px-2 pb-4">
             {groups.map((group) => {
               const active = groupIsActive(group, pathname);

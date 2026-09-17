@@ -70,14 +70,12 @@ export async function POST(request: Request) {
     .select("id, academy_id, role")
     .eq("email", email)
     .maybeSingle();
-  if (existing.data?.academy_id && existing.data.academy_id !== owner.data.academy_id) {
-    return NextResponse.json(
-      { error: "Este e-mail já está em outra academia." },
-      { status: 409 },
-    );
-  }
 
   let userId = existing.data?.id as string | undefined;
+  const otherHouse = Boolean(
+    existing.data?.academy_id && existing.data.academy_id !== owner.data.academy_id,
+  );
+
   if (!userId) {
     const created = await admin.auth.admin.createUser({
       email,
@@ -101,17 +99,36 @@ export async function POST(request: Request) {
     }
   }
 
-  const profile = await admin.from("profiles").upsert({
-    id: userId,
-    academy_id: owner.data.academy_id,
-    name,
-    email,
-    phone,
-    role: "instructor",
-    avatar_hue: Math.floor(Math.random() * 360),
-  });
-  if (profile.error) {
-    return NextResponse.json({ error: profile.error.message }, { status: 400 });
+  if (otherHouse) {
+    const membership = await admin.from("academy_memberships").upsert({
+      user_id: userId,
+      academy_id: owner.data.academy_id,
+      role: "instructor",
+    });
+    if (
+      membership.error &&
+      !/does not exist|schema cache|42P01|PGRST205/i.test(membership.error.message)
+    ) {
+      return NextResponse.json({ error: membership.error.message }, { status: 400 });
+    }
+  } else {
+    const profile = await admin.from("profiles").upsert({
+      id: userId,
+      academy_id: owner.data.academy_id,
+      name,
+      email,
+      phone,
+      role: "instructor",
+      avatar_hue: Math.floor(Math.random() * 360),
+    });
+    if (profile.error) {
+      return NextResponse.json({ error: profile.error.message }, { status: 400 });
+    }
+    await admin.from("academy_memberships").upsert({
+      user_id: userId,
+      academy_id: owner.data.academy_id,
+      role: "instructor",
+    });
   }
 
   const link = await admin.auth.admin.generateLink({
@@ -140,6 +157,7 @@ Depois: ${publicAppUrl()}/login`;
   return NextResponse.json({
     ok: true,
     userId,
+    linked: otherHouse,
     inviteUrl: actionLink,
     message,
     phone,

@@ -56,6 +56,7 @@ export function InviteInstructorForm() {
         userId?: string;
         message?: string;
         phone?: string;
+        linked?: boolean;
       };
       if (!res.ok) {
         toast.error(data.error || "Não convidou agora.");
@@ -63,7 +64,11 @@ export function InviteInstructorForm() {
       }
       store.addInstructor({ id: data.userId, name, email, phone });
       setInvite({ message: data.message || "", phone: data.phone || phone });
-      toast.success("Professor na equipe. Manda o WhatsApp com o link da senha.");
+      toast.success(
+        data.linked
+          ? "Professor vinculado neste login. Ele troca de unidade no painel."
+          : "Professor na equipe. Manda o WhatsApp com o link da senha.",
+      );
       setName("");
       setEmail("");
       setPhone("");

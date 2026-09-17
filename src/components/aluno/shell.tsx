@@ -6,6 +6,7 @@ import { usePathname, useRouter } from "next/navigation";
 import { CalendarDays, Home, LineChart, Lock, LogOut, MessageSquare, User } from "lucide-react";
 import { AcademyMark, Wordmark } from "@/components/brand";
 import { FirstLoginGuide } from "@/components/first-login-guide";
+import { HouseSwitcher } from "@/components/academia/house-switcher";
 import { StudentAppBrand } from "@/components/aluno/app-brand";
 import { hasFeature } from "@/lib/plan-access";
 import { DEMO_ACADEMY_ID } from "@/lib/seed";
@@ -37,8 +38,12 @@ export function AlunoShell({ children }: { children: React.ReactNode }) {
 
   useEffect(() => {
     if (!store.hydrated) return;
-    if (!store.session || store.session.role !== "student") {
+    if (!store.session) {
       router.replace("/entrar");
+      return;
+    }
+    if (store.session.role !== "student") {
+      router.replace("/academia");
       return;
     }
     if (store.academy.id === DEMO_ACADEMY_ID) return;
@@ -57,7 +62,10 @@ export function AlunoShell({ children }: { children: React.ReactNode }) {
       <div className="relative flex min-h-screen w-full max-w-md flex-col border-x border-white/10 bg-[#080808]">
         <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_50%_0%,rgba(220,38,38,0.14),transparent_36%)]" />
         <StudentAppBrand />
-        <header className="sticky top-0 z-30 flex h-16 items-center gap-3 border-b border-white/10 bg-[#080808]/90 px-4 backdrop-blur-xl">
+        <header className={cn(
+          "sticky top-0 z-30 flex items-center gap-3 border-b border-white/10 bg-[#080808]/90 px-4 backdrop-blur-xl",
+          store.houses.length > 1 ? "min-h-16 py-2" : "h-16",
+        )}>
           {branded ? (
             <AcademyMark
               name={store.academy.name}
@@ -68,7 +76,11 @@ export function AlunoShell({ children }: { children: React.ReactNode }) {
             <Wordmark href={null} kicker={false} />
           )}
           <div className="min-w-0 flex-1 text-right">
-            {branded ? null : (
+            {store.houses.length > 1 ? (
+              <div className="mb-1 flex justify-end">
+                <HouseSwitcher compact />
+              </div>
+            ) : branded ? null : (
               <p className="truncate text-[11px] text-white/40">{store.academy.name}</p>
             )}
             <p className="truncate text-[13px] font-bold">

@@ -4,6 +4,8 @@ import { pickCanonicalHouse, type HouseRow } from "@/lib/academy-canonical";
 import { joinStudentCapMessage, studentLimitForPlan } from "@/lib/plan-access";
 import { collapseAcademyKey, generateJoinCode, looksLikeHouseCode } from "@/lib/join-code";
 import { mapPublicHouse, STUDENT_JOIN_NOT_FOUND, type PublicAcademyJoin } from "@/lib/student-join";
+import { matchRosterClaim } from "@/lib/roster-claim";
+import { staffOfHouse } from "@/lib/memberships";
 
 const HOUSE_COLUMNS = "id, name, slug, city, state, join_code, created_at";
 
@@ -289,15 +291,23 @@ export async function enrollStudentInAcademy(
   if (profileError) return { error: profileError.message, status: 400 };
 
   if (profile) {
-    if (profile.role && profile.role !== "student") {
+    const memberships = await admin
+      .from("academy_memberships")
+      .select("academy_id, role")
+      .eq("user_id", input.userId);
+    const staffHere =
+      (profile.academy_id === academy.id && profile.role && profile.role !== "student") ||
+      (!memberships.error &&
+        staffOfHouse(
+          (memberships.data ?? []).map((row) => ({
+            id: String(row.academy_id ?? ""),
+            role: (row.role as "owner" | "instructor" | "student") || "student",
+          })),
+          academy.id,
+        ));
+    if (staffHere) {
       return {
         error: "Este e-mail já é da equipe da academia. Use outro e-mail no app do aluno.",
-        status: 400,
-      };
-    }
-    if (profile.academy_id && profile.academy_id !== academy.id) {
-      return {
-        error: "Este e-mail já pertence a outra academia. Use outro e-mail no app do aluno.",
         status: 400,
       };
     }
@@ -322,6 +332,18 @@ export async function enrollStudentInAcademy(
       phone: phone || null,
     });
     if (error) return { error: error.message, status: 400 };
+  }
+
+  const membership = await admin.from("academy_memberships").upsert({
+    user_id: input.userId,
+    academy_id: academy.id,
+    role: "student",
+  });
+  if (
+    membership.error &&
+    !/does not exist|schema cache|42P01|PGRST205/i.test(membership.error.message)
+  ) {
+    return { error: membership.error.message, status: 400 };
   }
 
   const roster = await ensureStudentRosterRow(admin, {
@@ -376,28 +398,9 @@ export async function ensureStudentRosterRow(
     .limit(500);
   if (rosterError) return { error: rosterError.message };
 
-  let studentId: string | null = null;
-  let claimed: string | null = null;
-
-  const byUser = (roster ?? []).find((row) => String(row.user_id ?? "") === input.userId);
-  if (byUser?.id) {
-    studentId = String(byUser.id);
-    claimed = byUser.user_id ? String(byUser.user_id) : null;
-  }
-
-  if (!studentId && email) {
-    const emailHit = (roster ?? []).find(
-      (row) => String(row.email ?? "").trim().toLowerCase() === email,
-    );
-    if (emailHit?.id) {
-      studentId = String(emailHit.id);
-      claimed = emailHit.user_id ? String(emailHit.user_id) : null;
-    }
-  }
-
-  if (claimed && claimed !== input.userId) {
-    return { error: "Essa ficha já tem acesso. Entre com o e-mail e a senha que você criou." };
-  }
+  const claimed = matchRosterClaim(roster ?? [], { userId: input.userId, email });
+  if (!claimed.ok) return { error: claimed.error };
+  const studentId = claimed.studentId;
 
   if (studentId) {
     const { error } = await admin
