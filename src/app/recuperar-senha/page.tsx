@@ -17,6 +17,7 @@ export default function RecuperarSenhaPage() {
   const [email, setEmail] = useState("");
   const [busy, setBusy] = useState(false);
   const [sent, setSent] = useState(false);
+  const [sendError, setSendError] = useState<string | null>(null);
 
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -37,9 +38,11 @@ export default function RecuperarSenhaPage() {
     }
 
     setBusy(true);
+    setSendError(null);
     try {
       const result = await requestPasswordReset(needle);
       if ("error" in result && result.error) {
+        setSendError(result.error);
         toast.error(result.error);
         return;
       }
@@ -102,6 +105,21 @@ export default function RecuperarSenhaPage() {
               />
             </div>
           </div>
+          {sendError ? (
+            <div className="space-y-2 rounded-xl border border-red-500/30 bg-red-500/10 px-4 py-3 text-sm leading-6 text-red-200">
+              <p>{sendError}</p>
+              <a
+                className="font-bold text-red-300 hover:text-red-200"
+                href={supportWhatsAppHref(
+                  `Olá, pedi recuperação de senha no TatameX para ${email.trim().toLowerCase()} e deu erro: ${sendError}`,
+                )}
+                target="_blank"
+                rel="noreferrer"
+              >
+                WhatsApp {SUPPORT_PHONE_DISPLAY}
+              </a>
+            </div>
+          ) : null}
           <button
             type="submit"
             disabled={busy}
