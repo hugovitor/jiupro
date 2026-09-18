@@ -7,8 +7,13 @@ import { AsaasChargeButton } from "@/components/asaas-pix-dialog";
 import { BeltBadge, PersonAvatar } from "@/components/belt-badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { FormDialog } from "@/components/form-dialog";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { NativeSelect } from "@/components/ui/native-select";
 import { Textarea } from "@/components/ui/textarea";
-import { beltLabel } from "@/lib/belts";
+import { beltLabel, beltsForDivision } from "@/lib/belts";
+import { formatCpf } from "@/lib/cpf";
 import {
   brl,
   currentMonth,
@@ -17,9 +22,10 @@ import {
   isoDate,
   monthsBetween,
 } from "@/lib/format";
-import { formatCpf } from "@/lib/cpf";
 import { attendanceInDays } from "@/lib/insights";
+import { normalizeStudentFicha } from "@/lib/student-ficha";
 import { useStore } from "@/lib/store";
+import type { Student } from "@/lib/types";
 import { SendStudentAccessButton } from "@/components/academia/send-student-access";
 import { overdueMessage, waHref } from "@/lib/whatsapp";
 import { useState } from "react";
@@ -60,6 +66,7 @@ export default function AlunoDetalhePage() {
           </div>
         </div>
         <div className="flex flex-wrap gap-2">
+          <EditarFicha student={student} />
           <SendStudentAccessButton student={student} size="default" />
           <Button
             variant="outline"
@@ -172,8 +179,8 @@ export default function AlunoDetalhePage() {
                 <Button
                   size="sm"
                   onClick={() => {
-                    store.updateStudent(student.id, { status: "active" });
-                    toast.success("Convertido em mensalista.");
+                    store.convertTrial(student.id);
+                    toast.success("Convertido em mensalista. Mensalidade do mês na cobrança.");
                   }}
                 >
                   Converter experimental
@@ -321,6 +328,171 @@ function Compras({ studentId }: { studentId: string }) {
         ))}
       </CardContent>
     </Card>
+  );
+}
+
+function EditarFicha({ student }: { student: Student }) {
+  const store = useStore();
+  const [open, setOpen] = useState(false);
+  const [form, setForm] = useState({
+    name: student.name,
+    phone: student.phone,
+    email: student.email,
+    birthDate: student.birthDate || "",
+    guardianName: student.guardianName || "",
+    division: student.division,
+    belt: student.belt,
+    monthlyFee: student.monthlyFee ? String(student.monthlyFee) : "0",
+    notes: student.notes || "",
+    cpf: student.cpf || "",
+  });
+  const belts = beltsForDivision(form.division);
+
+  function sync() {
+    setForm({
+      name: student.name,
+      phone: student.phone,
+      email: student.email,
+      birthDate: student.birthDate || "",
+      guardianName: student.guardianName || "",
+      division: student.division,
+      belt: student.belt,
+      monthlyFee: student.monthlyFee ? String(student.monthlyFee) : "0",
+      notes: student.notes || "",
+      cpf: student.cpf || "",
+    });
+  }
+
+  return (
+    <>
+      <Button
+        variant="outline"
+        onClick={() => {
+          sync();
+          setOpen(true);
+        }}
+      >
+        Editar ficha
+      </Button>
+      <FormDialog
+        open={open}
+        onClose={() => setOpen(false)}
+        title="Editar ficha"
+        className="max-w-md"
+      >
+        <form
+          className="grid max-h-[70vh] gap-3 overflow-y-auto pr-1"
+          onSubmit={(event) => {
+            event.preventDefault();
+            const next = normalizeStudentFicha(form);
+            if ("error" in next) {
+              toast.error(next.error);
+              return;
+            }
+            store.updateStudent(student.id, next);
+            toast.success("Ficha atualizada.");
+            setOpen(false);
+          }}
+        >
+          <div className="space-y-1.5">
+            <Label>Nome</Label>
+            <Input
+              value={form.name}
+              onChange={(e) => setForm({ ...form, name: e.target.value })}
+            />
+          </div>
+          <div className="grid grid-cols-2 gap-2">
+            <div className="space-y-1.5">
+              <Label>WhatsApp</Label>
+              <Input
+                value={form.phone}
+                onChange={(e) => setForm({ ...form, phone: e.target.value })}
+              />
+            </div>
+            <div className="space-y-1.5">
+              <Label>E-mail</Label>
+              <Input
+                value={form.email}
+                onChange={(e) => setForm({ ...form, email: e.target.value })}
+              />
+            </div>
+          </div>
+          <div className="grid grid-cols-2 gap-2">
+            <div className="space-y-1.5">
+              <Label>Nascimento</Label>
+              <Input
+                type="date"
+                value={form.birthDate}
+                onChange={(e) => setForm({ ...form, birthDate: e.target.value })}
+              />
+            </div>
+            <div className="space-y-1.5">
+              <Label>Mensalidade (R$)</Label>
+              <Input
+                value={form.monthlyFee}
+                onChange={(e) => setForm({ ...form, monthlyFee: e.target.value })}
+                inputMode="decimal"
+              />
+            </div>
+          </div>
+          <div className="grid grid-cols-2 gap-2">
+            <div className="space-y-1.5">
+              <Label>Turma</Label>
+              <NativeSelect
+                value={form.division}
+                onChange={(e) =>
+                  setForm({
+                    ...form,
+                    division: e.target.value as "adult" | "kids",
+                    belt: "white",
+                  })
+                }
+              >
+                <option value="adult">Adulto</option>
+                <option value="kids">Kids</option>
+              </NativeSelect>
+            </div>
+            <div className="space-y-1.5">
+              <Label>Faixa</Label>
+              <NativeSelect
+                value={form.belt}
+                onChange={(e) => setForm({ ...form, belt: e.target.value })}
+              >
+                {belts.map((b) => (
+                  <option key={b.id} value={b.id}>
+                    {b.label}
+                  </option>
+                ))}
+              </NativeSelect>
+            </div>
+          </div>
+          {form.division === "kids" ? (
+            <div className="space-y-1.5">
+              <Label>Responsável</Label>
+              <Input
+                value={form.guardianName}
+                onChange={(e) => setForm({ ...form, guardianName: e.target.value })}
+              />
+            </div>
+          ) : null}
+          <div className="space-y-1.5">
+            <Label>CPF do pagador</Label>
+            <Input
+              value={formatCpf(form.cpf)}
+              onChange={(e) => setForm({ ...form, cpf: e.target.value })}
+            />
+          </div>
+          <div className="space-y-1.5">
+            <Label>Observações</Label>
+            <Textarea
+              value={form.notes}
+              onChange={(e) => setForm({ ...form, notes: e.target.value })}
+            />
+          </div>
+          <Button type="submit">Salvar ficha</Button>
+        </form>
+      </FormDialog>
+    </>
   );
 }
 

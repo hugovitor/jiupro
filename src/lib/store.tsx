@@ -58,7 +58,7 @@ import { academyPortability } from "./lgpd";
 import { applyOverdueStatus } from "./payment-overdue";
 import { canAddStudent, studentCapMessage } from "./plan-access";
 import { kidsGuardianRequiredError, resolvedEnrollmentDivision } from "./kids-enrollment";
-import { clampPostContent, normalizeStudentPhone } from "./student-live";
+import { clampPersonName, clampPostContent, normalizeStudentPhone } from "./student-live";
 import {
   attendanceDay,
   canonicalStudent,
@@ -202,8 +202,12 @@ type Store = AppState & {
       goingIds?: string[];
     },
   ) => void;
+  updateEvent: (
+    id: string,
+    patch: Partial<Omit<AcademyEvent, "id" | "academyId" | "goingIds">>,
+  ) => void;
   toggleRsvp: (eventId: string, studentId: string) => void;
-  updateMyPhone: (phone: string) => Promise<{ ok: boolean; error?: string }>;
+  updateMyPhone: (phone: string, name?: string) => Promise<{ ok: boolean; error?: string }>;
   removeEvent: (id: string) => void;
   sellItem: (
     studentId: string,
@@ -1186,10 +1190,24 @@ export function StoreProvider({ children }: { children: ReactNode }) {
   }, [hydrated, refreshOverdue, state.academy.id, state.academy.dueDay]);
 
   const updateStudent: Store["updateStudent"] = useCallback((id, patch) => {
-    commit((prev) => ({
-      ...prev,
-      students: prev.students.map((s) => (s.id === id ? { ...s, ...patch } : s)),
-    }));
+    const month = currentMonth();
+    commit((prev) => {
+      const students = prev.students.map((s) => (s.id === id ? { ...s, ...patch } : s));
+      if (typeof patch.monthlyFee !== "number") {
+        return { ...prev, students };
+      }
+      return {
+        ...prev,
+        students,
+        payments: prev.payments.map((p) =>
+          p.studentId === id &&
+          p.month === month &&
+          (p.status === "pending" || p.status === "overdue")
+            ? { ...p, amount: patch.monthlyFee ?? p.amount }
+            : p,
+        ),
+      };
+    });
   }, []);
 
   const convertTrial: Store["convertTrial"] = useCallback((id) => {
@@ -1980,6 +1998,13 @@ export function StoreProvider({ children }: { children: ReactNode }) {
     }));
   }, []);
 
+  const updateEvent: Store["updateEvent"] = useCallback((id, patch) => {
+    commit((prev) => ({
+      ...prev,
+      events: (prev.events ?? []).map((evt) => (evt.id === id ? { ...evt, ...patch } : evt)),
+    }));
+  }, []);
+
   const toggleRsvp: Store["toggleRsvp"] = useCallback((eventId, studentId) => {
     commit((prev) => ({
       ...prev,
@@ -2003,23 +2028,32 @@ export function StoreProvider({ children }: { children: ReactNode }) {
       });
   }, []);
 
-  const updateMyPhone: Store["updateMyPhone"] = useCallback(async (phone) => {
-    const next = normalizeStudentPhone(phone);
+  const updateMyPhone: Store["updateMyPhone"] = useCallback(async (phone, name) => {
+    const nextPhone = normalizeStudentPhone(phone);
+    const nextName = name == null ? undefined : clampPersonName(name);
+    if (nextName !== undefined && nextName.length < 2) {
+      return { ok: false, error: "Informe o seu nome." };
+    }
     const current = getSnapshot();
     if (!current.session) return { ok: false, error: "Entre de novo." };
     if (isLiveRemote(current)) {
       const { error } = (await createSupabaseBrowserClient()?.rpc("update_my_student_profile", {
-        p_phone: next,
+        p_phone: nextPhone,
+        p_name: nextName ?? null,
       })) ?? { error: { message: "O banco da academia não está ligado." } };
       if (error) return { ok: false, error: error.message };
     }
     commit((prev) => ({
       ...prev,
       users: prev.users.map((user) =>
-        user.id === prev.session?.userId ? { ...user, phone: next } : user,
+        user.id === prev.session?.userId
+          ? { ...user, phone: nextPhone, name: nextName ?? user.name }
+          : user,
       ),
       students: prev.students.map((student) =>
-        student.userId === prev.session?.userId ? { ...student, phone: next } : student,
+        student.userId === prev.session?.userId
+          ? { ...student, phone: nextPhone, name: nextName ?? student.name }
+          : student,
       ),
     }));
     return { ok: true };
@@ -2139,6 +2173,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
       attachAsaasCharge,
       applyAsaasPaid,
       addEvent,
+      updateEvent,
       toggleRsvp,
       updateMyPhone,
       removeEvent,
@@ -2203,6 +2238,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
       attachAsaasCharge,
       applyAsaasPaid,
       addEvent,
+      updateEvent,
       toggleRsvp,
       updateMyPhone,
       removeEvent,

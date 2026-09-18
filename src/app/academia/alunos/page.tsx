@@ -25,6 +25,7 @@ import { beltsForDivision } from "@/lib/belts";
 import { formatCpf } from "@/lib/cpf";
 import { brl, currentMonth, isoDate } from "@/lib/format";
 import { canAddStudent, planUsageLabel, studentCapMessage } from "@/lib/plan-access";
+import { normalizeStudentFicha } from "@/lib/student-ficha";
 import { useStore } from "@/lib/store";
 import type { Student, StudentStatus } from "@/lib/types";
 
@@ -200,6 +201,7 @@ function NovoAluno() {
     email: "",
     phone: "",
     guardianName: "",
+    birthDate: "",
     division: "adult" as Student["division"],
     belt: "white",
     monthlyFee: "180",
@@ -274,25 +276,20 @@ function NovoAluno() {
                   toast.error("Nome é obrigatório.");
                   return;
                 }
-                if (form.division === "kids" && !form.guardianName.trim()) {
-                  toast.error("No kids, informe o responsável (LGPD, art. 14).");
+                const next = normalizeStudentFicha({
+                  ...form,
+                  birthDate: form.birthDate || (form.division === "kids" ? "" : "2000-01-01"),
+                });
+                if ("error" in next) {
+                  toast.error(next.error);
                   return;
                 }
                 if (!store.addStudent({
-                  name: form.name.trim(),
-                  email: form.email,
-                  phone: form.phone,
-                  guardianName: form.guardianName.trim() || undefined,
-                  birthDate: "2000-01-01",
-                  division: form.division,
-                  belt: form.belt as Student["belt"],
+                  ...next,
                   stripes: 0,
                   joinDate: isoDate(0),
                   lastPromotionDate: isoDate(0),
                   status: "active",
-                  monthlyFee: Number(form.monthlyFee) || 0,
-                  notes: "",
-                  cpf: form.cpf.replace(/\D/g, ""),
                 })) {
                   toast.error(studentCapMessage(store.academy));
                   return;
@@ -308,6 +305,7 @@ function NovoAluno() {
                   email: "",
                   phone: "",
                   guardianName: "",
+                  birthDate: "",
                   division: "adult",
                   belt: "white",
                   monthlyFee: "180",
@@ -369,6 +367,14 @@ function NovoAluno() {
                     ))}
                   </NativeSelect>
                 </div>
+              </div>
+              <div className="space-y-1.5">
+                <Label>Nascimento</Label>
+                <Input
+                  type="date"
+                  value={form.birthDate}
+                  onChange={(e) => setForm({ ...form, birthDate: e.target.value })}
+                />
               </div>
               {form.division === "kids" ? (
                 <div className="space-y-1.5">

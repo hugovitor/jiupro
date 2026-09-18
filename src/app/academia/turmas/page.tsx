@@ -19,6 +19,7 @@ import { weekdayFull, weekdayName, isoDate, weekdayToday } from "@/lib/format";
 import { attendanceDay } from "@/lib/roster-identity";
 import { useStore } from "@/lib/store";
 import type { ClassSession } from "@/lib/types";
+import { NativeSelect } from "@/components/ui/native-select";
 
 const WEEKDAYS = [
   { value: "0", label: "Domingo" },
@@ -135,6 +136,10 @@ function TurmaDialog({ existing }: { existing?: ClassSession }) {
   const [capacity, setCapacity] = useState(String(existing?.capacity ?? 24));
   const [gi, setGi] = useState(existing?.gi ?? true);
   const [division, setDivision] = useState(existing?.division ?? "adult");
+  const [instructorId, setInstructorId] = useState(
+    existing?.instructorId ?? store.users.find((u) => u.role === "owner")?.id ?? "",
+  );
+  const staff = store.users.filter((u) => u.role === "owner" || u.role === "instructor");
 
   function syncFromExisting() {
     if (!existing) return;
@@ -145,6 +150,9 @@ function TurmaDialog({ existing }: { existing?: ClassSession }) {
     setCapacity(String(existing.capacity));
     setGi(existing.gi);
     setDivision(existing.division);
+    setInstructorId(
+      existing.instructorId || store.users.find((u) => u.role === "owner")?.id || "",
+    );
   }
 
   return (
@@ -178,6 +186,7 @@ function TurmaDialog({ existing }: { existing?: ClassSession }) {
               startTime: time,
               durationMin: mins,
               instructorId:
+                instructorId ||
                 existing?.instructorId ||
                 store.users.find((u) => u.role === "owner")?.id ||
                 "",
@@ -282,6 +291,21 @@ function TurmaDialog({ existing }: { existing?: ClassSession }) {
                 {gi ? "Gi" : "No-Gi"}
               </button>
             </div>
+          </div>
+          <div className="space-y-1.5">
+            <Label>Professor</Label>
+            <NativeSelect
+              value={instructorId}
+              onChange={(e) => setInstructorId(e.target.value)}
+            >
+              {staff.length === 0 ? <option value="">Secretaria</option> : null}
+              {staff.map((user) => (
+                <option key={user.id} value={user.id}>
+                  {user.name}
+                  {user.role === "owner" ? " · dono" : ""}
+                </option>
+              ))}
+            </NativeSelect>
           </div>
           <Button type="submit">{existing ? "Salvar alterações" : "Salvar"}</Button>
         </form>

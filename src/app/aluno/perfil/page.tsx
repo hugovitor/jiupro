@@ -129,7 +129,7 @@ export default function PerfilAluno() {
 
       <FirstLoginHint className="w-full" label="Ver assistente de novo" />
 
-      {student ? <PhoneForm phone={student.phone} /> : null}
+      {student ? <PhoneForm phone={student.phone} name={student.name} /> : null}
 
       {student ? (
         <div className="space-y-2">
@@ -190,9 +190,10 @@ export default function PerfilAluno() {
   );
 }
 
-function PhoneForm({ phone }: { phone: string }) {
+function PhoneForm({ phone, name }: { phone: string; name: string }) {
   const store = useStore();
   const [value, setValue] = useState(phone);
+  const [fullName, setFullName] = useState(name);
   const [busy, setBusy] = useState(false);
 
   return (
@@ -201,15 +202,21 @@ function PhoneForm({ phone }: { phone: string }) {
       onSubmit={async (event) => {
         event.preventDefault();
         setBusy(true);
-        const result = await store.updateMyPhone(value);
+        const result = await store.updateMyPhone(value, fullName);
         setBusy(false);
         if (!result.ok) {
           toast.error(result.error);
           return;
         }
-        toast.success("WhatsApp da ficha atualizado.");
+        toast.success("Ficha atualizada.");
       }}
     >
+      <Label htmlFor="aluno-name">Nome</Label>
+      <Input
+        id="aluno-name"
+        value={fullName}
+        onChange={(e) => setFullName(e.target.value)}
+      />
       <Label htmlFor="aluno-phone">WhatsApp</Label>
       <Input
         id="aluno-phone"
@@ -218,7 +225,7 @@ function PhoneForm({ phone }: { phone: string }) {
         placeholder="(61) 99999-0000"
       />
       <Button type="submit" className="w-full" disabled={busy}>
-        {busy ? "Salvando…" : "Salvar WhatsApp"}
+        {busy ? "Salvando…" : "Salvar ficha"}
       </Button>
     </form>
   );

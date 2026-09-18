@@ -1365,7 +1365,9 @@ $$;
 revoke all on function public.toggle_my_rsvp(uuid) from public;
 grant execute on function public.toggle_my_rsvp(uuid) to authenticated;
 
-create or replace function public.update_my_student_profile(p_phone text)
+drop function if exists public.update_my_student_profile(text);
+
+create or replace function public.update_my_student_profile(p_phone text, p_name text default null)
 returns void
 language plpgsql
 security definer
@@ -1373,21 +1375,30 @@ set search_path = public
 as $$
 declare
   v_phone text := nullif(trim(p_phone), '');
+  v_name text := nullif(trim(p_name), '');
 begin
   if auth.uid() is null then
     raise exception 'Entre de novo.';
   end if;
+  if v_name is not null and char_length(v_name) < 2 then
+    raise exception 'Informe o seu nome.';
+  end if;
+  if v_name is not null and char_length(v_name) > 80 then
+    raise exception 'Nome longo demais.';
+  end if;
   update public.profiles
-    set phone = v_phone
+    set phone = v_phone,
+        name = coalesce(v_name, name)
     where id = auth.uid();
   update public.students
-    set phone = coalesce(v_phone, phone)
+    set phone = coalesce(v_phone, phone),
+        name = coalesce(v_name, name)
     where user_id = auth.uid()
       and academy_id = public.current_academy_id();
 end;
 $$;
 
-revoke all on function public.update_my_student_profile(text) from public;
-grant execute on function public.update_my_student_profile(text) to authenticated;
+revoke all on function public.update_my_student_profile(text, text) from public;
+grant execute on function public.update_my_student_profile(text, text) to authenticated;
 
 notify pgrst, 'reload schema';

@@ -11,8 +11,9 @@ import { Label } from "@/components/ui/label";
 import { NativeSelect } from "@/components/ui/native-select";
 import { brl, formatDay, isoDate } from "@/lib/format";
 import { EVENT_KIND_LABEL } from "@/lib/insights";
+import { normalizeAcademyEvent } from "@/lib/academy-edit";
 import { useStore } from "@/lib/store";
-import type { EventKind } from "@/lib/types";
+import type { AcademyEvent, EventKind } from "@/lib/types";
 import { eventInviteMessage, waHref } from "@/lib/whatsapp";
 
 export default function AgendaPage() {
@@ -33,7 +34,7 @@ export default function AgendaPage() {
             Seminário, campeonato, open mat. Quem confirmou, quem ainda não.
           </p>
         </div>
-        <NovoEvento />
+        <EventoDialog />
       </div>
 
       {upcoming.length === 0 ? (
@@ -83,16 +84,19 @@ function EventCard({ eventId }: { eventId: string }) {
             <p className="mt-2 text-sm text-muted-foreground">{evt.notes}</p>
           )}
         </div>
-        <Button
-          size="sm"
-          variant="ghost"
-          onClick={() => {
-            store.removeEvent(evt.id);
-            toast.message("Evento tirado da agenda.");
-          }}
-        >
-          Tirar
-        </Button>
+        <div className="flex flex-wrap items-start gap-2">
+          <EventoDialog existing={evt} />
+          <Button
+            size="sm"
+            variant="ghost"
+            onClick={() => {
+              store.removeEvent(evt.id);
+              toast.message("Evento tirado da agenda.");
+            }}
+          >
+            Tirar
+          </Button>
+        </div>
       </div>
 
       <p className="mt-4 text-xs text-muted-foreground">
@@ -156,43 +160,73 @@ function EventCard({ eventId }: { eventId: string }) {
   );
 }
 
-function NovoEvento() {
+function EventoDialog({ existing }: { existing?: AcademyEvent }) {
   const store = useStore();
   const [open, setOpen] = useState(false);
-  const [title, setTitle] = useState("");
-  const [kind, setKind] = useState<EventKind>("seminar");
-  const [date, setDate] = useState(isoDate(7));
-  const [time, setTime] = useState("10:00");
-  const [place, setPlace] = useState("Tatame principal");
-  const [fee, setFee] = useState("0");
+  const [title, setTitle] = useState(existing?.title ?? "");
+  const [kind, setKind] = useState<EventKind>(existing?.kind ?? "seminar");
+  const [date, setDate] = useState(existing?.date ?? isoDate(7));
+  const [time, setTime] = useState(existing?.time ?? "10:00");
+  const [place, setPlace] = useState(existing?.place ?? "Tatame principal");
+  const [fee, setFee] = useState(existing ? String(existing.fee) : "0");
+  const [notes, setNotes] = useState(existing?.notes ?? "");
+
+  function sync() {
+    if (!existing) return;
+    setTitle(existing.title);
+    setKind(existing.kind);
+    setDate(existing.date);
+    setTime(existing.time);
+    setPlace(existing.place);
+    setFee(String(existing.fee));
+    setNotes(existing.notes ?? "");
+  }
 
   return (
     <>
-      <Button type="button" onClick={() => setOpen(true)}>
-        Novo evento
+      <Button
+        type="button"
+        size={existing ? "sm" : "default"}
+        variant={existing ? "outline" : "default"}
+        onClick={() => {
+          sync();
+          setOpen(true);
+        }}
+      >
+        {existing ? "Editar" : "Novo evento"}
       </Button>
       <FormDialog
         open={open}
         onClose={() => setOpen(false)}
-        title="Marcar na agenda"
+        title={existing ? "Editar evento" : "Marcar na agenda"}
       >
         <form
           className="grid gap-3"
           onSubmit={(e) => {
             e.preventDefault();
-            if (!title.trim()) return;
-            store.addEvent({
-              title: title.trim(),
+            const next = normalizeAcademyEvent({
+              title,
               kind,
               date,
               time,
               place,
-              notes: "",
-              fee: Number(fee.replace(",", ".")) || 0,
+              notes,
+              fee,
             });
-            toast.success("Evento na agenda.");
+            if ("error" in next) {
+              toast.error(next.error);
+              return;
+            }
+            if (existing) {
+              store.updateEvent(existing.id, next);
+              toast.success("Evento atualizado.");
+            } else {
+              store.addEvent(next);
+              toast.success("Evento na agenda.");
+              setTitle("");
+              setNotes("");
+            }
             setOpen(false);
-            setTitle("");
           }}
         >
           <div className="space-y-1.5">
@@ -240,7 +274,11 @@ function NovoEvento() {
             <Label>Local</Label>
             <Input value={place} onChange={(e) => setPlace(e.target.value)} />
           </div>
-          <Button type="submit">Salvar</Button>
+          <div className="space-y-1.5">
+            <Label>Recado</Label>
+            <Input value={notes} onChange={(e) => setNotes(e.target.value)} />
+          </div>
+          <Button type="submit">{existing ? "Salvar alterações" : "Salvar"}</Button>
         </form>
       </FormDialog>
     </>
