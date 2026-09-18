@@ -2,6 +2,7 @@ import { firstName, waHref } from "@/lib/whatsapp";
 import { publicAppUrl } from "@/lib/app-url";
 import { looksLikeHouseCode, studentJoinUrl } from "@/lib/join-code";
 import { ACADEMY_MEMBERSHIP_SQL } from "@/lib/memberships";
+import { STUDENT_LIVE_SQL } from "@/lib/student-live";
 import type { Academy, Student } from "@/lib/types";
 
 export type PublicAcademyJoin = {
@@ -640,7 +641,7 @@ $$;
 
 revoke all on function public.academy_for_member() from public;
 grant execute on function public.academy_for_member() to authenticated;
-` + ACADEMY_MEMBERSHIP_SQL + `
+` + ACADEMY_MEMBERSHIP_SQL + STUDENT_LIVE_SQL + `
 notify pgrst, 'reload schema';
 `;
 

@@ -85,11 +85,28 @@ export function InviteInstructorForm() {
         Supabase.
       </p>
       {instructors.length > 0 ? (
-        <ul className="mt-3 space-y-1 text-sm">
+        <ul className="mt-3 space-y-2 text-sm">
           {instructors.map((user) => (
-            <li key={user.id}>
-              {user.name}
-              <span className="text-muted-foreground"> · {user.email}</span>
+            <li key={user.id} className="flex items-center justify-between gap-3">
+              <span>
+                {user.name}
+                <span className="text-muted-foreground"> · {user.email}</span>
+              </span>
+              <Button
+                type="button"
+                size="sm"
+                variant="outline"
+                onClick={async () => {
+                  const result = await store.removeInstructor(user.id);
+                  if (!result.ok) {
+                    toast.error(result.error);
+                    return;
+                  }
+                  toast.success(`${user.name.split(" ")[0]} saiu da equipe.`);
+                }}
+              >
+                Tirar
+              </Button>
             </li>
           ))}
         </ul>

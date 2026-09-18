@@ -17,7 +17,7 @@ export function postgresUriFromEnv() {
   return "";
 }
 
-const SCHEMA_VERSION = "2026-09-17-academy-memberships";
+const SCHEMA_VERSION = "2026-09-18-student-live";
 let appliedVersion = "";
 let inFlight: Promise<boolean> | null = null;
 
@@ -48,7 +48,7 @@ export async function ensureStudentJoinSchema(): Promise<{
 }
 
 export function isMissingStudentJoinRpc(message?: string) {
-  return /lookup_academy_join|search_academy_join|join_academy_as_student|academy_for_member|list_my_academies|switch_academy|list_house_staff|academy_memberships|PGRST202|does not exist|schema cache/i.test(
+  return /lookup_academy_join|search_academy_join|join_academy_as_student|academy_for_member|list_my_academies|switch_academy|list_house_staff|academy_memberships|add_my_post|toggle_my_post_like|remove_my_post|toggle_my_rsvp|update_my_student_profile|PGRST202|does not exist|schema cache/i.test(
     message ?? "",
   );
 }

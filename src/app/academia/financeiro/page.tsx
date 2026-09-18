@@ -160,7 +160,7 @@ function FinanceiroPage() {
             {store.expenses
             .filter((e) => e.date.startsWith(month))
             .map((e) => (
-              <div key={e.id} className="flex justify-between">
+              <div key={e.id} className="flex items-center justify-between gap-3">
                 <span>
                   {e.description}
                   <span className="text-muted-foreground">
@@ -168,7 +168,19 @@ function FinanceiroPage() {
                     · {EXPENSE_LABEL[e.category] ?? e.category}
                   </span>
                 </span>
-                <span>{brl(e.amount)}</span>
+                <span className="flex items-center gap-2">
+                  <span>{brl(e.amount)}</span>
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    onClick={() => {
+                      store.removeExpense(e.id);
+                      toast.success("Despesa apagada.");
+                    }}
+                  >
+                    Tirar
+                  </Button>
+                </span>
               </div>
             ))}
           {store.expenses.filter((e) => e.date.startsWith(month)).length === 0 && (

@@ -79,7 +79,7 @@ function EstoquePage() {
               <p className="mt-2 text-sm text-muted-foreground">
                 Custo {brl(item.cost)} · venda {brl(item.price)}
               </p>
-              <div className="mt-3 flex gap-2">
+              <div className="mt-3 flex flex-wrap gap-2">
                 <VenderItem itemId={item.id} disabled={item.quantity < 1} />
                 <Button
                   size="sm"
@@ -90,6 +90,26 @@ function EstoquePage() {
                   }}
                 >
                   +5 compra
+                </Button>
+                <Button
+                  size="sm"
+                  variant="outline"
+                  onClick={() => {
+                    store.updateInventory(item.id, { quantity: 0 });
+                    toast.message("Estoque zerado.");
+                  }}
+                >
+                  Zerar
+                </Button>
+                <Button
+                  size="sm"
+                  variant="outline"
+                  onClick={() => {
+                    store.removeInventory(item.id);
+                    toast.success("Item saiu da prateleira.");
+                  }}
+                >
+                  Tirar
                 </Button>
               </div>
             </article>

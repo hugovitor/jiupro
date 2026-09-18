@@ -54,13 +54,31 @@ export default function AlunoMural() {
               {formatTime(p.createdAt)}
             </p>
             <p className="mt-2 text-sm leading-relaxed">{p.content}</p>
-            <button
-              type="button"
-              className="mt-3 text-xs text-primary"
-              onClick={() => store.toggleLike(p.id)}
-            >
-              Curtir · {p.likedBy.length}
-            </button>
+            <div className="mt-3 flex items-center gap-3">
+              <button
+                type="button"
+                className="text-xs text-primary"
+                onClick={() => store.toggleLike(p.id)}
+              >
+                Curtir · {p.likedBy.length}
+              </button>
+              {p.authorId === store.session?.userId ? (
+                <button
+                  type="button"
+                  className="text-xs text-white/40 hover:text-red-400"
+                  onClick={async () => {
+                    const result = await store.removePost(p.id);
+                    if (!result.ok) {
+                      toast.error(result.error);
+                      return;
+                    }
+                    toast.success("Recado apagado.");
+                  }}
+                >
+                  Apagar
+                </button>
+              ) : null}
+            </div>
           </article>
         ))}
       </div>
