@@ -1,7 +1,6 @@
 "use client";
 
-import { BeltMark } from "@/components/brand";
-import { PRODUCT_MARK } from "@/lib/brand";
+import { PRODUCT_LOGO_SRC, PRODUCT_NAME } from "@/lib/brand";
 
 export default function GlobalError({
   reset,
@@ -26,11 +25,12 @@ export default function GlobalError({
           padding: 24,
         }}
       >
-        <div style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: 28 }}>
-          <BeltMark />
-          <span style={{ fontWeight: 900, letterSpacing: "-0.04em", fontSize: 18 }}>
-            {PRODUCT_MARK}
-          </span>
+        <div style={{ marginBottom: 28 }}>
+          <img
+            src={PRODUCT_LOGO_SRC}
+            alt={PRODUCT_NAME}
+            style={{ height: 36, width: "auto", maxWidth: 196, objectFit: "contain" }}
+          />
         </div>
         <p
           style={{

@@ -1,5 +1,6 @@
 "use client";
 
+import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 import { BeltBadge, PersonAvatar } from "@/components/belt-badge";
@@ -7,6 +8,8 @@ import { AcademyMark } from "@/components/brand";
 import { FirstLoginHint } from "@/components/first-login-guide";
 import { InstallPwaButton } from "@/components/install-pwa-button";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 import { brl, currentMonth, formatDate } from "@/lib/format";
 import { hasFeature } from "@/lib/plan-access";
 import { currentStudent, useStore } from "@/lib/store";
@@ -126,6 +129,8 @@ export default function PerfilAluno() {
 
       <FirstLoginHint className="w-full" label="Ver assistente de novo" />
 
+      {student ? <PhoneForm phone={student.phone} name={student.name} /> : null}
+
       {student ? (
         <div className="space-y-2">
           <Button
@@ -182,5 +187,46 @@ export default function PerfilAluno() {
         Sair
       </Button>
     </div>
+  );
+}
+
+function PhoneForm({ phone, name }: { phone: string; name: string }) {
+  const store = useStore();
+  const [value, setValue] = useState(phone);
+  const [fullName, setFullName] = useState(name);
+  const [busy, setBusy] = useState(false);
+
+  return (
+    <form
+      className="space-y-2 border border-border bg-card p-4"
+      onSubmit={async (event) => {
+        event.preventDefault();
+        setBusy(true);
+        const result = await store.updateMyPhone(value, fullName);
+        setBusy(false);
+        if (!result.ok) {
+          toast.error(result.error);
+          return;
+        }
+        toast.success("Ficha atualizada.");
+      }}
+    >
+      <Label htmlFor="aluno-name">Nome</Label>
+      <Input
+        id="aluno-name"
+        value={fullName}
+        onChange={(e) => setFullName(e.target.value)}
+      />
+      <Label htmlFor="aluno-phone">WhatsApp</Label>
+      <Input
+        id="aluno-phone"
+        value={value}
+        onChange={(e) => setValue(e.target.value)}
+        placeholder="(61) 99999-0000"
+      />
+      <Button type="submit" className="w-full" disabled={busy}>
+        {busy ? "Salvando…" : "Salvar ficha"}
+      </Button>
+    </form>
   );
 }

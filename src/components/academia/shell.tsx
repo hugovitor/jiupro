@@ -177,7 +177,7 @@ export function AcademiaShell({ children }: { children: React.ReactNode }) {
     document.addEventListener("visibilitychange", onVis);
     return () => document.removeEventListener("visibilitychange", onVis);
     // eslint-disable-next-line react-hooks/exhaustive-deps -- once per academy load
-  }, [store.hydrated, store.academy.id]);
+  }, [store.hydrated, store.academy.id, store.academy.name, store.academy.city, store.academy.phone]);
 
   function logout() {
     store.logout();

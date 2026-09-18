@@ -1,6 +1,6 @@
 import Link from "next/link";
-import { PRODUCT_MARK, PRODUCT_NAME } from "@/lib/brand";
-import { BeltMark } from "./belt-mark";
+import { PRODUCT_NAME } from "@/lib/brand";
+import { ProductLogo } from "./product-logo";
 import { SUPPORT_PHONE_DISPLAY, supportWhatsAppHref } from "@/lib/support";
 
 const DEFAULT_LINKS = [
@@ -19,9 +19,8 @@ export function SiteFooter({
     <footer className="bg-[#070707]">
       <div className="mx-auto flex max-w-7xl flex-col gap-8 px-5 py-10 lg:px-8">
         <div className="flex flex-col justify-between gap-6 sm:flex-row sm:items-center">
-          <div className="flex items-center gap-3">
-            <BeltMark />
-            <span className="text-lg font-black">{PRODUCT_MARK}</span>
+          <div className="flex items-center">
+            <ProductLogo decorative={false} />
           </div>
           <div className="flex flex-wrap gap-6 text-xs text-white/40">
             {links.map((link) => (

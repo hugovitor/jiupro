@@ -2,6 +2,8 @@ export const PRODUCT_NAME = "TatameX";
 export const PRODUCT_MARK = "TATAMEX";
 export const PRODUCT_TAGLINE = "Gestão no tatame";
 export const PRODUCT_BLURB = "sistema de gestão para academias de Jiu-Jitsu";
+export const PRODUCT_LOGO_SRC = "/tatamex-mark.png";
+export const PRODUCT_ICON_SRC = "/icon.png";
 
 export const CONTROLLER_NAME = "Hugo Vitor";
 export const CONTROLLER_EMAIL = "hugovitormnunes@gmail.com";

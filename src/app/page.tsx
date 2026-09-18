@@ -17,8 +17,8 @@ import {
   Wallet,
 } from "lucide-react";
 import {
-  BeltMark,
   Eyebrow,
+  ProductLogo,
   SectionHeading,
   SiteFooter,
   SiteHeader,
@@ -700,7 +700,7 @@ function PhonePreview() {
                 </p>
                 <p className="mt-2 text-lg font-black">Adultos Gi</p>
               </div>
-              <BeltMark />
+              <ProductLogo className="h-6 max-w-[120px] sm:h-6" />
             </div>
             <div className="mt-7 flex items-end justify-between">
               <p className="font-mono text-4xl font-black tracking-[-0.06em]">19:30</p>

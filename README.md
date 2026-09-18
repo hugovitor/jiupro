@@ -1,10 +1,12 @@
 # TatameX
 
-Sistema de gestão para academias de Jiu-Jitsu (antes chamado JiuPro). Site e painel no mesmo visual: canvas preto, faixa preta com ponteira vermelha e tipografia pesada. Cada academia tem a sua conta. Os alunos confirmam a aula no celular; o professor valida quem treinou.
+Sistema de gestão para academias de Jiu-Jitsu (antes chamado JiuPro). Site e painel no mesmo visual: canvas preto e a marca TatameX branca com o X vermelho. Cada academia tem a sua conta. Os alunos confirmam a aula no celular; o professor valida quem treinou.
 
 Feito para o dono que treina de manhã e administra de noite: mensalidades em atraso, aluno que some, graduação com critério (tempo + presença) e estoque de kimono.
 
 ## O que já funciona nesta fatia
+
+- **Ficha editável** — nome, WhatsApp, e-mail, mensalidade, faixa, nascimento e responsável. Mudou o valor, a cobrança aberta do mês acompanha.
 
 - **Painel da academia** — alunos, faixas/graus, turmas, chamada, financeiro, estoque, mural e plano
 - **Cobranças agora** — WhatsApp + chave Pix da academia + baixa manual (Asaas entra depois)
@@ -60,7 +62,7 @@ Projeto **novo e vazio** é o esperado. O Dashboard não cria as tabelas do Tata
 5. Authentication → Providers → Email: deixe **Confirm email ligado**. O cadastro da academia e do aluno confirma no servidor; um POST solto não cria conta confirmada.
 6. Authentication → URL Configuration: Redirect URLs deve incluir `https://tatamex.vercel.app/atualizar-senha` (senha esquecida). Em Email Templates → Reset password, use o link com `token_hash` para o aluno abrir noutro aparelho.
 7. Opcional, mas recomendado: Authentication → SMTP Settings com Resend/SES. Sem isso, “esqueci a senha” também cai na cota de 2–4 e-mails/hora.
-8. **Rode de novo o `supabase/schema.sql`** no SQL Editor depois de atualizar o app (ficha só por e-mail, várias unidades no mesmo login, aluno não lê Stripe, duas abas não se sobrescrevem).
+8. **Rode de novo o `supabase/schema.sql`** no SQL Editor depois de atualizar o app (ficha só por e-mail, várias unidades no mesmo login, mural/agenda do aluno no banco, aluno grava nome e WhatsApp da ficha, aluno não lê Stripe, duas abas não se sobrescrevem).
 9. Na sua academia (não na demo): **Enviar esta academia**
 10. App do aluno: o dono cadastra a ficha **com o e-mail** e manda o link. Quem tiver só o WhatsApp do aluno **não** reivindica a ficha. Se `DATABASE_URL` estiver no servidor, o app aplica o SQL do convite sozinho.
 

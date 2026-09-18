@@ -17,6 +17,7 @@ export default function EvolucaoPage() {
   const months = monthsBetween(student.lastPromotionDate);
   const att = attendanceInDays(store, student.id, 90);
   const history = store.graduations.filter((g) => g.studentId === student.id);
+  const notes = (store.evaluations ?? []).filter((e) => e.studentId === student.id);
   const need = monthsForNextStep(student);
   const timeProgress = Math.min(100, Math.round((months / Math.max(need, 1)) * 100));
   const attNeed = student.division === "kids" || student.stripes < 4 ? 12 : 20;
@@ -73,6 +74,30 @@ export default function EvolucaoPage() {
               </p>
               <p className="text-xs text-muted-foreground">
                 {formatDate(g.date)} · {g.notes}
+              </p>
+            </div>
+          ))}
+        </div>
+      </section>
+
+      <section>
+        <h2 className="mb-3 font-display text-sm text-muted-foreground">
+          Notas do professor
+        </h2>
+        <div className="space-y-3">
+          {notes.length === 0 && (
+            <p className="text-sm text-muted-foreground">
+              Ainda não tem avaliação no tatame.
+            </p>
+          )}
+          {notes.map((e) => (
+            <div key={e.id} className="border-l-2 border-primary/50 pl-3">
+              <p className="text-sm font-medium">
+                {e.instructorName}
+                {e.recommendPromotion ? " · indicou graduação" : ""}
+              </p>
+              <p className="text-xs text-muted-foreground">
+                {formatDate(e.date)} · {e.notes}
               </p>
             </div>
           ))}

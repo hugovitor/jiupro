@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect } from "react";
-import { PRODUCT_NAME } from "@/lib/brand";
+import { PRODUCT_ICON_SRC, PRODUCT_NAME } from "@/lib/brand";
 import { shortAcademyName, studentAppTitle } from "@/lib/academy-brand";
 import { hasFeature } from "@/lib/plan-access";
 import { useStore } from "@/lib/store";
@@ -28,9 +28,9 @@ function setManifest(academyName: string, logo: string, tagline: string) {
     lang: "pt-BR",
     icons: [
       {
-        src: logo || "/icon.svg",
-        sizes: logo ? "256x256" : "any",
-        type: logo?.startsWith("data:image/svg") || logo?.endsWith(".svg") ? "image/svg+xml" : logo ? "image/png" : "image/svg+xml",
+        src: logo || PRODUCT_ICON_SRC,
+        sizes: logo ? "256x256" : "512x512",
+        type: logo?.startsWith("data:image/svg") || logo?.endsWith(".svg") ? "image/svg+xml" : "image/png",
         purpose: "any",
       },
     ],

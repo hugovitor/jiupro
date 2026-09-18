@@ -10,8 +10,9 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { NativeSelect } from "@/components/ui/native-select";
 import { brl } from "@/lib/format";
+import { normalizeInventoryItem } from "@/lib/academy-edit";
 import { useStore } from "@/lib/store";
-import type { InventoryCategory } from "@/lib/types";
+import type { InventoryCategory, InventoryItem } from "@/lib/types";
 
 const CAT: Record<InventoryCategory, string> = {
   kimono: "Kimono",
@@ -79,8 +80,9 @@ function EstoquePage() {
               <p className="mt-2 text-sm text-muted-foreground">
                 Custo {brl(item.cost)} · venda {brl(item.price)}
               </p>
-              <div className="mt-3 flex gap-2">
+              <div className="mt-3 flex flex-wrap gap-2">
                 <VenderItem itemId={item.id} disabled={item.quantity < 1} />
+                <EditarItem item={item} />
                 <Button
                   size="sm"
                   variant="outline"
@@ -90,6 +92,26 @@ function EstoquePage() {
                   }}
                 >
                   +5 compra
+                </Button>
+                <Button
+                  size="sm"
+                  variant="outline"
+                  onClick={() => {
+                    store.updateInventory(item.id, { quantity: 0 });
+                    toast.message("Estoque zerado.");
+                  }}
+                >
+                  Zerar
+                </Button>
+                <Button
+                  size="sm"
+                  variant="outline"
+                  onClick={() => {
+                    store.removeInventory(item.id);
+                    toast.success("Item saiu da prateleira.");
+                  }}
+                >
+                  Tirar
                 </Button>
               </div>
             </article>
@@ -175,12 +197,195 @@ function VenderItem({ itemId, disabled }: { itemId: string; disabled?: boolean }
   );
 }
 
+function EditarItem({ item }: { item: InventoryItem }) {
+  const store = useStore();
+  const [open, setOpen] = useState(false);
+  const [name, setName] = useState(item.name);
+  const [sku, setSku] = useState(item.sku);
+  const [category, setCategory] = useState<InventoryCategory>(item.category);
+  const [size, setSize] = useState(item.size ?? "");
+  const [qty, setQty] = useState(String(item.quantity));
+  const [minQty, setMinQty] = useState(String(item.minQuantity));
+  const [cost, setCost] = useState(String(item.cost));
+  const [price, setPrice] = useState(String(item.price));
+
+  function sync() {
+    setName(item.name);
+    setSku(item.sku);
+    setCategory(item.category);
+    setSize(item.size ?? "");
+    setQty(String(item.quantity));
+    setMinQty(String(item.minQuantity));
+    setCost(String(item.cost));
+    setPrice(String(item.price));
+  }
+
+  return (
+    <>
+      <Button
+        size="sm"
+        variant="outline"
+        onClick={() => {
+          sync();
+          setOpen(true);
+        }}
+      >
+        Editar
+      </Button>
+      <FormDialog open={open} onClose={() => setOpen(false)} title="Editar item">
+        <InventoryForm
+          name={name}
+          sku={sku}
+          category={category}
+          size={size}
+          qty={qty}
+          minQty={minQty}
+          cost={cost}
+          price={price}
+          onName={setName}
+          onSku={setSku}
+          onCategory={setCategory}
+          onSize={setSize}
+          onQty={setQty}
+          onMinQty={setMinQty}
+          onCost={setCost}
+          onPrice={setPrice}
+          submitLabel="Salvar alterações"
+          onSubmit={() => {
+            const next = normalizeInventoryItem({
+              name,
+              sku,
+              category,
+              size,
+              quantity: qty,
+              minQuantity: minQty,
+              cost,
+              price,
+            });
+            if ("error" in next) {
+              toast.error(next.error);
+              return false;
+            }
+            store.updateInventory(item.id, next);
+            toast.success("Item atualizado.");
+            setOpen(false);
+            return true;
+          }}
+        />
+      </FormDialog>
+    </>
+  );
+}
+
+function InventoryForm({
+  name,
+  sku,
+  category,
+  size,
+  qty,
+  minQty,
+  cost,
+  price,
+  onName,
+  onSku,
+  onCategory,
+  onSize,
+  onQty,
+  onMinQty,
+  onCost,
+  onPrice,
+  submitLabel,
+  onSubmit,
+}: {
+  name: string;
+  sku: string;
+  category: InventoryCategory;
+  size: string;
+  qty: string;
+  minQty: string;
+  cost: string;
+  price: string;
+  onName: (v: string) => void;
+  onSku: (v: string) => void;
+  onCategory: (v: InventoryCategory) => void;
+  onSize: (v: string) => void;
+  onQty: (v: string) => void;
+  onMinQty: (v: string) => void;
+  onCost: (v: string) => void;
+  onPrice: (v: string) => void;
+  submitLabel: string;
+  onSubmit: () => boolean;
+}) {
+  return (
+    <form
+      className="grid gap-3"
+      onSubmit={(e) => {
+        e.preventDefault();
+        onSubmit();
+      }}
+    >
+      <div className="space-y-1.5">
+        <Label>Nome</Label>
+        <Input value={name} onChange={(e) => onName(e.target.value)} />
+      </div>
+      <div className="grid grid-cols-2 gap-2">
+        <div className="space-y-1.5">
+          <Label>Categoria</Label>
+          <NativeSelect
+            value={category}
+            onChange={(e) => onCategory(e.target.value as InventoryCategory)}
+          >
+            {(Object.keys(CAT) as InventoryCategory[]).map((k) => (
+              <option key={k} value={k}>
+                {CAT[k]}
+              </option>
+            ))}
+          </NativeSelect>
+        </div>
+        <div className="space-y-1.5">
+          <Label>Tamanho</Label>
+          <Input value={size} onChange={(e) => onSize(e.target.value)} />
+        </div>
+      </div>
+      <div className="grid grid-cols-3 gap-2">
+        <div className="space-y-1.5">
+          <Label>SKU</Label>
+          <Input value={sku} onChange={(e) => onSku(e.target.value)} />
+        </div>
+        <div className="space-y-1.5">
+          <Label>Qtd</Label>
+          <Input value={qty} onChange={(e) => onQty(e.target.value)} />
+        </div>
+        <div className="space-y-1.5">
+          <Label>Mínimo</Label>
+          <Input value={minQty} onChange={(e) => onMinQty(e.target.value)} />
+        </div>
+      </div>
+      <div className="grid grid-cols-2 gap-2">
+        <div className="space-y-1.5">
+          <Label>Custo</Label>
+          <Input value={cost} onChange={(e) => onCost(e.target.value)} />
+        </div>
+        <div className="space-y-1.5">
+          <Label>Preço</Label>
+          <Input value={price} onChange={(e) => onPrice(e.target.value)} />
+        </div>
+      </div>
+      <Button type="submit">{submitLabel}</Button>
+    </form>
+  );
+}
+
 function NovoItem() {
   const store = useStore();
   const [open, setOpen] = useState(false);
   const [name, setName] = useState("");
   const [sku, setSku] = useState("");
+  const [category, setCategory] = useState<InventoryCategory>("kimono");
+  const [size, setSize] = useState("");
   const [qty, setQty] = useState("4");
+  const [minQty, setMinQty] = useState("2");
+  const [cost, setCost] = useState("0");
   const [price, setPrice] = useState("100");
 
   return (
@@ -193,46 +398,48 @@ function NovoItem() {
         onClose={() => setOpen(false)}
         title="Entrada no estoque"
       >
-        <form
-          className="grid gap-3"
-          onSubmit={(e) => {
-            e.preventDefault();
-            if (!name.trim()) return;
-            store.addInventory({
-              name: name.trim(),
-              sku: sku || name.slice(0, 6).toUpperCase(),
-              category: "other",
-              quantity: Number(qty) || 0,
-              minQuantity: 2,
-              cost: 0,
-              price: Number(price) || 0,
+        <InventoryForm
+          name={name}
+          sku={sku}
+          category={category}
+          size={size}
+          qty={qty}
+          minQty={minQty}
+          cost={cost}
+          price={price}
+          onName={setName}
+          onSku={setSku}
+          onCategory={setCategory}
+          onSize={setSize}
+          onQty={setQty}
+          onMinQty={setMinQty}
+          onCost={setCost}
+          onPrice={setPrice}
+          submitLabel="Salvar"
+          onSubmit={() => {
+            const next = normalizeInventoryItem({
+              name,
+              sku,
+              category,
+              size,
+              quantity: qty,
+              minQuantity: minQty,
+              cost,
+              price,
             });
+            if ("error" in next) {
+              toast.error(next.error);
+              return false;
+            }
+            store.addInventory(next);
             toast.success("Item no estoque.");
             setOpen(false);
             setName("");
             setSku("");
+            setSize("");
+            return true;
           }}
-        >
-          <div className="space-y-1.5">
-            <Label>Nome</Label>
-            <Input value={name} onChange={(e) => setName(e.target.value)} />
-          </div>
-          <div className="grid grid-cols-3 gap-2">
-            <div className="space-y-1.5">
-              <Label>SKU</Label>
-              <Input value={sku} onChange={(e) => setSku(e.target.value)} />
-            </div>
-            <div className="space-y-1.5">
-              <Label>Qtd</Label>
-              <Input value={qty} onChange={(e) => setQty(e.target.value)} />
-            </div>
-            <div className="space-y-1.5">
-              <Label>Preço</Label>
-              <Input value={price} onChange={(e) => setPrice(e.target.value)} />
-            </div>
-          </div>
-          <Button type="submit">Salvar</Button>
-        </form>
+        />
       </FormDialog>
     </>
   );

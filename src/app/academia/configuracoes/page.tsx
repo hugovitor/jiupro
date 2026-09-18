@@ -13,6 +13,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { PRODUCT_NAME } from "@/lib/brand";
+import { normalizeAcademyHouse } from "@/lib/academy-edit";
 import { downloadJson } from "@/lib/lgpd";
 import { startPlanCheckout } from "@/lib/billing";
 import { brl } from "@/lib/format";
@@ -135,26 +136,7 @@ function ConfigInner() {
 
       <section className="border border-border bg-card p-5">
         <h2 className="font-medium">Academia</h2>
-        <dl className="mt-3 space-y-2 text-sm">
-          <div className="flex justify-between gap-4">
-            <dt className="text-muted-foreground">Nome</dt>
-            <dd>{store.academy.name}</dd>
-          </div>
-          <div className="flex justify-between gap-4">
-            <dt className="text-muted-foreground">Cidade</dt>
-            <dd>
-              {store.academy.city}/{store.academy.state}
-            </dd>
-          </div>
-          <div className="flex justify-between gap-4">
-            <dt className="text-muted-foreground">Endereço</dt>
-            <dd className="text-right">{store.academy.address}</dd>
-          </div>
-          <div className="flex justify-between gap-4">
-            <dt className="text-muted-foreground">Instagram</dt>
-            <dd>{store.academy.instagram}</dd>
-          </div>
-        </dl>
+        <HouseForm />
       </section>
 
       <PixForm />
@@ -309,6 +291,102 @@ export default function ConfigPage() {
     <Suspense>
       <ConfigInner />
     </Suspense>
+  );
+}
+
+function HouseForm() {
+  const store = useStore();
+  const [name, setName] = useState(store.academy.name);
+  const [city, setCity] = useState(
+    store.academy.state ? `${store.academy.city}, ${store.academy.state}` : store.academy.city,
+  );
+  const [address, setAddress] = useState(store.academy.address);
+  const [phone, setPhone] = useState(store.academy.phone);
+  const [instagram, setInstagram] = useState(store.academy.instagram);
+  const [monthlyGoal, setMonthlyGoal] = useState(
+    store.academy.monthlyGoal ? String(store.academy.monthlyGoal) : "",
+  );
+
+  return (
+    <>
+      <p className="mt-1 text-sm text-muted-foreground">
+        Nome, cidade, WhatsApp da secretaria e a meta que o financeiro usa.
+      </p>
+      <form
+        className="mt-4 grid gap-3 sm:grid-cols-2"
+        onSubmit={(event) => {
+          event.preventDefault();
+          const next = normalizeAcademyHouse({
+            name,
+            city,
+            address,
+            phone,
+            instagram,
+            monthlyGoal,
+          });
+          if ("error" in next) {
+            toast.error(next.error);
+            return;
+          }
+          store.updateAcademy(next);
+          toast.success("Dados da academia salvos.");
+        }}
+      >
+        <div className="space-y-1.5 sm:col-span-2">
+          <Label htmlFor="house-name">Nome</Label>
+          <Input id="house-name" value={name} onChange={(e) => setName(e.target.value)} />
+        </div>
+        <div className="space-y-1.5">
+          <Label htmlFor="house-city">Cidade</Label>
+          <Input
+            id="house-city"
+            value={city}
+            onChange={(e) => setCity(e.target.value)}
+            placeholder="Brasília, DF"
+          />
+        </div>
+        <div className="space-y-1.5">
+          <Label htmlFor="house-phone">WhatsApp da academia</Label>
+          <Input
+            id="house-phone"
+            value={phone}
+            onChange={(e) => setPhone(e.target.value)}
+            placeholder="(61) 99999-0000"
+          />
+        </div>
+        <div className="space-y-1.5 sm:col-span-2">
+          <Label htmlFor="house-address">Endereço</Label>
+          <Input
+            id="house-address"
+            value={address}
+            onChange={(e) => setAddress(e.target.value)}
+            placeholder="Rua, número, bairro"
+          />
+        </div>
+        <div className="space-y-1.5">
+          <Label htmlFor="house-ig">Instagram</Label>
+          <Input
+            id="house-ig"
+            value={instagram}
+            onChange={(e) => setInstagram(e.target.value)}
+            placeholder="@suaequipe"
+          />
+        </div>
+        <div className="space-y-1.5">
+          <Label htmlFor="house-goal">Meta mensal (R$)</Label>
+          <Input
+            id="house-goal"
+            value={monthlyGoal}
+            onChange={(e) => setMonthlyGoal(e.target.value)}
+            placeholder="15000"
+            inputMode="decimal"
+          />
+        </div>
+        <div className="sm:col-span-2">
+          <Button type="submit">Salvar academia</Button>
+        </div>
+      </form>
+    </>
   );
 }
 

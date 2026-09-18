@@ -73,13 +73,29 @@ function MuralPage() {
               </span>
             </div>
             <p className="mt-2 text-sm leading-relaxed">{p.content}</p>
-            <button
-              type="button"
-              className="mt-3 text-xs text-muted-foreground hover:text-primary"
-              onClick={() => store.toggleLike(p.id)}
-            >
-              {p.likedBy.length} curtiram
-            </button>
+            <div className="mt-3 flex items-center gap-3">
+              <button
+                type="button"
+                className="text-xs text-muted-foreground hover:text-primary"
+                onClick={() => store.toggleLike(p.id)}
+              >
+                {p.likedBy.length} curtiram
+              </button>
+              <button
+                type="button"
+                className="text-xs text-muted-foreground hover:text-red-400"
+                onClick={async () => {
+                  const result = await store.removePost(p.id);
+                  if (!result.ok) {
+                    toast.error(result.error);
+                    return;
+                  }
+                  toast.success("Recado apagado.");
+                }}
+              >
+                Apagar
+              </button>
+            </div>
           </article>
         ))}
       </div>

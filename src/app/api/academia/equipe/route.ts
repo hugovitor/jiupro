@@ -163,3 +163,70 @@ Depois: ${publicAppUrl()}/login`;
     phone,
   });
 }
+
+export async function DELETE(request: Request) {
+  const token = bearerToken(request);
+  if (!token) return NextResponse.json({ error: "Entre de novo." }, { status: 401 });
+  const user = await userFromToken(token);
+  if (!user?.id) return NextResponse.json({ error: "Entre de novo." }, { status: 401 });
+
+  const admin = supabaseAdmin();
+  if (!admin) {
+    return NextResponse.json(
+      { error: "Convite online precisa do Supabase neste deploy." },
+      { status: 503 },
+    );
+  }
+
+  const owner = await admin
+    .from("profiles")
+    .select("academy_id, role")
+    .eq("id", user.id)
+    .maybeSingle();
+  if (owner.data?.role !== "owner" || !owner.data.academy_id) {
+    return NextResponse.json({ error: "Só o dono tira professor." }, { status: 403 });
+  }
+
+  let body: { userId?: string };
+  try {
+    body = (await request.json()) as typeof body;
+  } catch {
+    body = {};
+  }
+  const userId = String(body.userId ?? "").trim();
+  if (!userId) return NextResponse.json({ error: "Informe o professor." }, { status: 400 });
+  if (userId === user.id) {
+    return NextResponse.json({ error: "Você não tira a si mesmo da equipe." }, { status: 400 });
+  }
+
+  await admin
+    .from("academy_memberships")
+    .delete()
+    .eq("user_id", userId)
+    .eq("academy_id", owner.data.academy_id)
+    .eq("role", "instructor");
+
+  const remaining = await admin
+    .from("academy_memberships")
+    .select("academy_id, role")
+    .eq("user_id", userId)
+    .order("created_at", { ascending: true });
+  const next = remaining.data?.[0];
+  const profile = await admin
+    .from("profiles")
+    .select("academy_id, role")
+    .eq("id", userId)
+    .maybeSingle();
+  if (profile.data?.academy_id === owner.data.academy_id) {
+    if (next?.academy_id) {
+      await admin
+        .from("profiles")
+        .update({ academy_id: next.academy_id, role: next.role })
+        .eq("id", userId);
+    } else {
+      await admin.from("profiles").update({ role: "student" }).eq("id", userId);
+    }
+  }
+
+  return NextResponse.json({ ok: true, userId });
+}

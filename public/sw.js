@@ -1,6 +1,6 @@
 self.addEventListener("install", (event) => {
   event.waitUntil(
-    caches.open("tatamex-aluno-v1").then((cache) => cache.addAll(["/aluno", "/icon.svg"])),
+    caches.open("tatamex-aluno-v2").then((cache) => cache.addAll(["/aluno", "/icon.png"])),
   );
   self.skipWaiting();
 });
@@ -8,7 +8,7 @@ self.addEventListener("install", (event) => {
 self.addEventListener("activate", (event) => {
   event.waitUntil(
     caches.keys().then((keys) =>
-      Promise.all(keys.filter((key) => key !== "tatamex-aluno-v1").map((key) => caches.delete(key))),
+      Promise.all(keys.filter((key) => key !== "tatamex-aluno-v2").map((key) => caches.delete(key))),
     ),
   );
   self.clients.claim();

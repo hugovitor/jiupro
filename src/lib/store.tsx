@@ -57,8 +57,9 @@ import { attendanceStatus, classHeadcount, isOnRoster, isValidated, studentCanSe
 import { academyPortability } from "./lgpd";
 import { applyOverdueStatus } from "./payment-overdue";
 import { canAddStudent, studentCapMessage } from "./plan-access";
-import { kidsGuardianRequiredError, resolvedEnrollmentDivision } from "./kids-enrollment";
 import { canCreateAnotherHouse } from "./memberships";
+import { kidsGuardianRequiredError, resolvedEnrollmentDivision } from "./kids-enrollment";
+import { clampPersonName, clampPostContent, normalizeStudentPhone } from "./student-live";
 import {
   attendanceDay,
   canonicalStudent,
@@ -136,6 +137,7 @@ type Store = AppState & {
   addStudent: (input: Omit<Student, "id" | "academyId" | "userId" | "avatarHue">) => boolean;
   importStudents: (rows: Omit<Student, "id" | "academyId" | "userId" | "avatarHue">[]) => number;
   addInstructor: (input: { id?: string; name: string; email: string; phone: string }) => void;
+  removeInstructor: (userId: string) => Promise<{ ok: boolean; error?: string }>;
   refreshOverdue: () => number;
   updateStudent: (id: string, patch: Partial<Student>) => void;
   convertTrial: (id: string) => void;
@@ -155,7 +157,10 @@ type Store = AppState & {
   addStripe: (studentId: string) => void;
   adjustStock: (id: string, delta: number) => void;
   addInventory: (item: Omit<InventoryItem, "id" | "academyId">) => void;
+  updateInventory: (id: string, patch: Partial<Omit<InventoryItem, "id" | "academyId">>) => void;
+  removeInventory: (id: string) => void;
   addPost: (content: string) => void;
+  removePost: (postId: string) => Promise<{ ok: boolean; error?: string }>;
   toggleLike: (postId: string) => void;
   changePlan: (plan: PlanId) => void;
   lastAttendance: (studentId: string) => Attendance | undefined;
@@ -179,6 +184,7 @@ type Store = AppState & {
     amount: number;
     date: string;
   }) => void;
+  removeExpense: (id: string) => void;
   waivePayment: (id: string) => void;
   attachAsaasCharge: (
     paymentId: string,
@@ -197,7 +203,12 @@ type Store = AppState & {
       goingIds?: string[];
     },
   ) => void;
+  updateEvent: (
+    id: string,
+    patch: Partial<Omit<AcademyEvent, "id" | "academyId" | "goingIds">>,
+  ) => void;
   toggleRsvp: (eventId: string, studentId: string) => void;
+  updateMyPhone: (phone: string, name?: string) => Promise<{ ok: boolean; error?: string }>;
   removeEvent: (id: string) => void;
   sellItem: (
     studentId: string,
@@ -270,6 +281,14 @@ function adoptRemote(state: AppState) {
   const next = persist(state, false);
   cached = next;
   emit();
+}
+
+function isLiveRemote(state: AppState) {
+  return isSupabaseConfigured() && state.academy.id !== DEMO_ACADEMY_ID;
+}
+
+function isLiveStudent(state: AppState) {
+  return isLiveRemote(state) && state.session?.role === "student";
 }
 
 async function retractStudentCheckIn(session: ClassSession): Promise<{ ok: boolean; error?: string }> {
@@ -1120,6 +1139,40 @@ export function StoreProvider({ children }: { children: ReactNode }) {
     });
   }, []);
 
+  const removeInstructor: Store["removeInstructor"] = useCallback(async (userId) => {
+    const current = getSnapshot();
+    const row = current.users.find((user) => user.id === userId);
+    if (!row || row.role !== "instructor") {
+      return { ok: false, error: "Professor não encontrado." };
+    }
+    if (row.id === current.session?.userId) {
+      return { ok: false, error: "Você não tira a si mesmo da equipe." };
+    }
+    if (isLiveRemote(current)) {
+      const client = createSupabaseBrowserClient();
+      const token = client ? await ensureBrowserAuthSession(client) : null;
+      if (!token) return { ok: false, error: "Entre de novo para tirar o professor." };
+      const res = await fetch("/api/academia/equipe", {
+        method: "DELETE",
+        headers: {
+          Authorization: `Bearer ${token}`,
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ userId }),
+      }).catch(() => null);
+      const data = (await res?.json().catch(() => ({}))) as { error?: string };
+      if (!res?.ok) return { ok: false, error: data.error || "Não tirou o professor agora." };
+    }
+    commit((prev) => ({
+      ...prev,
+      users: prev.users.filter((user) => user.id !== userId),
+      classes: prev.classes.map((klass) =>
+        klass.instructorId === userId ? { ...klass, instructorId: "" } : klass,
+      ),
+    }));
+    return { ok: true };
+  }, []);
+
   const refreshOverdue: Store["refreshOverdue"] = useCallback(() => {
     let changed = 0;
     commit((prev) => {
@@ -1138,10 +1191,24 @@ export function StoreProvider({ children }: { children: ReactNode }) {
   }, [hydrated, refreshOverdue, state.academy.id, state.academy.dueDay]);
 
   const updateStudent: Store["updateStudent"] = useCallback((id, patch) => {
-    commit((prev) => ({
-      ...prev,
-      students: prev.students.map((s) => (s.id === id ? { ...s, ...patch } : s)),
-    }));
+    const month = currentMonth();
+    commit((prev) => {
+      const students = prev.students.map((s) => (s.id === id ? { ...s, ...patch } : s));
+      if (typeof patch.monthlyFee !== "number") {
+        return { ...prev, students };
+      }
+      return {
+        ...prev,
+        students,
+        payments: prev.payments.map((p) =>
+          p.studentId === id &&
+          p.month === month &&
+          (p.status === "pending" || p.status === "overdue")
+            ? { ...p, amount: patch.monthlyFee ?? p.amount }
+            : p,
+        ),
+      };
+    });
   }, []);
 
   const convertTrial: Store["convertTrial"] = useCallback((id) => {
@@ -1503,22 +1570,92 @@ export function StoreProvider({ children }: { children: ReactNode }) {
     }));
   }, []);
 
+  const updateInventory: Store["updateInventory"] = useCallback((id, patch) => {
+    commit((prev) => ({
+      ...prev,
+      inventory: prev.inventory.map((item) =>
+        item.id === id
+          ? {
+              ...item,
+              ...patch,
+              quantity:
+                patch.quantity == null ? item.quantity : Math.max(0, patch.quantity),
+            }
+          : item,
+      ),
+    }));
+  }, []);
+
+  const removeInventory: Store["removeInventory"] = useCallback((id) => {
+    commit((prev) => ({
+      ...prev,
+      inventory: prev.inventory.filter((item) => item.id !== id),
+    }));
+  }, []);
+
   const addPost: Store["addPost"] = useCallback((content) => {
+    const body = clampPostContent(content);
+    if (body.length < 2) return;
+    const localId = uid("po");
     commit((prev) => {
       const user = prev.users.find((u) => u.id === prev.session?.userId);
-      if (!user) return prev;
+      const student = prev.students.find((s) => s.userId === prev.session?.userId);
+      const who = user
+        ? { id: user.id, name: user.name, role: user.role }
+        : prev.session
+          ? {
+              id: prev.session.userId,
+              name: student?.name ?? "Aluno",
+              role: prev.session.role,
+            }
+          : null;
+      if (!who) return prev;
       const post: Post = {
-        id: uid("po"),
+        id: localId,
         academyId: prev.academy.id,
-        authorId: user.id,
-        authorName: user.name,
-        authorRole: user.role,
-        content,
+        authorId: who.id,
+        authorName: who.name,
+        authorRole: who.role,
+        content: body,
         createdAt: new Date().toISOString(),
         likedBy: [],
       };
       return { ...prev, posts: [post, ...prev.posts] };
     });
+    const current = getSnapshot();
+    if (!isLiveStudent(current)) return;
+    void createSupabaseBrowserClient()
+      ?.rpc("add_my_post", { p_content: body })
+      .then(({ data, error }) => {
+        if (error) {
+          toast.error(error.message);
+          commit((prev) => ({ ...prev, posts: prev.posts.filter((p) => p.id !== localId) }));
+          return;
+        }
+        const remoteId = String(data ?? "");
+        if (!remoteId) return;
+        commit((prev) => ({
+          ...prev,
+          posts: prev.posts.map((p) => (p.id === localId ? { ...p, id: remoteId } : p)),
+        }));
+      });
+  }, []);
+
+  const removePost: Store["removePost"] = useCallback(async (postId) => {
+    const current = getSnapshot();
+    const post = current.posts.find((item) => item.id === postId);
+    if (!post) return { ok: false, error: "Recado não encontrado." };
+    const mine = post.authorId === current.session?.userId;
+    const staff = current.session?.role === "owner" || current.session?.role === "instructor";
+    if (!mine && !staff) return { ok: false, error: "Só quem escreveu ou a equipe apaga." };
+    if (isLiveRemote(current)) {
+      const { error } = (await createSupabaseBrowserClient()?.rpc("remove_my_post", {
+        p_post_id: postId,
+      })) ?? { error: { message: "O banco da academia não está ligado." } };
+      if (error) return { ok: false, error: error.message };
+    }
+    commit((prev) => ({ ...prev, posts: prev.posts.filter((item) => item.id !== postId) }));
+    return { ok: true };
   }, []);
 
   const toggleLike: Store["toggleLike"] = useCallback((postId) => {
@@ -1539,6 +1676,13 @@ export function StoreProvider({ children }: { children: ReactNode }) {
         }),
       };
     });
+    const current = getSnapshot();
+    if (!isLiveStudent(current)) return;
+    void createSupabaseBrowserClient()
+      ?.rpc("toggle_my_post_like", { p_post_id: postId })
+      .then(({ error }) => {
+        if (error) toast.error(error.message);
+      });
   }, []);
 
   const changePlan: Store["changePlan"] = useCallback((plan) => {
@@ -1785,6 +1929,13 @@ export function StoreProvider({ children }: { children: ReactNode }) {
     });
   }, []);
 
+  const removeExpense: Store["removeExpense"] = useCallback((id) => {
+    commit((prev) => ({
+      ...prev,
+      expenses: prev.expenses.filter((item) => item.id !== id),
+    }));
+  }, []);
+
   const waivePayment: Store["waivePayment"] = useCallback((id) => {
     commit((prev) => ({
       ...prev,
@@ -1848,6 +1999,13 @@ export function StoreProvider({ children }: { children: ReactNode }) {
     }));
   }, []);
 
+  const updateEvent: Store["updateEvent"] = useCallback((id, patch) => {
+    commit((prev) => ({
+      ...prev,
+      events: (prev.events ?? []).map((evt) => (evt.id === id ? { ...evt, ...patch } : evt)),
+    }));
+  }, []);
+
   const toggleRsvp: Store["toggleRsvp"] = useCallback((eventId, studentId) => {
     commit((prev) => ({
       ...prev,
@@ -1859,6 +2017,47 @@ export function StoreProvider({ children }: { children: ReactNode }) {
         return { ...evt, goingIds: going };
       }),
     }));
+    const current = getSnapshot();
+    const mine = current.students.find(
+      (student) => student.id === studentId && student.userId === current.session?.userId,
+    );
+    if (!isLiveStudent(current) || !mine) return;
+    void createSupabaseBrowserClient()
+      ?.rpc("toggle_my_rsvp", { p_event_id: eventId })
+      .then(({ error }) => {
+        if (error) toast.error(error.message);
+      });
+  }, []);
+
+  const updateMyPhone: Store["updateMyPhone"] = useCallback(async (phone, name) => {
+    const nextPhone = normalizeStudentPhone(phone);
+    const nextName = name == null ? undefined : clampPersonName(name);
+    if (nextName !== undefined && nextName.length < 2) {
+      return { ok: false, error: "Informe o seu nome." };
+    }
+    const current = getSnapshot();
+    if (!current.session) return { ok: false, error: "Entre de novo." };
+    if (isLiveRemote(current)) {
+      const { error } = (await createSupabaseBrowserClient()?.rpc("update_my_student_profile", {
+        p_phone: nextPhone,
+        p_name: nextName ?? null,
+      })) ?? { error: { message: "O banco da academia não está ligado." } };
+      if (error) return { ok: false, error: error.message };
+    }
+    commit((prev) => ({
+      ...prev,
+      users: prev.users.map((user) =>
+        user.id === prev.session?.userId
+          ? { ...user, phone: nextPhone, name: nextName ?? user.name }
+          : user,
+      ),
+      students: prev.students.map((student) =>
+        student.userId === prev.session?.userId
+          ? { ...student, phone: nextPhone, name: nextName ?? student.name }
+          : student,
+      ),
+    }));
+    return { ok: true };
   }, []);
 
   const removeEvent: Store["removeEvent"] = useCallback((id) => {
@@ -1932,6 +2131,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
       addStudent,
       importStudents,
       addInstructor,
+      removeInstructor,
       refreshOverdue,
       updateStudent,
       convertTrial,
@@ -1947,7 +2147,10 @@ export function StoreProvider({ children }: { children: ReactNode }) {
       addStripe,
       adjustStock,
       addInventory,
+      updateInventory,
+      removeInventory,
       addPost,
+      removePost,
       toggleLike,
       changePlan,
       lastAttendance,
@@ -1966,11 +2169,14 @@ export function StoreProvider({ children }: { children: ReactNode }) {
       republishPendingCheckIns,
       generateMonthCharges,
       addExpense,
+      removeExpense,
       waivePayment,
       attachAsaasCharge,
       applyAsaasPaid,
       addEvent,
+      updateEvent,
       toggleRsvp,
+      updateMyPhone,
       removeEvent,
       sellItem,
       addDropIn,
@@ -1990,6 +2196,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
       addStudent,
       importStudents,
       addInstructor,
+      removeInstructor,
       refreshOverdue,
       updateStudent,
       convertTrial,
@@ -2005,7 +2212,10 @@ export function StoreProvider({ children }: { children: ReactNode }) {
       addStripe,
       adjustStock,
       addInventory,
+      updateInventory,
+      removeInventory,
       addPost,
+      removePost,
       toggleLike,
       changePlan,
       lastAttendance,
@@ -2024,11 +2234,14 @@ export function StoreProvider({ children }: { children: ReactNode }) {
       republishPendingCheckIns,
       generateMonthCharges,
       addExpense,
+      removeExpense,
       waivePayment,
       attachAsaasCharge,
       applyAsaasPaid,
       addEvent,
+      updateEvent,
       toggleRsvp,
+      updateMyPhone,
       removeEvent,
       sellItem,
       addDropIn,

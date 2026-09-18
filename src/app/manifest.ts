@@ -1,5 +1,5 @@
 import type { MetadataRoute } from "next";
-import { PRODUCT_NAME } from "@/lib/brand";
+import { PRODUCT_ICON_SRC, PRODUCT_NAME } from "@/lib/brand";
 
 export default function manifest(): MetadataRoute.Manifest {
   return {
@@ -13,15 +13,15 @@ export default function manifest(): MetadataRoute.Manifest {
     lang: "pt-BR",
     icons: [
       {
-        src: "/icon.svg",
-        sizes: "any",
-        type: "image/svg+xml",
+        src: PRODUCT_ICON_SRC,
+        sizes: "512x512",
+        type: "image/png",
         purpose: "any",
       },
       {
-        src: "/icon.svg",
-        sizes: "any",
-        type: "image/svg+xml",
+        src: PRODUCT_ICON_SRC,
+        sizes: "512x512",
+        type: "image/png",
         purpose: "maskable",
       },
     ],
