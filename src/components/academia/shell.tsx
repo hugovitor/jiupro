@@ -246,11 +246,11 @@ export function AcademiaShell({ children }: { children: React.ReactNode }) {
             <Button
               variant="outline"
               size="sm"
-              className="hidden border-white/15 text-white/70 hover:bg-white/10 hover:text-white sm:inline-flex"
+              className="border-white/15 text-white/70 hover:bg-white/10 hover:text-white"
               render={<Link href="/operacao" />}
             >
               <Shield className="size-3.5" />
-              TatameX
+              Central
             </Button>
           ) : null}
           <div className="hidden text-right sm:block">
