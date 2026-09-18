@@ -58,7 +58,7 @@ export default function OperacaoPage() {
       if (!res.ok) {
         setError(data.error ?? "Não carregou o painel.");
         setOverview(null);
-        setForbidden(res.status === 403);
+        setForbidden(res.status === 401 || res.status === 403);
         return;
       }
       setForbidden(false);
@@ -113,6 +113,14 @@ export default function OperacaoPage() {
     );
   }
 
+  if (loading && !overview) {
+    return (
+      <DarkCanvas className="flex min-h-screen items-center justify-center text-sm text-white/40">
+        Abrindo central…
+      </DarkCanvas>
+    );
+  }
+
   const data = overview ?? EMPTY_OVERVIEW;
 
   return (
@@ -145,23 +153,6 @@ export default function OperacaoPage() {
           </p>
         </div>
 
-        <nav className="flex flex-wrap gap-2">
-          {OPERATOR_SECTIONS.map((item) => (
-            <button
-              key={item.id}
-              type="button"
-              onClick={() => setSection(item.id)}
-              className={`rounded-xl border px-3 py-2 text-sm font-bold ${
-                section === item.id
-                  ? "border-red-500 bg-red-500/10 text-white"
-                  : "border-white/10 bg-white/[0.03] text-white/60 hover:text-white"
-              }`}
-            >
-              {item.label}
-            </button>
-          ))}
-        </nav>
-
         {loading ? (
           <p className="flex items-center gap-2 text-sm text-white/40">
             <LoaderCircle className="h-4 w-4 animate-spin text-red-500" />
@@ -170,28 +161,48 @@ export default function OperacaoPage() {
         ) : null}
         {error ? <p className="text-sm text-red-400">{error}</p> : null}
 
-        {section === "visao" ? (
-          <OperatorOverviewPanel
-            stats={data.stats}
-            leads={data.leads}
-            onOpenSection={(id) => setSection(id)}
-          />
-        ) : null}
-        {section === "academias" ? (
-          <OperatorAcademiesBoard email={email} academies={data.academies} onChanged={load} />
-        ) : null}
-        {section === "planilha" ? <OperatorLeadsBoard email={email} /> : null}
-        {section === "cupons" ? (
-          <OperatorCouponsPanel
-            email={email}
-            stripe={overview?.stripe ?? false}
-            trialLabel={overview?.trialLabel ?? null}
-            codes={data.codes}
-            onChanged={load}
-          />
-        ) : null}
-        {section === "sistema" ? (
-          <OperatorSystemPanel email={email} health={data.health} />
+        {!loading && overview ? (
+          <>
+            <nav className="flex flex-wrap gap-2">
+              {OPERATOR_SECTIONS.map((item) => (
+                <button
+                  key={item.id}
+                  type="button"
+                  onClick={() => setSection(item.id)}
+                  className={`rounded-xl border px-3 py-2 text-sm font-bold ${
+                    section === item.id
+                      ? "border-red-500 bg-red-500/10 text-white"
+                      : "border-white/10 bg-white/[0.03] text-white/60 hover:text-white"
+                  }`}
+                >
+                  {item.label}
+                </button>
+              ))}
+            </nav>
+            {section === "visao" ? (
+              <OperatorOverviewPanel
+                stats={data.stats}
+                leads={data.leads}
+                onOpenSection={(id) => setSection(id)}
+              />
+            ) : null}
+            {section === "academias" ? (
+              <OperatorAcademiesBoard email={email} academies={data.academies} onChanged={load} />
+            ) : null}
+            {section === "planilha" ? <OperatorLeadsBoard email={email} /> : null}
+            {section === "cupons" ? (
+              <OperatorCouponsPanel
+                email={email}
+                stripe={overview.stripe}
+                trialLabel={overview.trialLabel}
+                codes={data.codes}
+                onChanged={load}
+              />
+            ) : null}
+            {section === "sistema" ? (
+              <OperatorSystemPanel email={email} health={data.health} />
+            ) : null}
+          </>
         ) : null}
       </div>
     </DarkCanvas>
