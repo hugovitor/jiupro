@@ -1,6 +1,6 @@
 # TatameX
 
-Sistema de gestão para academias de Jiu-Jitsu (antes chamado JiuPro). Site e painel no mesmo visual: canvas preto, faixa preta com ponteira vermelha e tipografia pesada. Cada academia tem a sua conta. Os alunos confirmam a aula no celular; o professor valida quem treinou.
+Sistema de gestão para academias de Jiu-Jitsu (antes chamado JiuPro). Site e painel no mesmo visual: canvas preto e a marca TatameX branca com o X vermelho. Cada academia tem a sua conta. Os alunos confirmam a aula no celular; o professor valida quem treinou.
 
 Feito para o dono que treina de manhã e administra de noite: mensalidades em atraso, aluno que some, graduação com critério (tempo + presença) e estoque de kimono.
 

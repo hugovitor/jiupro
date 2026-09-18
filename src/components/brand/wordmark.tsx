@@ -1,7 +1,7 @@
 import Link from "next/link";
-import { PRODUCT_MARK, PRODUCT_NAME, PRODUCT_TAGLINE } from "@/lib/brand";
+import { PRODUCT_NAME, PRODUCT_TAGLINE } from "@/lib/brand";
 import { cn } from "@/lib/utils";
-import { BeltMark } from "./belt-mark";
+import { ProductLogo } from "./product-logo";
 
 export function Wordmark({
   href = "/",
@@ -15,28 +15,18 @@ export function Wordmark({
   className?: string;
 }) {
   const mark = (
-    <span className={cn("inline-flex items-center gap-3", className)}>
-      <BeltMark />
-      <span>
+    <span className={cn("inline-flex flex-col items-start", className)}>
+      <ProductLogo decorative={Boolean(href)} />
+      {kicker ? (
         <span
           className={cn(
-            "block text-lg font-black tracking-[-0.04em]",
-            inverted ? "text-white" : "text-[#111]",
+            "mt-1 text-[8px] font-semibold tracking-[0.32em] uppercase",
+            inverted ? "text-white/40" : "text-black/40",
           )}
         >
-          {PRODUCT_MARK}
+          {PRODUCT_TAGLINE}
         </span>
-        {kicker ? (
-          <span
-            className={cn(
-              "block text-[8px] font-semibold tracking-[0.32em] uppercase",
-              inverted ? "text-white/40" : "text-black/40",
-            )}
-          >
-            {PRODUCT_TAGLINE}
-          </span>
-        ) : null}
-      </span>
+      ) : null}
     </span>
   );
 
