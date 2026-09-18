@@ -177,7 +177,7 @@ STRIPE_WEBHOOK_SECRET=whsec_…
 
 Cadastro novo entra com **30 dias grátis** (cartão na hora, primeira fatura depois). Para desligar: `NEXT_PUBLIC_STRIPE_TRIAL_DAYS=0`. Para um cupom automático em todo cadastro, sem o cliente digitar: `STRIPE_SIGNUP_PROMO=SEUCODIGO`. Código digitado no cadastro vale no lugar do mês grátis.
 
-O dono do TatameX gerencia a planilha de academias (Maps → Zap), cupons e contas no ar em `/operacao` (e-mail `hugovitormnunes@gmail.com`, ou `JIUPRO_OPERATOR_EMAILS`). Cupom ligado a um e-mail entra sozinho no cadastro dessa pessoa. A tabela `operator_leads` precisa existir no projeto — o painel mostra o SQL se ainda faltar.
+O dono do TatameX opera a central em `/operacao` (e-mail `hugovitormnunes@gmail.com`, ou `TATAMEX_OPERATOR_EMAILS`): visão (academias, alunos, recorrência, retornos), academias no ar (mudar plano, liberar/travar, WhatsApp), planilha Maps → Zap, cupons e o que está ligado neste deploy. Cupom ligado a um e-mail entra sozinho no cadastro dessa pessoa. A tabela `operator_leads` precisa existir no projeto — o painel mostra o SQL se ainda faltar.
 
 `STRIPE_PRICE_*` é opcional. Asaas continua só para mensalidade do aluno.
 
