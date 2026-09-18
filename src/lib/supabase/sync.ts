@@ -4,10 +4,11 @@ import { passwordResetUrl, isLocalOrigin, publicAppUrl } from "../app-url";
 import { mapAuthError } from "../auth-errors";
 import { looksLikeHouseCode } from "../join-code";
 import { isStudentJoinNotFound, preferredJoinCode, STUDENT_JOIN_NOT_FOUND, type PublicAcademyJoin } from "../student-join";
+import { mapHouseMembership } from "../memberships";
 import { ensureUuidState, rehomeAcademy, stateToTables, tablesToState } from "./mapper";
 import { ensureBrowserAuthSession } from "./session";
 import { DEMO_ACADEMY_ID } from "../seed";
-import type { AppState, Role, Session } from "../types";
+import type { AppState, HouseMembership, Role, Session } from "../types";
 import { isUuid } from "./ids";
 
 const OPTIONAL_COLUMNS = [
@@ -117,6 +118,54 @@ export function clearRemoteSnapshot() {
 function previousIds(table: keyof Omit<RemoteTableSnapshot, "academyId" | "revision">, academyId: string) {
   if (!remoteSnapshot || remoteSnapshot.academyId !== academyId) return [];
   return remoteSnapshot[table];
+}
+
+export async function listMyHouses(client?: SupabaseClient | null): Promise<HouseMembership[]> {
+  const db = client ?? createSupabaseBrowserClient();
+  if (!db) return [];
+  const { data, error } = await db.rpc("list_my_academies");
+  if (error) return [];
+  return ((data ?? []) as Record<string, unknown>[])
+    .map((row) => mapHouseMembership(row))
+    .filter((row): row is HouseMembership => Boolean(row));
+}
+
+export async function switchRemoteHouse(academyId: string): Promise<AppState | { error: string }> {
+  const client = createSupabaseBrowserClient();
+  if (!client) return { error: "Não foi possível abrir a academia." };
+  const { error } = await client.rpc("switch_academy", { p_academy_id: academyId });
+  if (error) return { error: error.message };
+  const { data: userData } = await client.auth.getUser();
+  const user = userData.user;
+  if (!user) return { error: "Entre de novo." };
+  const { data: profile } = await client
+    .from("profiles")
+    .select("id, academy_id, role")
+    .eq("id", user.id)
+    .maybeSingle();
+  if (!profile?.academy_id) return { error: "Academia não encontrada." };
+  return pullAcademyState({
+    userId: user.id,
+    academyId: String(profile.academy_id),
+    role: ((profile.role as Role | undefined) || "student") as Role,
+  });
+}
+
+async function mergeHouseStaff(
+  client: SupabaseClient,
+  academyId: string,
+  profiles: Record<string, unknown>[],
+) {
+  const staff = await client.rpc("list_house_staff");
+  if (staff.error || !Array.isArray(staff.data)) return profiles;
+  const byId = new Map(profiles.map((row) => [String(row.id), { ...row }]));
+  for (const row of staff.data as Record<string, unknown>[]) {
+    const id = String(row.id ?? "").trim();
+    if (!id) continue;
+    const prev = byId.get(id) ?? {};
+    byId.set(id, { ...prev, ...row, academy_id: academyId, role: row.role });
+  }
+  return [...byId.values()];
 }
 
 function isMissingRelation(error: { message?: string; code?: string } | null) {
@@ -387,6 +436,7 @@ export async function pullAcademyState(session: Session): Promise<AppState | { e
     events,
     sales,
     dropIns,
+    houseRows,
   ] = await Promise.all([
     loadAcademyRecord(client, academyId, isStudent),
     client.from("profiles").select("*").eq("academy_id", academyId),
@@ -410,6 +460,7 @@ export async function pullAcademyState(session: Session): Promise<AppState | { e
     isStudent
       ? Promise.resolve({ data: [], error: null })
       : client.from("drop_ins").select("*").eq("academy_id", academyId),
+    listMyHouses(client),
   ]);
 
   if (academy.error) return { error: academy.error.message };
@@ -441,6 +492,10 @@ export async function pullAcademyState(session: Session): Promise<AppState | { e
   if (profiles.error && !isMissingRelation(profiles.error)) {
     return { error: profiles.error.message };
   }
+
+  const profileRows = isStudent
+    ? ((profiles.data ?? []) as Record<string, unknown>[])
+    : await mergeHouseStaff(client, academyId, (profiles.data ?? []) as Record<string, unknown>[]);
 
   const postIds = (posts.data ?? []).map((p: { id: string }) => String(p.id));
   const eventIds = (events.data ?? []).map((e: { id: string }) => String(e.id));
@@ -488,7 +543,7 @@ export async function pullAcademyState(session: Session): Promise<AppState | { e
 
   return tablesToState({
     academy: academy.data,
-    profiles: profiles.data ?? [],
+    profiles: profileRows,
     students: studentRows,
     classes: classes.data ?? [],
     attendance: attendance.data ?? [],
@@ -504,6 +559,18 @@ export async function pullAcademyState(session: Session): Promise<AppState | { e
     sales: sales.data ?? [],
     dropIns: dropIns.data ?? [],
     session,
+    houses: houseRows.length
+      ? houseRows
+      : [
+          {
+            id: academyId,
+            name: String((academy.data as { name?: string }).name ?? ""),
+            slug: String((academy.data as { slug?: string }).slug ?? ""),
+            city: String((academy.data as { city?: string }).city ?? ""),
+            state: String((academy.data as { state?: string }).state ?? ""),
+            role: session.role,
+          },
+        ],
   });
 }
 

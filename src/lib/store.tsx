@@ -28,6 +28,7 @@ import {
   resumeRemoteSession,
   scheduleRemotePush,
   signInRemote,
+  switchRemoteHouse,
 } from "./supabase/sync";
 import { createSupabaseBrowserClient } from "./supabase/client";
 import { ensureBrowserAuthSession } from "./supabase/session";
@@ -57,6 +58,7 @@ import { academyPortability } from "./lgpd";
 import { applyOverdueStatus } from "./payment-overdue";
 import { canAddStudent, studentCapMessage } from "./plan-access";
 import { kidsGuardianRequiredError, resolvedEnrollmentDivision } from "./kids-enrollment";
+import { canCreateAnotherHouse } from "./memberships";
 import {
   attendanceDay,
   canonicalStudent,
@@ -109,6 +111,13 @@ type Store = AppState & {
   logout: () => void;
   resetDemo: () => void;
   registerAcademy: (input: RegisterInput) => Promise<LoginResult>;
+  switchHouse: (academyId: string) => Promise<LoginResult>;
+  openAnotherHouse: (input: {
+    name: string;
+    city: string;
+    state?: string;
+    plan?: PlanId;
+  }) => Promise<LoginResult>;
   registerStudent: (input: {
     code: string;
     slug?: string;
@@ -702,6 +711,85 @@ export function StoreProvider({ children }: { children: ReactNode }) {
     return { ok: true, role: "owner", academyId: academy.academy.id };
   }, [login]);
 
+  const switchHouse = useCallback(async (academyId: string): Promise<LoginResult> => {
+    const current = getSnapshot();
+    if (!academyId) return { ok: false, error: "Escolha a academia." };
+    if (current.academy.id === academyId) {
+      return { ok: true, role: current.session?.role ?? "student", academyId };
+    }
+    if (current.academy.id === DEMO_ACADEMY_ID || !isSupabaseConfigured()) {
+      return { ok: false, error: "A demonstração tem só uma academia." };
+    }
+    if (!current.session) return { ok: false, error: "Entre de novo." };
+    pushCancel?.();
+    if (usesDatabase(current.academy.id)) {
+      await pushAcademyState(current);
+    }
+    clearRemoteSnapshot();
+    const switched = await switchRemoteHouse(academyId);
+    if ("error" in switched) return { ok: false, error: switched.error };
+    adoptRemote(switched);
+    return {
+      ok: true,
+      role: switched.session?.role ?? "student",
+      academyId: switched.academy.id,
+    };
+  }, []);
+
+  const openAnotherHouse = useCallback(async (input: {
+    name: string;
+    city: string;
+    state?: string;
+    plan?: PlanId;
+  }): Promise<LoginResult> => {
+    const current = getSnapshot();
+    if (current.academy.id === DEMO_ACADEMY_ID) {
+      return {
+        ok: false,
+        error: "Na demonstração não dá para abrir outra unidade. Cadastre a sua academia.",
+      };
+    }
+    if (!canCreateAnotherHouse(current.session?.role, current.houses)) {
+      return { ok: false, error: "Só a equipe abre outra unidade." };
+    }
+    const name = input.name.trim();
+    const place = input.city.trim();
+    if (!name || !place) {
+      return { ok: false, error: "Informe o nome e a cidade da nova unidade." };
+    }
+    const placeMatch = place.match(/^(.*?),\s*([A-Za-z]{2})$/);
+    const city = placeMatch ? placeMatch[1] : place;
+    const uf =
+      input.state ?? (placeMatch ? placeMatch[2].toUpperCase() : current.academy.state || "SP");
+    const slug = uniqueSlug(name, [
+      ...takenSlugs(),
+      current.academy.slug,
+      ...current.houses.map((house) => house.slug),
+    ]);
+    const ownerName =
+      current.users.find((user) => user.id === current.session?.userId)?.name || name;
+    const created = await createAcademyForCurrentUser({
+      name,
+      slug,
+      city,
+      state: uf,
+      plan: input.plan || current.academy.plan || "essencial",
+      ownerName,
+    });
+    if ("error" in created && created.error) return { ok: false, error: created.error };
+    if (!created.academyId) return { ok: false, error: "Não criou a unidade." };
+    if (!current.session) return { ok: false, error: "Entre de novo." };
+    clearRemoteSnapshot();
+    const pulled = await pullAcademyState({
+      userId: current.session.userId,
+      academyId: created.academyId,
+      role: "owner",
+    });
+    if ("error" in pulled) return { ok: false, error: pulled.error };
+    adoptRemote(pulled);
+    return { ok: true, role: "owner", academyId: pulled.academy.id };
+  }, []);
+
   const registerStudent = useCallback(async (input: {
     code: string;
     slug?: string;
@@ -775,14 +863,11 @@ export function StoreProvider({ children }: { children: ReactNode }) {
       return { ok: false, error: "Academia não encontrada. Busque o nome da sua academia." };
     }
     const across = findUserAcrossAcademies(email);
-    if (across && across.state.academy.id !== house.academy.id) {
-      return {
-        ok: false,
-        error: "Este e-mail já pertence a outra academia. Use outro e-mail no app do aluno.",
-      };
+    if (across && across.user.role !== "student" && across.state.academy.id === house.academy.id) {
+      return { ok: false, error: "Este e-mail já é da equipe da academia. Use outro no app do aluno." };
     }
     const existingUser = house.users.find((user) => user.email.toLowerCase() === email);
-    if ((existingUser && existingUser.role !== "student") || (across && across.user.role !== "student")) {
+    if (existingUser && existingUser.role !== "student") {
       return { ok: false, error: "Este e-mail já é da equipe da academia. Use outro no app do aluno." };
     }
     if (existingUser && !checkPassword(email, input.password) && hasLocalPassword(email)) {
@@ -1839,6 +1924,8 @@ export function StoreProvider({ children }: { children: ReactNode }) {
       logout,
       resetDemo,
       registerAcademy,
+      switchHouse,
+      openAnotherHouse,
       registerStudent,
       syncNow,
       pullNow,
@@ -1895,6 +1982,8 @@ export function StoreProvider({ children }: { children: ReactNode }) {
       logout,
       resetDemo,
       registerAcademy,
+      switchHouse,
+      openAnotherHouse,
       registerStudent,
       syncNow,
       pullNow,

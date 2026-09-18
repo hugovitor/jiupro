@@ -53,6 +53,15 @@ export type Session = {
   role: Role;
 };
 
+export type HouseMembership = {
+  id: string;
+  name: string;
+  slug: string;
+  city: string;
+  state: string;
+  role: Role;
+};
+
 export type Academy = {
   id: string;
   name: string;
@@ -269,4 +278,5 @@ export type AppState = {
   sales: Sale[];
   dropIns: DropIn[];
   session: Session | null;
+  houses: HouseMembership[];
 };

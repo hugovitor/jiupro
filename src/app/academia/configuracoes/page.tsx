@@ -5,6 +5,7 @@ import { useRouter, useSearchParams } from "next/navigation";
 import { Suspense, useEffect, useRef, useState } from "react";
 import { toast } from "sonner";
 import { InviteInstructorForm } from "@/components/academia/invite-instructor-form";
+import { OpenAnotherHouseForm } from "@/components/academia/house-switcher";
 import { AlunoAppCard } from "@/components/academia/aluno-app-card";
 import { AcademyBrandEditor } from "@/components/academia/brand-editor";
 import { FirstLoginHint } from "@/components/first-login-guide";
@@ -161,6 +162,8 @@ function ConfigInner() {
       <DueDayForm />
 
       <InviteInstructorForm />
+
+      <OpenAnotherHouseForm />
 
       <section className="border border-border bg-card p-5">
         <h2 className="font-medium">Plano {PRODUCT_NAME} · {plan.name}</h2>

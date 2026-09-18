@@ -65,6 +65,7 @@ export function blankLiveState(session: Session): AppState {
     sales: [],
     dropIns: [],
     session,
+    houses: [],
   };
 }
 
@@ -163,5 +164,6 @@ export function createEmptyAcademy(input: {
       academyId,
       role: "owner",
     },
+    houses: [],
   };
 }

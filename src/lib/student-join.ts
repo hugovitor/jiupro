@@ -1,6 +1,7 @@
 import { firstName, waHref } from "@/lib/whatsapp";
 import { publicAppUrl } from "@/lib/app-url";
 import { looksLikeHouseCode, studentJoinUrl } from "@/lib/join-code";
+import { ACADEMY_MEMBERSHIP_SQL } from "@/lib/memberships";
 import type { Academy, Student } from "@/lib/types";
 
 export type PublicAcademyJoin = {
@@ -249,11 +250,16 @@ begin
   where p.id = v_uid;
 
   if found then
-    if v_profile_role is distinct from 'student' then
+    if exists (
+      select 1 from public.academy_memberships m
+      where m.user_id = v_uid
+        and m.academy_id = v_academy
+        and m.role in ('owner', 'instructor')
+    ) or (
+      v_profile_academy is not distinct from v_academy
+      and v_profile_role is distinct from 'student'
+    ) then
       raise exception 'Este e-mail já é da equipe da academia. Use outro e-mail no app do aluno.';
-    end if;
-    if v_profile_academy is not null and v_profile_academy is distinct from v_academy then
-      raise exception 'Este e-mail já pertence a outra academia. Use outro e-mail no app do aluno.';
     end if;
   end if;
 
@@ -384,11 +390,25 @@ begin
   where p.id = auth.uid();
 
   if found then
-    if v_profile_academy is not null then
-      return v_profile_academy;
-    end if;
-    if v_profile_role = 'student' then
+    if v_profile_role = 'student'
+       and not exists (
+         select 1 from public.academy_memberships m
+         where m.user_id = auth.uid() and m.role in ('owner', 'instructor')
+       )
+    then
       raise exception 'Este e-mail já é de um aluno. Use outro e-mail para a academia.';
+    end if;
+    if v_profile_academy is not null
+       and exists (
+         select 1 from public.academies a
+         where a.id = v_profile_academy
+           and (
+             lower(trim(a.name)) = lower(trim(p_name))
+             or a.slug = p_slug
+           )
+       )
+    then
+      return v_profile_academy;
     end if;
   end if;
 
@@ -620,7 +640,7 @@ $$;
 
 revoke all on function public.academy_for_member() from public;
 grant execute on function public.academy_for_member() to authenticated;
-
+` + ACADEMY_MEMBERSHIP_SQL + `
 notify pgrst, 'reload schema';
 `;
 

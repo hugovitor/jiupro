@@ -45,6 +45,7 @@ function migrateState(state: AppState): AppState {
     events: state.events ?? [],
     sales: state.sales ?? [],
     dropIns: state.dropIns ?? [],
+    houses: state.houses ?? [],
     students: (state.students ?? []).map((s) => ({
       ...s,
       cpf: s.cpf ?? "",

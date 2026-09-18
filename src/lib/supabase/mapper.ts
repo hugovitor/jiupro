@@ -9,6 +9,7 @@ import type {
   Evaluation,
   Expense,
   Graduation,
+  HouseMembership,
   InventoryItem,
   Payment,
   PlanId,
@@ -120,6 +121,7 @@ export function ensureUuidState(state: AppState): AppState {
           academyId,
         }
       : null,
+    houses: state.houses ?? [],
   };
 }
 
@@ -413,6 +415,7 @@ export function tablesToState(input: {
   sales: Row[];
   dropIns: Row[];
   session: Session | null;
+  houses?: HouseMembership[];
 }): AppState {
   const a = input.academy;
   const academyId = str(a.id);
@@ -663,5 +666,6 @@ export function tablesToState(input: {
       method: (str(d.method, "pix") as DropIn["method"]) || "pix",
     })),
     session: input.session,
+    houses: input.houses ?? [],
   };
 }

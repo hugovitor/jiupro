@@ -921,6 +921,7 @@ export function createSeed(): AppState {
     sales,
     dropIns,
     session,
+    houses: [],
   };
 }
 
