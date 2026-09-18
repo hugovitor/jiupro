@@ -57,6 +57,7 @@ import { attendanceStatus, classHeadcount, isOnRoster, isValidated, studentCanSe
 import { academyPortability } from "./lgpd";
 import { applyOverdueStatus } from "./payment-overdue";
 import { canAddStudent, studentCapMessage } from "./plan-access";
+import { canCreateAnotherHouse } from "./memberships";
 import { kidsGuardianRequiredError, resolvedEnrollmentDivision } from "./kids-enrollment";
 import { clampPersonName, clampPostContent, normalizeStudentPhone } from "./student-live";
 import {

@@ -456,7 +456,7 @@ function EditarFicha({ student }: { student: Student }) {
               <Label>Faixa</Label>
               <NativeSelect
                 value={form.belt}
-                onChange={(e) => setForm({ ...form, belt: e.target.value })}
+                onChange={(e) => setForm({ ...form, belt: e.target.value as Student["belt"] })}
               >
                 {belts.map((b) => (
                   <option key={b.id} value={b.id}>
