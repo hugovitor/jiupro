@@ -56,6 +56,7 @@ import {
 import { attendanceStatus, classHeadcount, isOnRoster, isValidated, studentCanSelfCheckIn } from "./attendance";
 import { academyPortability } from "./lgpd";
 import { applyOverdueStatus } from "./payment-overdue";
+import { OVERDUE_LOCK_MESSAGE, studentBlockedByOverdue } from "./overdue-lock";
 import { canAddStudent, studentCapMessage } from "./plan-access";
 import { canCreateAnotherHouse } from "./memberships";
 import { kidsGuardianRequiredError, resolvedEnrollmentDivision } from "./kids-enrollment";
@@ -178,6 +179,7 @@ type Store = AppState & {
   confirmClass: (studentId: string, classId: string) => Promise<{ ok: boolean; error?: string }>;
   republishPendingCheckIns: () => Promise<void>;
   generateMonthCharges: (month: string) => number;
+  markChargeNotified: (paymentIds: string | string[]) => void;
   addExpense: (input: {
     description: string;
     category: ExpenseCategory;
@@ -1810,6 +1812,9 @@ export function StoreProvider({ children }: { children: ReactNode }) {
       }
       const who = current.students.find((item) => item.id === studentId);
       const sid = (who ? canonicalStudent(current.students, who)?.id : null) ?? studentId;
+      if (studentBlockedByOverdue(current.payments, sid, current.academy)) {
+        return { ok: false, error: OVERDUE_LOCK_MESSAGE };
+      }
       const today = isoDate(0);
       const aliases = who ? studentAliasIds(who, current.students) : new Set([sid]);
       const classIds = classAliasIds(current.classes, classId);
@@ -1917,6 +1922,18 @@ export function StoreProvider({ children }: { children: ReactNode }) {
     },
     [],
   );
+
+  const markChargeNotified: Store["markChargeNotified"] = useCallback((paymentIds) => {
+    const ids = new Set(Array.isArray(paymentIds) ? paymentIds : [paymentIds]);
+    if (!ids.size) return;
+    const now = new Date().toISOString();
+    commit((prev) => ({
+      ...prev,
+      payments: prev.payments.map((payment) =>
+        ids.has(payment.id) ? { ...payment, chargeNotifiedAt: now } : payment,
+      ),
+    }));
+  }, []);
 
   const addExpense: Store["addExpense"] = useCallback((input) => {
     commit((prev) => {
@@ -2168,6 +2185,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
       confirmClass,
       republishPendingCheckIns,
       generateMonthCharges,
+      markChargeNotified,
       addExpense,
       removeExpense,
       waivePayment,
@@ -2233,6 +2251,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
       confirmClass,
       republishPendingCheckIns,
       generateMonthCharges,
+      markChargeNotified,
       addExpense,
       removeExpense,
       waivePayment,

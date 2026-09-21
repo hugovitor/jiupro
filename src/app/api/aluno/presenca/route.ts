@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { createClient } from "@supabase/supabase-js";
 import { isoDate, weekdayToday } from "@/lib/format";
+import { OVERDUE_LOCK_MESSAGE, studentBlockedByOverdue } from "@/lib/overdue-lock";
 import { supabaseAdmin } from "@/lib/operator";
 import { classFingerprint } from "@/lib/roster-identity";
 import { ensureStudentRosterRow } from "@/lib/student-enroll";
@@ -149,6 +150,31 @@ async function studentAndClasses(db: AttendanceClient, user: { id: string; email
   return { academyId, studentId, classes: classes ?? [] };
 }
 
+async function studentIsBlockedByOverdue(
+  db: AttendanceClient,
+  academyId: string,
+  studentId: string,
+) {
+  const [{ data: academy }, { data: payments, error }] = await Promise.all([
+    db.from("academies").select("due_day").eq("id", academyId).maybeSingle(),
+    db
+      .from("payments")
+      .select("student_id, status, month")
+      .eq("academy_id", academyId)
+      .eq("student_id", studentId),
+  ]);
+  if (error) return false;
+  return studentBlockedByOverdue(
+    (payments ?? []).map((row) => ({
+      studentId: String(row.student_id ?? studentId),
+      status: String(row.status ?? "pending") as "paid" | "pending" | "overdue" | "waived",
+      month: String(row.month ?? ""),
+    })),
+    studentId,
+    { dueDay: Number(academy?.due_day ?? 10) },
+  );
+}
+
 async function loadExistingAttendance(
   db: AttendanceClient,
   academyId: string,
@@ -275,6 +301,10 @@ export async function POST(request: Request) {
     studentId: string;
     classes: { id: unknown; weekday?: unknown; start_time?: unknown; name?: unknown; division?: unknown }[];
   };
+
+  if (await studentIsBlockedByOverdue(db, academyId, studentId)) {
+    return NextResponse.json({ error: OVERDUE_LOCK_MESSAGE }, { status: 403 });
+  }
 
   const { classId, slotIds } = resolveClassId(classes, body);
   const today = isoDate(0);

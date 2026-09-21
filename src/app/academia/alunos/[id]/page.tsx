@@ -135,6 +135,14 @@ export default function AlunoDetalhePage() {
             <Row k="CPF" v={student.cpf ? formatCpf(student.cpf) : "—"} />
             {student.guardianName && <Row k="Responsável" v={student.guardianName} />}
             <Row k="Mensalidade" v={student.monthlyFee ? brl(student.monthlyFee) : "Isento"} />
+            <Row
+              k="Atestado"
+              v={
+                student.medicalCertificateUntil
+                  ? formatDay(student.medicalCertificateUntil)
+                  : "Sem validade"
+              }
+            />
             <Row k="Último treino" v={last ? formatDay(last.date) : "—"} />
             <Row k="Status" v={student.status} />
             {student.notes && (
@@ -345,6 +353,7 @@ function EditarFicha({ student }: { student: Student }) {
     monthlyFee: student.monthlyFee ? String(student.monthlyFee) : "0",
     notes: student.notes || "",
     cpf: student.cpf || "",
+    medicalCertificateUntil: student.medicalCertificateUntil || "",
   });
   const belts = beltsForDivision(form.division);
 
@@ -360,6 +369,7 @@ function EditarFicha({ student }: { student: Student }) {
       monthlyFee: student.monthlyFee ? String(student.monthlyFee) : "0",
       notes: student.notes || "",
       cpf: student.cpf || "",
+      medicalCertificateUntil: student.medicalCertificateUntil || "",
     });
   }
 
@@ -480,6 +490,16 @@ function EditarFicha({ student }: { student: Student }) {
             <Input
               value={formatCpf(form.cpf)}
               onChange={(e) => setForm({ ...form, cpf: e.target.value })}
+            />
+          </div>
+          <div className="space-y-1.5">
+            <Label>Atestado válido até</Label>
+            <Input
+              type="date"
+              value={form.medicalCertificateUntil}
+              onChange={(e) =>
+                setForm({ ...form, medicalCertificateUntil: e.target.value })
+              }
             />
           </div>
           <div className="space-y-1.5">

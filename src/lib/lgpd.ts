@@ -37,6 +37,7 @@ export function studentPortability(student: Student, state: AppState) {
       joinDate: student.joinDate,
       status: student.status,
       cpf: student.cpf ?? "",
+      medicalCertificateUntil: student.medicalCertificateUntil ?? "",
     },
     payments: pays.map((p) => ({
       month: p.month,

@@ -26,6 +26,7 @@ import {
   statusLabel,
 } from "@/lib/attendance";
 import { brl, clockLabel, currentMonth, formatTime, isoDate, minutes, weekdayName } from "@/lib/format";
+import { medicalNeedsAttention } from "@/lib/medical-certificate";
 import { attendanceDay, attendanceForStudent, classesShareSlot } from "@/lib/roster-identity";
 import { useStore } from "@/lib/store";
 import type { Attendance, ClassSession, Student } from "@/lib/types";
@@ -210,12 +211,26 @@ export default function PresencaPage() {
           <h1 className="mt-2 text-3xl font-black tracking-[-0.04em]">Presença</h1>
           <p className="mt-1 max-w-xl text-sm text-muted-foreground">
             O aluno confirma no celular. Isso só avisa que vem — não fecha o
-            treino. Você aceita quem pisou no tatame. Se não fizer nada, fica
-            em aguardando: não conta presença sozinho.
+            treino. Você aceita quem pisou no tatame. Atraso e atestado vencido
+            aparecem na lista, mas não travam a sua chamada.
           </p>
         </div>
         <Visitante classId={classId} disabled={!classId} />
       </div>
+
+      {store.students.filter(
+        (s) => s.status !== "inactive" && medicalNeedsAttention(s.medicalCertificateUntil),
+      ).length > 0 ? (
+        <Link
+          href="/academia/atestados"
+          className="block border border-amber-500/30 bg-amber-500/10 px-4 py-3 text-sm"
+        >
+          {store.students.filter(
+            (s) => s.status !== "inactive" && medicalNeedsAttention(s.medicalCertificateUntil),
+          ).length}{" "}
+          atestado(s) vencido ou faltando. Abrir lista — a chamada continua liberada.
+        </Link>
+      ) : null}
 
       <div className="flex gap-1 overflow-x-auto border-b border-border">
         {tabs.map((c) => {
@@ -415,6 +430,7 @@ export default function PresencaPage() {
                   attendance={row}
                   session={cls}
                   overdue={store.overdueFor(s.id).length > 0}
+                  medical={medicalNeedsAttention(s.medicalCertificateUntil)}
                   missing={isOverdue(s, store.attendance)}
                   action={
                     <div className="flex gap-1">
@@ -454,6 +470,7 @@ export default function PresencaPage() {
                   attendance={row}
                   session={cls}
                   overdue={store.overdueFor(s.id).length > 0}
+                  medical={medicalNeedsAttention(s.medicalCertificateUntil)}
                   missing={isOverdue(s, store.attendance)}
                   action={
                     <div className="flex gap-1">
@@ -484,6 +501,7 @@ export default function PresencaPage() {
                 key={s.id}
                 student={s}
                 overdue={store.overdueFor(s.id).length > 0}
+                medical={medicalNeedsAttention(s.medicalCertificateUntil)}
                 missing={isOverdue(s, store.attendance)}
                 action={
                   <Button
@@ -507,6 +525,7 @@ export default function PresencaPage() {
                 key={s.id}
                 student={s}
                 overdue={store.overdueFor(s.id).length > 0}
+                medical={medicalNeedsAttention(s.medicalCertificateUntil)}
                 missing={isOverdue(s, store.attendance)}
                 action={
                   <Button
@@ -533,6 +552,7 @@ export default function PresencaPage() {
                 student={s}
                 attendance={noShowByStudent.get(s.id)}
                 overdue={store.overdueFor(s.id).length > 0}
+                medical={medicalNeedsAttention(s.medicalCertificateUntil)}
                 missing={isOverdue(s, store.attendance)}
                 action={
                   <Button
@@ -637,6 +657,7 @@ function RosterRow({
   attendance,
   session,
   overdue,
+  medical,
   missing,
   action,
 }: {
@@ -644,6 +665,7 @@ function RosterRow({
   attendance?: Attendance;
   session?: ClassSession;
   overdue: boolean;
+  medical?: boolean;
   missing: boolean;
   action: React.ReactNode;
 }) {
@@ -668,6 +690,7 @@ function RosterRow({
           )}
           {student.status === "trial" ? <span>Experimental</span> : null}
           {overdue ? <span className="text-destructive">Mensalidade</span> : null}
+          {medical ? <span className="text-destructive">Atestado</span> : null}
           {missing && !attendance ? <span>Sumiu</span> : null}
         </p>
       </div>

@@ -117,6 +117,8 @@ export type Student = {
   avatarHue: number;
   cpf?: string;
   asaasCustomerId?: string;
+  /** Validade do atestado médico (YYYY-MM-DD). Vazio = sem atestado na ficha. */
+  medicalCertificateUntil?: string;
 };
 
 export type ClassSession = {
@@ -171,6 +173,8 @@ export type Payment = {
   asaasInvoiceUrl?: string;
   asaasPixCopy?: string;
   asaasStatus?: string;
+  /** Último Zap de cobrança (Pix da casa). Evita cobrar duas vezes no mesmo dia. */
+  chargeNotifiedAt?: string;
 };
 
 export type Expense = {

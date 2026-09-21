@@ -55,6 +55,7 @@ create table if not exists public.students (
   monthly_fee numeric not null default 0,
   notes text,
   avatar_hue int not null default 40,
+  medical_until date,
   created_at timestamptz not null default now()
 );
 
@@ -93,7 +94,8 @@ create table if not exists public.payments (
   amount numeric not null,
   status text not null default 'pending',
   paid_at timestamptz,
-  method text
+  method text,
+  charge_notified_at timestamptz
 );
 
 create table if not exists public.expenses (
@@ -473,10 +475,12 @@ alter table public.posts add column if not exists author_name text;
 alter table public.posts add column if not exists author_role text;
 alter table public.students add column if not exists cpf text;
 alter table public.students add column if not exists asaas_customer_id text;
+alter table public.students add column if not exists medical_until date;
 alter table public.payments add column if not exists asaas_payment_id text;
 alter table public.payments add column if not exists asaas_invoice_url text;
 alter table public.payments add column if not exists asaas_pix_copy text;
 alter table public.payments add column if not exists asaas_status text;
+alter table public.payments add column if not exists charge_notified_at timestamptz;
 alter table public.attendance add column if not exists status text;
 alter table public.attendance add column if not exists validated_at timestamptz;
 alter table public.attendance add column if not exists validated_by uuid;

@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 import { kidsGuardianRequiredError, resolvedEnrollmentDivision } from "./kids-enrollment";
 import { canAddStudent, joinStudentCapMessage, studentLimitForPlan } from "./plan-access";
 import { matchRosterClaim } from "./roster-claim";
+import { ownerDestination } from "./auth-redirect";
 import { canCreateAnotherHouse, mapHouseMembership, routeForRole, staffOfHouse } from "./memberships";
 
 describe("join · ficha", () => {
@@ -73,7 +74,12 @@ describe("join · ficha", () => {
     expect(canCreateAnotherHouse("student")).toBe(false);
     expect(canCreateAnotherHouse("student", [{ role: "owner" }])).toBe(true);
     expect(routeForRole("student")).toBe("/aluno");
-    expect(routeForRole("instructor")).toBe("/academia");
+    expect(routeForRole("instructor")).toBe("/academia/presenca");
+    expect(routeForRole("owner")).toBe("/academia");
+    expect(ownerDestination(null, "instructor")).toBe("/academia/presenca");
+    expect(ownerDestination("/academia", "instructor")).toBe("/academia/presenca");
+    expect(ownerDestination("/academia/atestados", "instructor")).toBe("/academia/atestados");
+    expect(ownerDestination("/academia", "owner")).toBe("/academia");
     expect(
       mapHouseMembership({
         id: "ac2",

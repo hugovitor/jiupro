@@ -362,7 +362,9 @@ export function FirstLoginGuide() {
                 onClick={() => {
                   closeForever();
                   if (role === "student") router.push("/aluno");
-                  else if (current.id === "pronto") router.push("/academia");
+                  else if (current.id === "pronto") {
+                    router.push(role === "instructor" ? "/academia/presenca" : "/academia");
+                  }
                 }}
               >
                 Começar
@@ -422,18 +424,23 @@ const OWNER_STEPS: Step[] = [
 const INSTRUCTOR_STEPS: Step[] = [
   {
     id: "ola",
-    title: "Você está na operação.",
-    body: "Mesmo painel da academia. Sua parte é turma, chamada e graduação.",
+    title: "Este é o app do professor.",
+    body: "Você cai na chamada. Embaixo: Presença, Atestados e Alunos. Financeiro fica com o dono.",
   },
   {
     id: "presenca",
     title: "Chamada em duas etapas.",
-    body: "O aluno confirma no app. No tatame você valida quem treinou ou marca quem confirmou e não veio. Sem PIN de quadro.",
+    body: "O aluno confirma no app. No tatame você valida quem treinou ou marca quem confirmou e não veio. Atraso e atestado não travam a sua lista.",
+  },
+  {
+    id: "atestado",
+    title: "Atestado na ficha.",
+    body: "Em Atestados você vê quem está vencido ou sem validade. Grava a data na hora. Quem treina ainda entra na chamada.",
   },
   {
     id: "pronto",
     title: "Pode ir pro tatame.",
-    body: "Alunos, turmas e presença estão no menu de baixo. Se faltar alguém, o painel sugere o Zap de volta.",
+    body: "Aceite quem pisou no tatame. Se faltar alguém, o painel sugere o Zap de volta.",
   },
 ];
 

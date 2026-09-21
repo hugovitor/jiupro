@@ -256,6 +256,7 @@ export function stateToTables(state: AppState, allowedProfiles?: Set<string>) {
       avatar_hue: s.avatarHue,
       cpf: s.cpf || null,
       asaas_customer_id: s.asaasCustomerId || null,
+      medical_until: dateCol(s.medicalCertificateUntil),
     })),
     classes: state.classes.filter((c) => isUuid(c.id)).map((c) => ({
       id: c.id,
@@ -296,6 +297,7 @@ export function stateToTables(state: AppState, allowedProfiles?: Set<string>) {
       asaas_invoice_url: p.asaasInvoiceUrl ?? null,
       asaas_pix_copy: p.asaasPixCopy ?? null,
       asaas_status: p.asaasStatus ?? null,
+      charge_notified_at: p.chargeNotifiedAt ?? null,
     })),
     expenses: state.expenses.filter((e) => isUuid(e.id)).map((e) => ({
       id: e.id,
@@ -498,6 +500,7 @@ export function tablesToState(input: {
     avatarHue: num(s.avatar_hue, 40),
     cpf: str(s.cpf) || undefined,
     asaasCustomerId: str(s.asaas_customer_id) || undefined,
+    medicalCertificateUntil: dateCol(s.medical_until) || undefined,
   }));
 
   const seenUser = new Set(students.map((s) => s.userId).filter(Boolean));
@@ -581,6 +584,7 @@ export function tablesToState(input: {
       asaasInvoiceUrl: str(p.asaas_invoice_url) || undefined,
       asaasPixCopy: str(p.asaas_pix_copy) || undefined,
       asaasStatus: str(p.asaas_status) || undefined,
+      chargeNotifiedAt: str(p.charge_notified_at) || undefined,
     })),
     expenses: input.expenses.map((e) => ({
       id: str(e.id),

@@ -41,6 +41,7 @@ import { attendanceDay } from "@/lib/roster-identity";
 import { useStore } from "@/lib/store";
 import { useNow } from "@/lib/use-now";
 import { birthdayMessage, comebackMessage, waHref } from "@/lib/whatsapp";
+import { chargeQueueToday } from "@/lib/charge-reminder";
 
 export default function AcademiaDashboard() {
   const store = useStore();
@@ -75,6 +76,7 @@ export default function AcademiaDashboard() {
     .filter((e) => e.date >= today)
     .sort((a, b) => a.date.localeCompare(b.date))
     .slice(0, 3);
+  const zapToday = chargeQueueToday(store.payments, store.students);
 
   return (
     <div className="mx-auto max-w-6xl">
@@ -106,6 +108,21 @@ export default function AcademiaDashboard() {
 
       {!store.isDemo && store.students.length === 0 ? <FirstHouseCard /> : null}
       <LaunchChecklist />
+
+      {store.session?.role !== "instructor" && zapToday.length > 0 ? (
+        <Link
+          href="/academia/cobrancas"
+          className="mt-6 block surface border-red-500/30 bg-red-500/10 p-4"
+        >
+          <p className="text-[11px] font-black tracking-[0.16em] text-red-400 uppercase">
+            Cobrança no Zap
+          </p>
+          <p className="mt-2 text-sm">
+            {zapToday.length} aluno(s) para cobrar hoje com o Pix da academia. A fila
+            não repete no mesmo dia.
+          </p>
+        </Link>
+      ) : null}
 
       {!canAddStudent(store.academy, store.students.length) ? (
         <div className="mt-6 surface border-red-500/30 bg-red-500/10 p-4 text-sm">

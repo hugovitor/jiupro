@@ -87,8 +87,8 @@ export function weekdayToday() {
   return new Date(Date.UTC(year, month - 1, day)).getUTCDay();
 }
 
-export function currentMonth() {
-  const { year, month } = civilParts(new Date());
+export function currentMonth(now = new Date()) {
+  const { year, month } = civilParts(now);
   return `${year}-${String(month).padStart(2, "0")}`;
 }
 

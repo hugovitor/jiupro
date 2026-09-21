@@ -18,11 +18,12 @@ import {
   studentCanSelfCheckIn,
   type ClassPhase,
 } from "@/lib/attendance";
-import { formatDay, isoDate, minutes, weekdayFull, weekdayToday, currentMonth } from "@/lib/format";
+import { brl, formatDay, isoDate, minutes, weekdayFull, weekdayToday, currentMonth } from "@/lib/format";
 import { attendanceInDays } from "@/lib/insights";
 import { ADULT_ORDER, beltMeta } from "@/lib/belts";
 import { attendanceDay, attendanceForStudent, classesShareSlot } from "@/lib/roster-identity";
 import { currentStudent, useStore } from "@/lib/store";
+import { studentBlockedByOverdue } from "@/lib/overdue-lock";
 import { hasFeature } from "@/lib/plan-access";
 import type { Attendance, ClassSession, Student } from "@/lib/types";
 import { useNow } from "@/lib/use-now";
@@ -46,6 +47,9 @@ export default function AlunoHome() {
     .sort((a, b) => minutes(a.startTime) - minutes(b.startTime));
   const featured = recommendClass(classes, now);
   const att = student ? attendanceInDays(store, student.id, 30) : 0;
+  const overdueLock = student
+    ? studentBlockedByOverdue(store.payments, student.id, store.academy)
+    : false;
 
   const classIdsFor = (classId: string) => {
     const cls = store.classes.find((c) => c.id === classId);
@@ -90,6 +94,8 @@ export default function AlunoHome() {
         {student && <BeltBadge belt={student.belt} stripes={student.stripes} />}
       </div>
 
+      {overdueLock ? <OverdueLockCard /> : null}
+
       <section className="surface p-4">
         <p className="text-[11px] font-black tracking-[0.16em] text-red-500 uppercase">
           Próxima aula
@@ -111,8 +117,17 @@ export default function AlunoHome() {
                 : phaseHint(featured, now)
             }
             mine={mineRow(featured.id)}
-            canCheck={!!student && studentCanSelfCheckIn(featured, now) && !onList(featured.id)}
-            lockHint={selfCheckInHint(featured, now)}
+            canCheck={
+              !!student &&
+              !overdueLock &&
+              studentCanSelfCheckIn(featured, now) &&
+              !onList(featured.id)
+            }
+            lockHint={
+              overdueLock && !onList(featured.id)
+                ? "Mensalidade em atraso. Pague no Pix da academia — o professor ainda pode te colocar na lista no tatame."
+                : selfCheckInHint(featured, now)
+            }
             full={
               featured.capacity > 0 &&
               classHeadcount(
@@ -126,6 +141,10 @@ export default function AlunoHome() {
             classmates={rosterFor(store.students, store.attendance, featured.id, today)}
             onConfirm={async () => {
               if (!student || busyId) return;
+              if (overdueLock) {
+                toast.error("Mensalidade em atraso. Pague no Pix da academia.");
+                return;
+              }
               if (onList(featured.id)) return;
               if (!studentCanSelfCheckIn(featured, now)) {
                 toast.error(selfCheckInHint(featured, now));
@@ -203,9 +222,13 @@ export default function AlunoHome() {
                       <Button
                         size="sm"
                         variant="outline"
-                        disabled={!student || !open || busyId === c.id}
+                        disabled={!student || overdueLock || !open || busyId === c.id}
                         onClick={async () => {
                           if (!student || busyId) return;
+                          if (overdueLock) {
+                            toast.error("Mensalidade em atraso. Pague no Pix da academia.");
+                            return;
+                          }
                           setBusyId(c.id);
                           try {
                             const result = await store.confirmClass(student.id, c.id);
@@ -221,7 +244,7 @@ export default function AlunoHome() {
                           }
                         }}
                       >
-                        {open ? "Confirmar" : "Encerrada"}
+                        {overdueLock ? "Trava" : open ? "Confirmar" : "Encerrada"}
                       </Button>
                     )}
                   </div>
@@ -237,6 +260,44 @@ export default function AlunoHome() {
       <GradeSemana />
       <ProximoEvento />
     </div>
+  );
+}
+
+function OverdueLockCard() {
+  const store = useStore();
+  const student = currentStudent(store);
+  const pix = store.academy.pixKey.trim();
+  const open = student
+    ? store.payments.filter(
+        (payment) =>
+          payment.studentId === student.id &&
+          (payment.status === "overdue" || payment.status === "pending"),
+      )
+    : [];
+  const total = open.reduce((sum, payment) => sum + payment.amount, 0);
+  return (
+    <section className="rounded-2xl border border-red-500/35 bg-red-500/10 p-4">
+      <p className="text-[11px] font-black tracking-[0.16em] text-red-400 uppercase">
+        Trava por atraso
+      </p>
+      <p className="mt-2 text-sm">
+        Você não confirma aula sozinho enquanto a mensalidade estiver em atraso. Pague no
+        Pix da academia e avise a secretaria. No tatame o professor ainda pode te colocar
+        na lista.
+      </p>
+      {pix ? (
+        <div className="mt-3 rounded-xl border border-white/10 bg-black/20 px-3 py-3">
+          <p className="text-[11px] text-white/45">Pix da academia</p>
+          <p className="mt-1 font-mono text-sm">{pix}</p>
+          <p className="text-xs text-white/40">{store.academy.pixName}</p>
+          {total > 0 ? (
+            <p className="mt-2 text-sm font-bold">{brl(total)} em aberto</p>
+          ) : null}
+        </div>
+      ) : (
+        <p className="mt-3 text-sm text-white/55">A academia ainda não colocou a chave Pix.</p>
+      )}
+    </section>
   );
 }
 
