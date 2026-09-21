@@ -25,6 +25,7 @@ export type StudentFichaInput = {
   monthlyFee?: string | number;
   notes?: string;
   cpf?: string;
+  medicalCertificateUntil?: string;
 };
 
 export type StudentFichaPatch = Pick<
@@ -39,6 +40,7 @@ export type StudentFichaPatch = Pick<
   | "monthlyFee"
   | "notes"
   | "cpf"
+  | "medicalCertificateUntil"
 >;
 
 export function normalizeStudentFicha(
@@ -58,6 +60,7 @@ export function normalizeStudentFicha(
   const birthDate = (input.birthDate ?? "").slice(0, 10);
   const email = (input.email ?? "").trim().toLowerCase();
   const cpf = (input.cpf ?? "").replace(/\D/g, "").slice(0, 11);
+  const medical = (input.medicalCertificateUntil ?? "").slice(0, 10);
   return {
     name,
     phone: normalizeStudentPhone(input.phone ?? ""),
@@ -69,5 +72,6 @@ export function normalizeStudentFicha(
     monthlyFee: parseFee(input.monthlyFee),
     notes: (input.notes ?? "").trim().slice(0, 500),
     cpf: cpf || undefined,
+    medicalCertificateUntil: /^\d{4}-\d{2}-\d{2}$/.test(medical) ? medical : "",
   };
 }

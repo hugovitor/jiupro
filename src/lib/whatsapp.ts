@@ -39,6 +39,19 @@ export function overdueMessage(
   } Qualquer dúvida, estamos no tatame. Oss.`;
 }
 
+export function housePixMessage(
+  academy: Academy,
+  student: Student,
+  payment: Payment,
+) {
+  const who = student.guardianName
+    ? firstName(student.guardianName)
+    : firstName(student.name);
+  const kid = student.guardianName ? ` do(a) ${firstName(student.name)}` : "";
+  const late = payment.status === "overdue";
+  return `Oi ${who}, aqui é a ${academy.name}. A mensalidade${kid} de ${monthLabel(payment.month)} (${brl(payment.amount)}) ${late ? "está em atraso" : "está em aberto"}. Pix: ${academy.pixKey} (${academy.pixName}). Qualquer dúvida, estamos no tatame. Oss.`;
+}
+
 export function comebackMessage(academy: Academy, student: Student) {
   return `Oi ${firstName(student.name)}, sentimos sua falta nos treinos da ${academy.name}. Tem turma hoje — vem quando puder. Oss.`;
 }

@@ -7,7 +7,7 @@ export function applyOverdueStatus(
   academy: Pick<Academy, "dueDay">,
   now = new Date(),
 ): { payments: Payment[]; changed: number } {
-  const month = currentMonth();
+  const month = currentMonth(now);
   const day = dayOfMonth(now);
   const due = normalizeDueDay(academy.dueDay);
   let changed = 0;

@@ -51,7 +51,7 @@ export default function PerfilAluno() {
           {pay?.status === "paid"
             ? "pago"
             : pay?.status === "overdue"
-              ? "em atraso"
+              ? "em atraso — presença travada no app até a baixa"
               : pay?.status === "waived"
                 ? "isento"
                 : "em aberto"}

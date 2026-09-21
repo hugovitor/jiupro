@@ -56,6 +56,7 @@ describe("módulos · casa, mural, ficha", () => {
         belt: "blue",
         monthlyFee: "180,50",
         cpf: "123.456.789-09",
+        medicalCertificateUntil: "2026-12-01",
       }),
     ).toMatchObject({
       name: "João Pedro",
@@ -63,6 +64,7 @@ describe("módulos · casa, mural, ficha", () => {
       belt: "blue",
       monthlyFee: 180.5,
       cpf: "12345678909",
+      medicalCertificateUntil: "2026-12-01",
     });
   });
 

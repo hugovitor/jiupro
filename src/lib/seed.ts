@@ -116,6 +116,7 @@ export function createSeed(): AppState {
       monthlyFee: 180,
       notes: "Treina competição aos sábados.",
       avatarHue: 210,
+      medicalCertificateUntil: isoDate(200),
     },
     {
       id: "s_ana",
@@ -152,6 +153,7 @@ export function createSeed(): AppState {
       monthlyFee: 160,
       notes: "Mensalidade em atraso. Cobrar com cuidado — acabou de perder o emprego.",
       avatarHue: 20,
+      medicalCertificateUntil: isoDate(-40),
     },
     {
       id: "s_marina",
@@ -280,6 +282,7 @@ export function createSeed(): AppState {
       monthlyFee: 140,
       notes: "Muito aplicada. Pai assiste todas as aulas.",
       avatarHue: 95,
+      medicalCertificateUntil: isoDate(12),
     },
     {
       id: "s_andre",

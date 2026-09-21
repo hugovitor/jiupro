@@ -49,6 +49,7 @@ function migrateState(state: AppState): AppState {
     students: (state.students ?? []).map((s) => ({
       ...s,
       cpf: s.cpf ?? "",
+      medicalCertificateUntil: s.medicalCertificateUntil ?? "",
       joinDate: /^\d{4}-\d{2}-\d{2}/.test(s.joinDate ?? "")
         ? s.joinDate
         : new Date().toISOString().slice(0, 10),
@@ -68,6 +69,7 @@ function migrateState(state: AppState): AppState {
       asaasInvoiceUrl: p.asaasInvoiceUrl,
       asaasPixCopy: p.asaasPixCopy,
       asaasStatus: p.asaasStatus,
+      chargeNotifiedAt: p.chargeNotifiedAt,
     })),
   };
 }

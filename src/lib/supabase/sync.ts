@@ -18,6 +18,8 @@ const OPTIONAL_COLUMNS = [
   "asaas_invoice_url",
   "asaas_pix_copy",
   "asaas_status",
+  "medical_until",
+  "charge_notified_at",
   "validated_at",
   "validated_by",
   "guardian_name",

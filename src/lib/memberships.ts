@@ -35,7 +35,9 @@ export function canCreateAnotherHouse(
 }
 
 export function routeForRole(role: Role) {
-  return role === "student" ? "/aluno" : "/academia";
+  if (role === "student") return "/aluno";
+  if (role === "instructor") return "/academia/presenca";
+  return "/academia";
 }
 
 export function roleLabel(role: Role) {

@@ -6,6 +6,7 @@ import { usePathname, useRouter } from "next/navigation";
 import {
   Banknote,
   Building2,
+  HeartPulse,
   LayoutGrid,
   Lock,
   LogOut,
@@ -57,6 +58,7 @@ const GROUPS: NavGroup[] = [
     items: [
       { href: "/academia/turmas", label: "Turmas" },
       { href: "/academia/presenca", label: "Presença" },
+      { href: "/academia/atestados", label: "Atestados" },
       { href: "/academia/agenda", label: "Agenda" },
     ],
   },
@@ -83,8 +85,17 @@ const GROUPS: NavGroup[] = [
   },
 ];
 
+const INSTRUCTOR_GROUPS: NavGroup[] = [
+  { id: "presenca", label: "Presença", icon: PersonStanding, href: "/academia/presenca", items: [] },
+  { id: "atestados", label: "Atestados", icon: HeartPulse, href: "/academia/atestados", items: [] },
+  { id: "alunos", label: "Alunos", icon: Users, href: "/academia/alunos", items: [] },
+];
+
 function groupIsActive(group: NavGroup, pathname: string) {
-  if (group.href) return pathname === group.href;
+  if (group.href) {
+    if (group.href === "/academia") return pathname === "/academia";
+    return pathname === group.href || pathname.startsWith(`${group.href}/`);
+  }
   return group.items.some((item) => pathname.startsWith(item.href));
 }
 
@@ -100,18 +111,22 @@ export function AcademiaShell({ children }: { children: React.ReactNode }) {
   const [stripeLive, setStripeLive] = useState(false);
   const [isOperator, setIsOperator] = useState(false);
   const user = store.users.find((u) => u.id === store.session?.userId);
+  const instructor = store.session?.role === "instructor";
+  const homeHref = instructor ? "/academia/presenca" : "/academia";
   const groups = useMemo(() => {
-    return GROUPS.map((group) => ({
+    const base = instructor ? INSTRUCTOR_GROUPS : GROUPS;
+    return base.map((group) => ({
       ...group,
       items: group.items.map((item) => ({
         ...item,
         locked: Boolean(item.feature && !hasFeature(store.academy, item.feature)),
       })),
     }));
-  }, [store.academy]);
+  }, [instructor, store.academy]);
   const activeGroup = groups.find((g) => groupIsActive(g, pathname)) ?? groups[0];
   const pageTitle =
-    activeGroup.items.find((i) => itemIsActive(i.href, pathname))?.label ?? "Início";
+    activeGroup.items.find((i) => itemIsActive(i.href, pathname))?.label ??
+    activeGroup.label;
   const plan = planById(store.academy.plan);
   const priority = hasFeature(store.academy, "prioritySupport");
 
@@ -123,8 +138,12 @@ export function AcademiaShell({ children }: { children: React.ReactNode }) {
     }
     if (store.session.role === "student") {
       router.replace("/aluno");
+      return;
     }
-  }, [router, store.hydrated, store.session]);
+    if (store.session.role === "instructor" && pathname === "/academia") {
+      router.replace("/academia/presenca");
+    }
+  }, [pathname, router, store.hydrated, store.session]);
 
   useEffect(() => {
     if (!store.session) return;
@@ -203,7 +222,7 @@ export function AcademiaShell({ children }: { children: React.ReactNode }) {
     <div className="flex min-h-screen flex-col bg-[#080808] text-white selection:bg-red-600 selection:text-white">
       <header className="sticky top-0 z-50 flex h-16 items-center justify-between border-b border-white/10 bg-[#080808]/90 px-4 backdrop-blur-xl">
         <div className="flex min-w-0 items-center gap-5">
-          <Link href="/academia" className="shrink-0">
+          <Link href={homeHref} className="shrink-0">
             <Wordmark href={null} kicker={false} />
           </Link>
           <div className="hidden min-w-0 sm:block">
@@ -293,7 +312,7 @@ export function AcademiaShell({ children }: { children: React.ReactNode }) {
           <nav className="flex-1 overflow-y-auto px-2 pb-4">
             {groups.map((group) => {
               const active = groupIsActive(group, pathname);
-              const href = group.href ?? group.items[0]?.href ?? "/academia";
+              const href = group.href ?? group.items[0]?.href ?? homeHref;
               const Icon = group.icon;
               return (
                 <div key={group.id} className="mb-1">
@@ -396,7 +415,7 @@ export function AcademiaShell({ children }: { children: React.ReactNode }) {
         <div className="flex">
           {groups.map((group) => {
             const active = groupIsActive(group, pathname);
-            const href = group.href ?? group.items[0]?.href ?? "/academia";
+            const href = group.href ?? group.items[0]?.href ?? homeHref;
             const Icon = group.icon;
             return (
               <Link
