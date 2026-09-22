@@ -26,6 +26,13 @@ const OPTIONAL_COLUMNS = [
   "birth_date",
   "brand_logo",
   "brand_tagline",
+  "contract_body",
+  "contract_version",
+  "contract_updated_at",
+  "contract_signed_version",
+  "contract_signed_at",
+  "contract_signed_by",
+  "contract_signed_as",
 ];
 
 function stripOptional(rows: Record<string, unknown>[], columns: string[]) {
@@ -392,7 +399,7 @@ export function scheduleRemotePush(state: AppState) {
 }
 
 const ACADEMY_MEMBER_COLUMNS =
-  "id, name, slug, city, state, address, phone, instagram, pix_key, pix_name, plan, monthly_goal, drop_in_fee, due_day, join_code, brand_logo, brand_tagline, billing_status, created_at, updated_at";
+  "id, name, slug, city, state, address, phone, instagram, pix_key, pix_name, plan, monthly_goal, drop_in_fee, due_day, join_code, brand_logo, brand_tagline, billing_status, contract_body, contract_version, contract_updated_at, created_at, updated_at";
 
 async function loadAcademyRecord(
   client: SupabaseClient,

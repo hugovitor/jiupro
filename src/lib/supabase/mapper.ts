@@ -223,6 +223,9 @@ export function academyToRow(a: Academy): Row {
     join_code: a.joinCode || null,
     brand_logo: a.brandLogo || null,
     brand_tagline: a.brandTagline || null,
+    contract_body: a.contractBody || null,
+    contract_version: a.contractVersion ?? 0,
+    contract_updated_at: a.contractUpdatedAt || null,
   };
 }
 
@@ -257,6 +260,10 @@ export function stateToTables(state: AppState, allowedProfiles?: Set<string>) {
       cpf: s.cpf || null,
       asaas_customer_id: s.asaasCustomerId || null,
       medical_until: dateCol(s.medicalCertificateUntil),
+      contract_signed_version: s.contractSignedVersion ?? null,
+      contract_signed_at: s.contractSignedAt ?? null,
+      contract_signed_by: s.contractSignedBy ?? null,
+      contract_signed_as: s.contractSignedAs ?? null,
     })),
     classes: state.classes.filter((c) => isUuid(c.id)).map((c) => ({
       id: c.id,
@@ -468,6 +475,9 @@ export function tablesToState(input: {
     stripeCustomerId: str(a.stripe_customer_id),
     stripeSubscriptionId: str(a.stripe_subscription_id),
     updatedAt: str(a.updated_at),
+    contractBody: str(a.contract_body),
+    contractVersion: num(a.contract_version),
+    contractUpdatedAt: str(a.contract_updated_at),
   };
 
   const users: User[] = input.profiles.map((p) => ({
@@ -501,6 +511,11 @@ export function tablesToState(input: {
     cpf: str(s.cpf) || undefined,
     asaasCustomerId: str(s.asaas_customer_id) || undefined,
     medicalCertificateUntil: dateCol(s.medical_until) || undefined,
+    contractSignedVersion: s.contract_signed_version != null ? num(s.contract_signed_version) : undefined,
+    contractSignedAt: str(s.contract_signed_at) || undefined,
+    contractSignedBy: str(s.contract_signed_by) || undefined,
+    contractSignedAs:
+      str(s.contract_signed_as) === "guardian" ? "guardian" : str(s.contract_signed_as) === "student" ? "student" : undefined,
   }));
 
   const seenUser = new Set(students.map((s) => s.userId).filter(Boolean));

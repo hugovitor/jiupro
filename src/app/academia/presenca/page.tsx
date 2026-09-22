@@ -27,6 +27,7 @@ import {
 } from "@/lib/attendance";
 import { brl, clockLabel, currentMonth, formatTime, isoDate, minutes, weekdayName } from "@/lib/format";
 import { medicalNeedsAttention } from "@/lib/medical-certificate";
+import { studentNeedsContractSignature } from "@/lib/enrollment-contract";
 import { attendanceDay, attendanceForStudent, classesShareSlot } from "@/lib/roster-identity";
 import { useStore } from "@/lib/store";
 import type { Attendance, ClassSession, Student } from "@/lib/types";
@@ -229,6 +230,20 @@ export default function PresencaPage() {
             (s) => s.status !== "inactive" && medicalNeedsAttention(s.medicalCertificateUntil),
           ).length}{" "}
           atestado(s) vencido ou faltando. Abrir lista — a chamada continua liberada.
+        </Link>
+      ) : null}
+
+      {store.students.filter(
+        (s) => s.status !== "inactive" && studentNeedsContractSignature(s, store.academy),
+      ).length > 0 ? (
+        <Link
+          href="/academia/contratos"
+          className="block border border-amber-500/30 bg-amber-500/10 px-4 py-3 text-sm"
+        >
+          {store.students.filter(
+            (s) => s.status !== "inactive" && studentNeedsContractSignature(s, store.academy),
+          ).length}{" "}
+          contrato(s) sem aceite da versão atual. Abrir lista — a chamada continua liberada.
         </Link>
       ) : null}
 
@@ -669,6 +684,8 @@ function RosterRow({
   missing: boolean;
   action: React.ReactNode;
 }) {
+  const store = useStore();
+  const unsigned = studentNeedsContractSignature(student, store.academy);
   const late =
     attendance && session ? isLateCheckIn(session, attendance.checkedInAt) : false;
   return (
@@ -691,6 +708,7 @@ function RosterRow({
           {student.status === "trial" ? <span>Experimental</span> : null}
           {overdue ? <span className="text-destructive">Mensalidade</span> : null}
           {medical ? <span className="text-destructive">Atestado</span> : null}
+          {unsigned ? <span className="text-destructive">Contrato</span> : null}
           {missing && !attendance ? <span>Sumiu</span> : null}
         </p>
       </div>

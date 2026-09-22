@@ -40,6 +40,13 @@ export function LaunchChecklist() {
       href: "/academia/cobrancas",
       done: store.payments.some((p) => p.month === month),
     },
+    {
+      id: "contract",
+      label: "Publicar o contrato da casa",
+      hint: "O aluno assina no perfil. Experimental treina uma vez sem assinar.",
+      href: "/academia/configuracoes",
+      done: Boolean((store.academy.contractBody ?? "").trim()) && store.academy.contractVersion > 0,
+    },
   ];
   const done = steps.filter((step) => step.done).length;
   if (done === steps.length) return null;

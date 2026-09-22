@@ -6,12 +6,14 @@ const OWNER_NEXT = new Set([
   "/academia/presenca",
   "/academia/cobrancas",
   "/academia/atestados",
+  "/academia/contratos",
 ]);
 
 const INSTRUCTOR_NEXT = new Set([
   "/academia",
   "/academia/presenca",
   "/academia/atestados",
+  "/academia/contratos",
   "/academia/alunos",
 ]);
 

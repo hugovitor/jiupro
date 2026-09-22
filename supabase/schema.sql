@@ -476,6 +476,13 @@ alter table public.posts add column if not exists author_role text;
 alter table public.students add column if not exists cpf text;
 alter table public.students add column if not exists asaas_customer_id text;
 alter table public.students add column if not exists medical_until date;
+alter table public.students add column if not exists contract_signed_version int;
+alter table public.students add column if not exists contract_signed_at timestamptz;
+alter table public.students add column if not exists contract_signed_by text;
+alter table public.students add column if not exists contract_signed_as text;
+alter table public.academies add column if not exists contract_body text;
+alter table public.academies add column if not exists contract_version int not null default 0;
+alter table public.academies add column if not exists contract_updated_at timestamptz;
 alter table public.payments add column if not exists asaas_payment_id text;
 alter table public.payments add column if not exists asaas_invoice_url text;
 alter table public.payments add column if not exists asaas_pix_copy text;
@@ -1058,6 +1065,9 @@ returns table (
   brand_logo text,
   brand_tagline text,
   billing_status text,
+  contract_body text,
+  contract_version int,
+  contract_updated_at timestamptz,
   created_at timestamptz,
   updated_at timestamptz
 )
@@ -1085,6 +1095,9 @@ as $$
     a.brand_logo,
     a.brand_tagline,
     a.billing_status,
+    a.contract_body,
+    a.contract_version,
+    a.contract_updated_at,
     a.created_at,
     a.updated_at
   from public.academies a

@@ -24,6 +24,11 @@ import { ADULT_ORDER, beltMeta } from "@/lib/belts";
 import { attendanceDay, attendanceForStudent, classesShareSlot } from "@/lib/roster-identity";
 import { currentStudent, useStore } from "@/lib/store";
 import { studentBlockedByOverdue } from "@/lib/overdue-lock";
+import {
+  CONTRACT_LOCK_MESSAGE,
+  studentBlockedByContract,
+  trainedCountForContract,
+} from "@/lib/enrollment-contract";
 import { hasFeature } from "@/lib/plan-access";
 import type { Attendance, ClassSession, Student } from "@/lib/types";
 import { useNow } from "@/lib/use-now";
@@ -50,6 +55,14 @@ export default function AlunoHome() {
   const overdueLock = student
     ? studentBlockedByOverdue(store.payments, student.id, store.academy)
     : false;
+  const contractLock = student
+    ? studentBlockedByContract(
+        student,
+        store.academy,
+        trainedCountForContract(store.attendance, student.id),
+      )
+    : false;
+  const selfLock = overdueLock || contractLock;
 
   const classIdsFor = (classId: string) => {
     const cls = store.classes.find((c) => c.id === classId);
@@ -95,6 +108,7 @@ export default function AlunoHome() {
       </div>
 
       {overdueLock ? <OverdueLockCard /> : null}
+      {contractLock ? <ContractLockCard /> : null}
 
       <section className="surface p-4">
         <p className="text-[11px] font-black tracking-[0.16em] text-red-500 uppercase">
@@ -119,14 +133,16 @@ export default function AlunoHome() {
             mine={mineRow(featured.id)}
             canCheck={
               !!student &&
-              !overdueLock &&
+              !selfLock &&
               studentCanSelfCheckIn(featured, now) &&
               !onList(featured.id)
             }
             lockHint={
               overdueLock && !onList(featured.id)
                 ? "Mensalidade em atraso. Pague no Pix da academia — o professor ainda pode te colocar na lista no tatame."
-                : selfCheckInHint(featured, now)
+                : contractLock && !onList(featured.id)
+                  ? CONTRACT_LOCK_MESSAGE
+                  : selfCheckInHint(featured, now)
             }
             full={
               featured.capacity > 0 &&
@@ -143,6 +159,10 @@ export default function AlunoHome() {
               if (!student || busyId) return;
               if (overdueLock) {
                 toast.error("Mensalidade em atraso. Pague no Pix da academia.");
+                return;
+              }
+              if (contractLock) {
+                toast.error(CONTRACT_LOCK_MESSAGE);
                 return;
               }
               if (onList(featured.id)) return;
@@ -222,11 +242,15 @@ export default function AlunoHome() {
                       <Button
                         size="sm"
                         variant="outline"
-                        disabled={!student || overdueLock || !open || busyId === c.id}
+                        disabled={!student || selfLock || !open || busyId === c.id}
                         onClick={async () => {
                           if (!student || busyId) return;
                           if (overdueLock) {
                             toast.error("Mensalidade em atraso. Pague no Pix da academia.");
+                            return;
+                          }
+                          if (contractLock) {
+                            toast.error(CONTRACT_LOCK_MESSAGE);
                             return;
                           }
                           setBusyId(c.id);
@@ -244,7 +268,7 @@ export default function AlunoHome() {
                           }
                         }}
                       >
-                        {overdueLock ? "Trava" : open ? "Confirmar" : "Encerrada"}
+                        {overdueLock ? "Trava" : contractLock ? "Contrato" : open ? "Confirmar" : "Encerrada"}
                       </Button>
                     )}
                   </div>
@@ -297,6 +321,20 @@ function OverdueLockCard() {
       ) : (
         <p className="mt-3 text-sm text-white/55">A academia ainda não colocou a chave Pix.</p>
       )}
+    </section>
+  );
+}
+
+function ContractLockCard() {
+  return (
+    <section className="rounded-2xl border border-amber-500/35 bg-amber-500/10 p-4">
+      <p className="text-[11px] font-black tracking-[0.16em] text-amber-400 uppercase">
+        Contrato da academia
+      </p>
+      <p className="mt-2 text-sm">{CONTRACT_LOCK_MESSAGE}</p>
+      <Button className="mt-3" size="sm" render={<Link href="/aluno/perfil" />}>
+        Assinar no perfil
+      </Button>
     </section>
   );
 }

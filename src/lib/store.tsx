@@ -57,6 +57,15 @@ import { attendanceStatus, classHeadcount, isOnRoster, isValidated, studentCanSe
 import { academyPortability } from "./lgpd";
 import { applyOverdueStatus } from "./payment-overdue";
 import { OVERDUE_LOCK_MESSAGE, studentBlockedByOverdue } from "./overdue-lock";
+import {
+  applyContractSignature,
+  CONTRACT_LOCK_MESSAGE,
+  hasPublishedContract,
+  nextContractVersion,
+  normalizeEnrollmentContract,
+  studentBlockedByContract,
+  trainedCountForContract,
+} from "./enrollment-contract";
 import { canAddStudent, studentCapMessage } from "./plan-access";
 import { canCreateAnotherHouse } from "./memberships";
 import { kidsGuardianRequiredError, resolvedEnrollmentDivision } from "./kids-enrollment";
@@ -211,6 +220,9 @@ type Store = AppState & {
   ) => void;
   toggleRsvp: (eventId: string, studentId: string) => void;
   updateMyPhone: (phone: string, name?: string) => Promise<{ ok: boolean; error?: string }>;
+  publishEnrollmentContract: (body: string) => { ok: boolean; error?: string };
+  signEnrollmentContract: (studentId?: string) => Promise<{ ok: boolean; error?: string }>;
+  recordEnrollmentContract: (studentId: string) => { ok: boolean; error?: string };
   removeEvent: (id: string) => void;
   sellItem: (
     studentId: string,
@@ -346,6 +358,57 @@ async function publishOwnerAttendance(input: {
     cache: "no-store",
     body: JSON.stringify(input),
   }).catch(() => undefined);
+}
+
+async function publishStudentContract(): Promise<{
+  ok: boolean;
+  error?: string;
+  contractSignedVersion?: number;
+  contractSignedAt?: string;
+  contractSignedBy?: string;
+  contractSignedAs?: "student" | "guardian";
+}> {
+  const client = createSupabaseBrowserClient();
+  if (!client) {
+    return { ok: false, error: "O banco da academia não está ligado." };
+  }
+  const token = await ensureBrowserAuthSession(client);
+  if (!token) {
+    return { ok: false, error: "Entre de novo para assinar o contrato." };
+  }
+  try {
+    const res = await fetch("/api/aluno/contrato", {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${token}`,
+        "Content-Type": "application/json",
+      },
+      cache: "no-store",
+    });
+    const data = (await res.json().catch(() => ({}))) as {
+      ok?: boolean;
+      error?: string;
+      contractSignedVersion?: number;
+      contractSignedAt?: string;
+      contractSignedBy?: string;
+      contractSignedAs?: "student" | "guardian";
+    };
+    if (!res.ok || data.ok === false) {
+      return {
+        ok: false,
+        error: data.error || "Não deu para registrar o aceite agora.",
+      };
+    }
+    return {
+      ok: true,
+      contractSignedVersion: data.contractSignedVersion,
+      contractSignedAt: data.contractSignedAt,
+      contractSignedBy: data.contractSignedBy,
+      contractSignedAs: data.contractSignedAs,
+    };
+  } catch {
+    return { ok: false, error: "Sem conexão. Tente de novo." };
+  }
 }
 
 function classAliasIds(classes: ClassSession[], classId: string) {
@@ -1812,11 +1875,18 @@ export function StoreProvider({ children }: { children: ReactNode }) {
       }
       const who = current.students.find((item) => item.id === studentId);
       const sid = (who ? canonicalStudent(current.students, who)?.id : null) ?? studentId;
+      const aliases = who ? studentAliasIds(who, current.students) : new Set([sid]);
       if (studentBlockedByOverdue(current.payments, sid, current.academy)) {
         return { ok: false, error: OVERDUE_LOCK_MESSAGE };
       }
+      const trained = trainedCountForContract(current.attendance, aliases);
+      if (
+        who &&
+        studentBlockedByContract({ ...who, id: sid }, current.academy, trained)
+      ) {
+        return { ok: false, error: CONTRACT_LOCK_MESSAGE };
+      }
       const today = isoDate(0);
-      const aliases = who ? studentAliasIds(who, current.students) : new Set([sid]);
       const classIds = classAliasIds(current.classes, classId);
       const mine = current.attendance.find(
         (a) =>
@@ -2077,6 +2147,90 @@ export function StoreProvider({ children }: { children: ReactNode }) {
     return { ok: true };
   }, []);
 
+  const publishEnrollmentContract: Store["publishEnrollmentContract"] = useCallback((body) => {
+    const normalized = normalizeEnrollmentContract(body);
+    if (typeof normalized !== "string") return { ok: false, error: normalized.error };
+    const current = getSnapshot();
+    const version = nextContractVersion(current.academy, normalized);
+    commit((prev) => ({
+      ...prev,
+      academy: {
+        ...prev.academy,
+        contractBody: normalized,
+        contractVersion: version,
+        contractUpdatedAt: new Date().toISOString(),
+      },
+    }));
+    flushRemotePush();
+    return { ok: true };
+  }, []);
+
+  const applySignatureToStudent = (
+    prev: AppState,
+    studentId: string,
+    patch: {
+      contractSignedVersion: number;
+      contractSignedAt: string;
+      contractSignedBy: string;
+      contractSignedAs: "student" | "guardian";
+    },
+  ): AppState => ({
+    ...prev,
+    students: prev.students.map((row) => (row.id === studentId ? { ...row, ...patch } : row)),
+  });
+
+  const signEnrollmentContract: Store["signEnrollmentContract"] = useCallback(async (studentId) => {
+    const current = getSnapshot();
+    const sessionUser = current.session?.userId;
+    const student =
+      current.students.find((row) => row.id === studentId) ??
+      current.students.find((row) => row.userId && row.userId === sessionUser);
+    if (!student) return { ok: false, error: "Ficha não encontrada." };
+    if (!hasPublishedContract(current.academy)) {
+      return { ok: false, error: "A academia ainda não publicou o contrato." };
+    }
+    const local = applyContractSignature(student, current.academy);
+    if ("error" in local) return { ok: false, error: local.error };
+
+    if (isLiveRemote(current)) {
+      const published = await publishStudentContract();
+      if (!published.ok) return { ok: false, error: published.error };
+      const patch = {
+        contractSignedVersion:
+          published.contractSignedVersion ?? local.contractSignedVersion,
+        contractSignedAt: published.contractSignedAt ?? local.contractSignedAt,
+        contractSignedBy: published.contractSignedBy ?? local.contractSignedBy,
+        contractSignedAs: published.contractSignedAs ?? local.contractSignedAs,
+      };
+      commit((prev) => applySignatureToStudent(prev, student.id, patch));
+      const epoch = writeEpoch;
+      if (current.session) {
+        const pulled = await pullAcademyState(current.session);
+        if (!("error" in pulled) && writeEpoch === epoch) {
+          adoptRemote({ ...pulled, session: current.session });
+        }
+      }
+      return { ok: true };
+    }
+
+    commit((prev) => applySignatureToStudent(prev, student.id, local));
+    return { ok: true };
+  }, []);
+
+  const recordEnrollmentContract: Store["recordEnrollmentContract"] = useCallback((studentId) => {
+    const current = getSnapshot();
+    const student = current.students.find((row) => row.id === studentId);
+    if (!student) return { ok: false, error: "Ficha não encontrada." };
+    if (!hasPublishedContract(current.academy)) {
+      return { ok: false, error: "Publique o contrato em Configurações primeiro." };
+    }
+    const patch = applyContractSignature(student, current.academy);
+    if ("error" in patch) return { ok: false, error: patch.error };
+    commit((prev) => applySignatureToStudent(prev, student.id, patch));
+    flushRemotePush();
+    return { ok: true };
+  }, []);
+
   const removeEvent: Store["removeEvent"] = useCallback((id) => {
     commit((prev) => ({
       ...prev,
@@ -2195,6 +2349,9 @@ export function StoreProvider({ children }: { children: ReactNode }) {
       updateEvent,
       toggleRsvp,
       updateMyPhone,
+      publishEnrollmentContract,
+      signEnrollmentContract,
+      recordEnrollmentContract,
       removeEvent,
       sellItem,
       addDropIn,
@@ -2261,6 +2418,9 @@ export function StoreProvider({ children }: { children: ReactNode }) {
       updateEvent,
       toggleRsvp,
       updateMyPhone,
+      publishEnrollmentContract,
+      signEnrollmentContract,
+      recordEnrollmentContract,
       removeEvent,
       sellItem,
       addDropIn,

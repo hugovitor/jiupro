@@ -42,6 +42,7 @@ import { useStore } from "@/lib/store";
 import { useNow } from "@/lib/use-now";
 import { birthdayMessage, comebackMessage, waHref } from "@/lib/whatsapp";
 import { chargeQueueToday } from "@/lib/charge-reminder";
+import { studentNeedsContractSignature } from "@/lib/enrollment-contract";
 
 export default function AcademiaDashboard() {
   const store = useStore();
@@ -120,6 +121,28 @@ export default function AcademiaDashboard() {
           <p className="mt-2 text-sm">
             {zapToday.length} aluno(s) para cobrar hoje com o Pix da academia. A fila
             não repete no mesmo dia.
+          </p>
+        </Link>
+      ) : null}
+
+      {store.session?.role !== "instructor" &&
+      store.students.filter(
+        (s) => s.status !== "inactive" && studentNeedsContractSignature(s, store.academy),
+      ).length > 0 ? (
+        <Link
+          href="/academia/contratos"
+          className="mt-6 block surface border-amber-500/30 bg-amber-500/10 p-4"
+        >
+          <p className="text-[11px] font-black tracking-[0.16em] text-amber-400 uppercase">
+            Contratos
+          </p>
+          <p className="mt-2 text-sm">
+            {
+              store.students.filter(
+                (s) => s.status !== "inactive" && studentNeedsContractSignature(s, store.academy),
+              ).length
+            }{" "}
+            aluno(s) sem aceite da versão atual. O professor ainda dá presença no tatame.
           </p>
         </Link>
       ) : null}

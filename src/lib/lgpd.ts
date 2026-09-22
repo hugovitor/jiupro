@@ -38,6 +38,10 @@ export function studentPortability(student: Student, state: AppState) {
       status: student.status,
       cpf: student.cpf ?? "",
       medicalCertificateUntil: student.medicalCertificateUntil ?? "",
+      contractSignedVersion: student.contractSignedVersion ?? 0,
+      contractSignedAt: student.contractSignedAt ?? "",
+      contractSignedBy: student.contractSignedBy ?? "",
+      contractSignedAs: student.contractSignedAs ?? "",
     },
     payments: pays.map((p) => ({
       month: p.month,
