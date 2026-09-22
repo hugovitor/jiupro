@@ -62,13 +62,12 @@ describe("contrato da academia", () => {
 
   it("no kids exige responsável e sobe versão só se o texto mudou", () => {
     expect(
-      contractSignerError({ division: "kids", guardianName: "", birthDate: "2015-01-01" }),
+      contractSignerError({ division: "kids", guardianName: "" }),
     ).toMatch(/responsável/);
     expect(
       contractSignerError({
         division: "kids",
         guardianName: "Eduardo Martins",
-        birthDate: "2015-01-01",
       }),
     ).toBeNull();
     expect(nextContractVersion(academy, academy.contractBody)).toBe(1);

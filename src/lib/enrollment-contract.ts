@@ -121,7 +121,7 @@ export function studentBlockedByContract(
 }
 
 export function contractSignerError(
-  student: Pick<Student, "division" | "guardianName" | "birthDate">,
+  student: Pick<Student, "division" | "guardianName">,
 ) {
   if (student.division === "kids") {
     const guardian = (student.guardianName ?? "").trim();
