@@ -10,7 +10,7 @@ export const LEGACY_STATE_KEY = "jiupro.demo.v1";
 export const SESSION_KEY = "jiupro.session.v1";
 
 export type Vault = {
-  version: 8;
+  version: 9;
   activeId: string;
   session: Session | null;
   credentials: Record<string, string>;
@@ -79,7 +79,7 @@ function migrateState(state: AppState): AppState {
 
 function emptyVault(): Vault {
   return {
-    version: 8,
+    version: 9,
     activeId: DEMO_ACADEMY_ID,
     session: createSeed().session,
     credentials: {},
@@ -92,12 +92,12 @@ function readVault(): Vault {
     const raw = localStorage.getItem(VAULT_KEY);
     if (raw) {
       const parsed = JSON.parse(raw) as Vault;
-      const stale = (parsed.version ?? 0) < 8;
+      const stale = (parsed.version ?? 0) < 9;
       if (!parsed.academies[DEMO_ACADEMY_ID] || stale) {
         parsed.academies[DEMO_ACADEMY_ID] = stripSession(createSeed());
       }
       parsed.credentials = isSupabaseConfigured() ? {} : (parsed.credentials ?? {});
-      parsed.version = 8;
+      parsed.version = 9;
       try {
         localStorage.setItem(VAULT_KEY, JSON.stringify(parsed));
       } catch {
