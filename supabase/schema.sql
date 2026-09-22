@@ -1045,6 +1045,9 @@ drop policy if exists "academy staff read" on public.academies;
 create policy "academy staff read" on public.academies
   for select using (id = public.current_academy_id() and public.is_academy_staff());
 
+-- CREATE OR REPLACE não troca o RETURNS TABLE; precisa dropar antes de incluir contract_*.
+drop function if exists public.academy_for_member();
+
 create or replace function public.academy_for_member()
 returns table (
   id uuid,

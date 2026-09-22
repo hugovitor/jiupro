@@ -565,6 +565,13 @@ create policy "evaluations read academy" on public.evaluations
 alter table public.academies add column if not exists updated_at timestamptz not null default now();
 alter table public.academies add column if not exists billing_status text not null default 'none';
 alter table public.academies add column if not exists due_day int not null default 10;
+alter table public.academies add column if not exists contract_body text;
+alter table public.academies add column if not exists contract_version int not null default 0;
+alter table public.academies add column if not exists contract_updated_at timestamptz;
+alter table public.students add column if not exists contract_signed_version int;
+alter table public.students add column if not exists contract_signed_at timestamptz;
+alter table public.students add column if not exists contract_signed_by text;
+alter table public.students add column if not exists contract_signed_as text;
 
 create or replace function public.academies_touch_updated_at()
 returns trigger
@@ -586,6 +593,8 @@ drop policy if exists "academy staff read" on public.academies;
 create policy "academy staff read" on public.academies
   for select using (id = public.current_academy_id() and public.is_academy_staff());
 
+drop function if exists public.academy_for_member();
+
 create or replace function public.academy_for_member()
 returns table (
   id uuid,
@@ -606,6 +615,9 @@ returns table (
   brand_logo text,
   brand_tagline text,
   billing_status text,
+  contract_body text,
+  contract_version int,
+  contract_updated_at timestamptz,
   created_at timestamptz,
   updated_at timestamptz
 )
@@ -633,6 +645,9 @@ as $$
     a.brand_logo,
     a.brand_tagline,
     a.billing_status,
+    a.contract_body,
+    a.contract_version,
+    a.contract_updated_at,
     a.created_at,
     a.updated_at
   from public.academies a
