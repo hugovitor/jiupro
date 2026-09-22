@@ -29,6 +29,10 @@ import type { Student } from "@/lib/types";
 import { SendStudentAccessButton } from "@/components/academia/send-student-access";
 import { overdueMessage, waHref } from "@/lib/whatsapp";
 import { useState } from "react";
+import {
+  contractLabel,
+  studentNeedsContractSignature,
+} from "@/lib/enrollment-contract";
 
 export default function AlunoDetalhePage() {
   const { id } = useParams<{ id: string }>();
@@ -143,6 +147,7 @@ export default function AlunoDetalhePage() {
                   : "Sem validade"
               }
             />
+            <Row k="Contrato" v={contractLabel(student, store.academy)} />
             <Row k="Último treino" v={last ? formatDay(last.date) : "—"} />
             <Row k="Status" v={student.status} />
             {student.notes && (
@@ -150,7 +155,23 @@ export default function AlunoDetalhePage() {
                 {student.notes}
               </p>
             )}
-            <div className="flex gap-2 pt-2">
+            <div className="flex flex-wrap gap-2 pt-2">
+              {studentNeedsContractSignature(student, store.academy) ? (
+                <Button
+                  size="sm"
+                  variant="outline"
+                  onClick={() => {
+                    const result = store.recordEnrollmentContract(student.id);
+                    if (!result.ok) {
+                      toast.error(result.error);
+                      return;
+                    }
+                    toast.success("Aceite do contrato registrado.");
+                  }}
+                >
+                  Registrar aceite
+                </Button>
+              ) : null}
               <Button
                 size="sm"
                 variant="outline"

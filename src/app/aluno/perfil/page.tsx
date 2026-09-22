@@ -15,6 +15,14 @@ import { hasFeature } from "@/lib/plan-access";
 import { currentStudent, useStore } from "@/lib/store";
 import { downloadJson, studentPortability, deletionWhatsAppText } from "@/lib/lgpd";
 import { supportWhatsAppHref } from "@/lib/support";
+import type { Student } from "@/lib/types";
+import {
+  CONTRACT_DISCLAIMER,
+  contractLabel,
+  contractStatus,
+  hasPublishedContract,
+  studentNeedsContractSignature,
+} from "@/lib/enrollment-contract";
 
 export default function PerfilAluno() {
   const store = useStore();
@@ -131,6 +139,8 @@ export default function PerfilAluno() {
 
       {student ? <PhoneForm phone={student.phone} name={student.name} /> : null}
 
+      {student ? <ContractCard student={student} /> : null}
+
       {student ? (
         <div className="space-y-2">
           <Button
@@ -228,5 +238,74 @@ function PhoneForm({ phone, name }: { phone: string; name: string }) {
         {busy ? "Salvando…" : "Salvar ficha"}
       </Button>
     </form>
+  );
+}
+
+function ContractCard({ student }: { student: Student }) {
+  const store = useStore();
+  const [open, setOpen] = useState(false);
+  const [busy, setBusy] = useState(false);
+  const published = hasPublishedContract(store.academy);
+  const status = contractStatus(student, store.academy);
+  const needs = studentNeedsContractSignature(student, store.academy);
+  const kids = student.division === "kids";
+
+  if (!published) return null;
+
+  return (
+    <section className="space-y-3 border border-border bg-card p-4 text-sm">
+      <div>
+        <p className="font-medium">Contrato da academia</p>
+        <p className="mt-1 text-xs text-muted-foreground">
+          {contractLabel(student, store.academy)}
+          {student.contractSignedBy ? ` · ${student.contractSignedBy}` : ""}
+          {student.contractSignedAt ? ` · ${formatDate(student.contractSignedAt)}` : ""}
+        </p>
+      </div>
+      {kids ? (
+        <p className="text-xs text-muted-foreground">
+          No kids, quem aceita é o responsável ({student.guardianName || "cadastre o nome na ficha"}
+          ).
+        </p>
+      ) : null}
+      <Button type="button" variant="outline" className="w-full" onClick={() => setOpen((v) => !v)}>
+        {open ? "Esconder texto" : "Ler contrato"}
+      </Button>
+      {open ? (
+        <pre className="max-h-72 overflow-auto whitespace-pre-wrap rounded-lg bg-background p-3 font-sans text-xs leading-5">
+          {store.academy.contractBody}
+        </pre>
+      ) : null}
+      <p className="text-[11px] text-muted-foreground">{CONTRACT_DISCLAIMER}</p>
+      {needs ? (
+        <Button
+          className="w-full"
+          disabled={busy}
+          onClick={async () => {
+            setBusy(true);
+            try {
+              const result = await store.signEnrollmentContract(student.id);
+              if (!result.ok) {
+                toast.error(result.error);
+                return;
+              }
+              toast.success(
+                status === "stale"
+                  ? "Nova versão aceita."
+                  : kids
+                    ? "Aceite do responsável registrado."
+                    : "Contrato assinado.",
+              );
+            } finally {
+              setBusy(false);
+            }
+          }}
+        >
+          {busy ? "Registrando…" : kids ? "Responsável aceita" : "Assinar"}
+        </Button>
+      ) : (
+        <p className="text-xs text-muted-foreground">Aceite da versão atual registrado.</p>
+      )}
+    </section>
   );
 }

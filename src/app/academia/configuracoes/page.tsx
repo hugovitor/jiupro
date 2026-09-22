@@ -12,7 +12,13 @@ import { FirstLoginHint } from "@/components/first-login-guide";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
 import { PRODUCT_NAME } from "@/lib/brand";
+import {
+  CONTRACT_DISCLAIMER,
+  defaultEnrollmentContract,
+  hasPublishedContract,
+} from "@/lib/enrollment-contract";
 import { normalizeAcademyHouse } from "@/lib/academy-edit";
 import { downloadJson } from "@/lib/lgpd";
 import { startPlanCheckout } from "@/lib/billing";
@@ -140,6 +146,8 @@ function ConfigInner() {
       </section>
 
       <PixForm />
+
+      <ContractForm />
 
       <DueDayForm />
 
@@ -427,6 +435,75 @@ function PixForm() {
           <Input value={pixName} onChange={(e) => setPixName(e.target.value)} />
         </div>
         <Button type="submit">{missing ? "Salvar chave Pix" : "Salvar Pix"}</Button>
+      </form>
+    </section>
+  );
+}
+
+function ContractForm() {
+  const store = useStore();
+  const published = hasPublishedContract(store.academy);
+  const [body, setBody] = useState(
+    store.academy.contractBody || defaultEnrollmentContract(store.academy.name),
+  );
+
+  useEffect(() => {
+    if (store.academy.contractBody) setBody(store.academy.contractBody);
+  }, [store.academy.contractBody]);
+
+  return (
+    <section className="border border-border bg-card p-5">
+      <h2 className="font-medium">Contrato de matrícula</h2>
+      <p className="mt-1 text-sm text-muted-foreground">
+        Texto da academia com o aluno — não é o termo do {PRODUCT_NAME}. Quem
+        assina é o aluno no perfil, ou o responsável no kids. Mudar o texto sobe
+        a versão; quem já tinha aceito precisa aceitar de novo.
+      </p>
+      {published ? (
+        <p className="mt-2 text-xs text-muted-foreground">
+          Versão {store.academy.contractVersion} publicada.{" "}
+          <Link href="/academia/contratos" className="font-medium text-foreground underline">
+            Ver quem falta assinar
+          </Link>
+          .
+        </p>
+      ) : (
+        <p className="mt-2 text-xs text-amber-400">
+          Ainda não publicado. Sem isso o app não pede aceite nem trava presença.
+        </p>
+      )}
+      <form
+        className="mt-4 space-y-3"
+        onSubmit={(event) => {
+          event.preventDefault();
+          const result = store.publishEnrollmentContract(body);
+          if (!result.ok) {
+            toast.error(result.error);
+            return;
+          }
+          toast.success("Contrato publicado. Quem ainda não assinou vê no perfil.");
+        }}
+      >
+        <div className="space-y-1.5">
+          <Label htmlFor="house-contract">Texto</Label>
+          <Textarea
+            id="house-contract"
+            value={body}
+            onChange={(e) => setBody(e.target.value)}
+            className="min-h-56 font-mono text-sm"
+          />
+        </div>
+        <p className="text-[11px] text-muted-foreground">{CONTRACT_DISCLAIMER}</p>
+        <div className="flex flex-wrap gap-2">
+          <Button type="submit">{published ? "Publicar nova versão" : "Publicar contrato"}</Button>
+          <Button
+            type="button"
+            variant="outline"
+            onClick={() => setBody(defaultEnrollmentContract(store.academy.name))}
+          >
+            Usar modelo da casa
+          </Button>
+        </div>
       </form>
     </section>
   );

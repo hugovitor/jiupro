@@ -1,5 +1,6 @@
 import { currentMonth, isoDate, shiftMonth, weekdayToday } from "./format";
 import { sandboxCpf } from "./cpf";
+import { defaultEnrollmentContract } from "./enrollment-contract";
 import type {
   Academy,
   AcademyEvent,
@@ -60,6 +61,9 @@ export function createSeed(): AppState {
     stripeCustomerId: "",
     stripeSubscriptionId: "",
     updatedAt: "2021-03-08T12:00:00.000Z",
+    contractBody: defaultEnrollmentContract("Equipe Origem Jiu-Jitsu"),
+    contractVersion: 1,
+    contractUpdatedAt: "2026-09-01T12:00:00.000Z",
   };
 
   const session = {
@@ -117,6 +121,10 @@ export function createSeed(): AppState {
       notes: "Treina competição aos sábados.",
       avatarHue: 210,
       medicalCertificateUntil: isoDate(200),
+      contractSignedVersion: 1,
+      contractSignedAt: "2026-09-02T10:00:00.000Z",
+      contractSignedBy: "João Pedro Almeida",
+      contractSignedAs: "student",
     },
     {
       id: "s_ana",
@@ -135,6 +143,10 @@ export function createSeed(): AppState {
       monthlyFee: 180,
       notes: "Ajuda na turma feminina.",
       avatarHue: 310,
+      contractSignedVersion: 1,
+      contractSignedAt: "2026-09-02T10:12:00.000Z",
+      contractSignedBy: "Ana Carolina Souza",
+      contractSignedAs: "student",
     },
     {
       id: "s_lucas",
@@ -172,6 +184,10 @@ export function createSeed(): AppState {
       monthlyFee: 180,
       notes: "Pronta para faixa roxa. Frequência alta.",
       avatarHue: 280,
+      contractSignedVersion: 1,
+      contractSignedAt: "2026-09-02T10:20:00.000Z",
+      contractSignedBy: "Marina Oliveira",
+      contractSignedAs: "student",
     },
     {
       id: "s_thiago",
@@ -190,6 +206,10 @@ export function createSeed(): AppState {
       monthlyFee: 0,
       notes: "Professor assistente. Mensalidade isenta.",
       avatarHue: 12,
+      contractSignedVersion: 1,
+      contractSignedAt: "2026-09-02T10:22:00.000Z",
+      contractSignedBy: "Thiago Santos",
+      contractSignedAs: "student",
     },
     {
       id: "s_bia",
@@ -227,6 +247,10 @@ export function createSeed(): AppState {
       monthlyFee: 0,
       notes: "Faixa preta. Dá aula de no-gi.",
       avatarHue: 0,
+      contractSignedVersion: 1,
+      contractSignedAt: "2026-09-02T10:24:00.000Z",
+      contractSignedBy: "Pedro Henrique Ramos",
+      contractSignedAs: "student",
     },
     {
       id: "s_camila",
@@ -283,6 +307,10 @@ export function createSeed(): AppState {
       notes: "Muito aplicada. Pai assiste todas as aulas.",
       avatarHue: 95,
       medicalCertificateUntil: isoDate(12),
+      contractSignedVersion: 1,
+      contractSignedAt: "2026-09-02T11:00:00.000Z",
+      contractSignedBy: "Eduardo Martins",
+      contractSignedAs: "guardian",
     },
     {
       id: "s_andre",
@@ -301,6 +329,10 @@ export function createSeed(): AppState {
       monthlyFee: 200,
       notes: "Competidor. Peso pena. Próximo estadual em outubro.",
       avatarHue: 25,
+      contractSignedVersion: 1,
+      contractSignedAt: "2026-09-02T10:30:00.000Z",
+      contractSignedBy: "André Barbosa",
+      contractSignedAs: "student",
     },
     {
       id: "s_larissa",

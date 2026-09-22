@@ -1,6 +1,10 @@
 import { NextResponse } from "next/server";
 import { createClient } from "@supabase/supabase-js";
 import { isoDate, weekdayToday } from "@/lib/format";
+import {
+  CONTRACT_LOCK_MESSAGE,
+  studentBlockedByContract,
+} from "@/lib/enrollment-contract";
 import { OVERDUE_LOCK_MESSAGE, studentBlockedByOverdue } from "@/lib/overdue-lock";
 import { supabaseAdmin } from "@/lib/operator";
 import { classFingerprint } from "@/lib/roster-identity";
@@ -175,6 +179,48 @@ async function studentIsBlockedByOverdue(
   );
 }
 
+async function studentIsBlockedByContract(
+  db: AttendanceClient,
+  academyId: string,
+  studentId: string,
+) {
+  const [{ data: academy }, { data: student, error: studentError }, { data: attendance }] =
+    await Promise.all([
+      db
+        .from("academies")
+        .select("contract_body, contract_version")
+        .eq("id", academyId)
+        .maybeSingle(),
+      db
+        .from("students")
+        .select("id, status, contract_signed_version")
+        .eq("id", studentId)
+        .maybeSingle(),
+      db
+        .from("attendance")
+        .select("id, status")
+        .eq("academy_id", academyId)
+        .eq("student_id", studentId),
+    ]);
+  if (studentError || !student) return false;
+  const trained = (attendance ?? []).filter((row) => String(row.status ?? "") !== "no_show").length;
+  return studentBlockedByContract(
+    {
+      id: studentId,
+      status: (String(student.status ?? "active") as "active" | "inactive" | "trial") || "active",
+      contractSignedVersion:
+        student.contract_signed_version == null
+          ? undefined
+          : Number(student.contract_signed_version),
+    },
+    {
+      contractBody: String(academy?.contract_body ?? ""),
+      contractVersion: Number(academy?.contract_version ?? 0),
+    },
+    trained,
+  );
+}
+
 async function loadExistingAttendance(
   db: AttendanceClient,
   academyId: string,
@@ -304,6 +350,9 @@ export async function POST(request: Request) {
 
   if (await studentIsBlockedByOverdue(db, academyId, studentId)) {
     return NextResponse.json({ error: OVERDUE_LOCK_MESSAGE }, { status: 403 });
+  }
+  if (await studentIsBlockedByContract(db, academyId, studentId)) {
+    return NextResponse.json({ error: CONTRACT_LOCK_MESSAGE }, { status: 403 });
   }
 
   const { classId, slotIds } = resolveClassId(classes, body);

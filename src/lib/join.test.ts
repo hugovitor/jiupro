@@ -79,6 +79,7 @@ describe("join · ficha", () => {
     expect(ownerDestination(null, "instructor")).toBe("/academia/presenca");
     expect(ownerDestination("/academia", "instructor")).toBe("/academia/presenca");
     expect(ownerDestination("/academia/atestados", "instructor")).toBe("/academia/atestados");
+    expect(ownerDestination("/academia/contratos", "instructor")).toBe("/academia/contratos");
     expect(ownerDestination("/academia", "owner")).toBe("/academia");
     expect(
       mapHouseMembership({

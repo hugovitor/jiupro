@@ -85,6 +85,10 @@ export type Academy = {
   stripeCustomerId: string;
   stripeSubscriptionId: string;
   updatedAt: string;
+  /** Texto do contrato de matrícula da casa (não é o termo do TatameX). */
+  contractBody: string;
+  contractVersion: number;
+  contractUpdatedAt: string;
 };
 
 export type User = {
@@ -119,6 +123,10 @@ export type Student = {
   asaasCustomerId?: string;
   /** Validade do atestado médico (YYYY-MM-DD). Vazio = sem atestado na ficha. */
   medicalCertificateUntil?: string;
+  contractSignedVersion?: number;
+  contractSignedAt?: string;
+  contractSignedBy?: string;
+  contractSignedAs?: "student" | "guardian";
 };
 
 export type ClassSession = {

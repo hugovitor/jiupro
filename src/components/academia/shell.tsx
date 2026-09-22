@@ -11,6 +11,7 @@ import {
   Lock,
   LogOut,
   PersonStanding,
+  ScrollText,
   Shield,
   Users,
 } from "lucide-react";
@@ -48,6 +49,7 @@ const GROUPS: NavGroup[] = [
     items: [
       { href: "/academia/alunos", label: "Alunos" },
       { href: "/academia/experimentais", label: "Experimentais" },
+      { href: "/academia/contratos", label: "Contratos" },
       { href: "/academia/graduacoes", label: "Graduações", feature: "promotions" },
     ],
   },
@@ -88,6 +90,7 @@ const GROUPS: NavGroup[] = [
 const INSTRUCTOR_GROUPS: NavGroup[] = [
   { id: "presenca", label: "Presença", icon: PersonStanding, href: "/academia/presenca", items: [] },
   { id: "atestados", label: "Atestados", icon: HeartPulse, href: "/academia/atestados", items: [] },
+  { id: "contratos", label: "Contratos", icon: ScrollText, href: "/academia/contratos", items: [] },
   { id: "alunos", label: "Alunos", icon: Users, href: "/academia/alunos", items: [] },
 ];
 
