@@ -75,7 +75,7 @@ const modules = [
 
 export default function HomePage() {
   return (
-    <main className="min-h-screen overflow-x-hidden bg-[#080808] text-white selection:bg-red-600 selection:text-white">
+    <main className="min-h-screen overflow-x-hidden bg-background text-foreground selection:bg-red-600 selection:text-white">
       <SiteHeader
         variant="landing"
         nav={
@@ -136,8 +136,8 @@ export default function HomePage() {
 function Hero() {
   return (
     <section id="inicio" className="relative isolate min-h-[850px] overflow-hidden pt-16">
-      <div className="absolute inset-0 -z-20 bg-[radial-gradient(circle_at_75%_25%,rgba(220,38,38,0.16),transparent_32%),radial-gradient(circle_at_20%_70%,rgba(255,255,255,0.06),transparent_28%)]" />
-      <div className="absolute inset-0 -z-10 opacity-[0.035] [background-image:linear-gradient(rgba(255,255,255,.8)_1px,transparent_1px),linear-gradient(90deg,rgba(255,255,255,.8)_1px,transparent_1px)] [background-size:72px_72px]" />
+      <div className="absolute inset-0 -z-20 bg-[radial-gradient(circle_at_75%_25%,rgba(220,38,38,0.16),transparent_32%),radial-gradient(circle_at_20%_70%,rgba(255,255,255,0.06),transparent_28%)] light:bg-[radial-gradient(circle_at_75%_25%,rgba(220,38,38,0.16),transparent_32%),radial-gradient(circle_at_20%_70%,rgba(17,17,17,0.04),transparent_28%)]" />
+      <div className="absolute inset-0 -z-10 opacity-[0.035] [background-image:linear-gradient(rgba(255,255,255,.8)_1px,transparent_1px),linear-gradient(90deg,rgba(255,255,255,.8)_1px,transparent_1px)] [background-size:72px_72px] light:opacity-[0.04] light:[background-image:linear-gradient(rgba(17,17,17,.55)_1px,transparent_1px),linear-gradient(90deg,rgba(17,17,17,.55)_1px,transparent_1px)]" />
       <div className="absolute -right-40 top-32 -z-10 h-[600px] w-[600px] rounded-full border border-red-600/15" />
       <div className="absolute top-56 -right-16 -z-10 h-[360px] w-[360px] rounded-full border border-white/10" />
 

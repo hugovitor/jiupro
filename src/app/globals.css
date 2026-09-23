@@ -3,6 +3,7 @@
 @import "shadcn/tailwind.css";
 
 @custom-variant dark (&:is(.dark *));
+@custom-variant light (&:is(.light *));
 
 @theme inline {
   --color-background: var(--background);
@@ -50,7 +51,8 @@
   --color-card: var(--card);
 }
 
-:root {
+:root,
+.dark {
   --background: #080808;
   --foreground: #f5f5f5;
   --card: #111111;
@@ -83,6 +85,44 @@
   --sidebar-accent-foreground: #f5f5f5;
   --sidebar-border: rgba(255, 255, 255, 0.1);
   --sidebar-ring: #dc2626;
+  --surface: rgb(255 255 255 / 0.03);
+  --ink: #f5f5f5;
+}
+
+.light {
+  --background: #ffffff;
+  --foreground: #111111;
+  --card: #f7f7f5;
+  --card-foreground: #111111;
+  --popover: #ffffff;
+  --popover-foreground: #111111;
+  --primary: #dc2626;
+  --primary-foreground: #ffffff;
+  --secondary: #f0f0ee;
+  --secondary-foreground: #111111;
+  --muted: #f0f0ee;
+  --muted-foreground: rgba(17, 17, 17, 0.52);
+  --accent: #f0f0ee;
+  --accent-foreground: #111111;
+  --destructive: #dc2626;
+  --border: rgba(17, 17, 17, 0.12);
+  --input: rgba(17, 17, 17, 0.14);
+  --ring: #dc2626;
+  --chart-1: #dc2626;
+  --chart-2: #111111;
+  --chart-3: rgba(17, 17, 17, 0.4);
+  --chart-4: #7f1d1d;
+  --chart-5: #ef4444;
+  --sidebar: #f7f7f5;
+  --sidebar-foreground: #111111;
+  --sidebar-primary: #dc2626;
+  --sidebar-primary-foreground: #ffffff;
+  --sidebar-accent: #ecece8;
+  --sidebar-accent-foreground: #111111;
+  --sidebar-border: rgba(17, 17, 17, 0.1);
+  --sidebar-ring: #dc2626;
+  --surface: rgb(17 17 17 / 0.03);
+  --ink: #111111;
 }
 
 @layer base {
@@ -94,14 +134,17 @@
   }
   html {
     @apply font-sans;
-    background: #080808;
+    background: var(--background);
     color-scheme: dark;
+  }
+  html.light {
+    color-scheme: light;
   }
   select,
   select option,
   select optgroup {
-    background-color: #111111;
-    color: #f5f5f5;
+    background-color: var(--card);
+    color: var(--foreground);
   }
   ::selection {
     background: #dc2626;
@@ -117,12 +160,152 @@
 }
 
 .surface {
-  border: 1px solid rgb(255 255 255 / 0.1);
-  background: rgb(255 255 255 / 0.03);
+  border: 1px solid var(--border);
+  background: var(--surface);
   border-radius: 16px;
 }
 
 .belt-tip {
   height: 2px;
   background: var(--primary);
+}
+
+/* Fundo branco: mesmo layout, só troca tinta dos tons escuros hardcoded. */
+html.light {
+  .bg-\[\#080808\],
+  .bg-\[\#070707\],
+  .bg-\[\#0b0b0b\],
+  .bg-\[\#0c0c0c\] {
+    background-color: var(--background);
+  }
+
+  .bg-\[\#101010\],
+  .bg-\[\#111111\],
+  .bg-\[\#111\],
+  .bg-\[\#121212\],
+  .bg-\[\#191919\],
+  .bg-\[\#222\],
+  .bg-\[\#080808\]\/90,
+  .bg-\[\#080808\]\/85,
+  .bg-\[\#080808\]\/95,
+  .bg-\[\#0b0b0b\]\/95,
+  .bg-\[\#0c0c0c\]\/95,
+  .bg-\[\#101010\]\/95 {
+    background-color: var(--card);
+  }
+
+  .bg-\[\#777\] {
+    background-color: #9a9a9a;
+  }
+
+  .text-white\/20,
+  .text-white\/25,
+  .text-white\/28,
+  .text-white\/30,
+  .text-white\/35,
+  .text-white\/40,
+  .text-white\/42,
+  .text-white\/45,
+  .text-white\/48,
+  .text-white\/50,
+  .text-white\/55,
+  .text-white\/58,
+  .text-white\/60,
+  .text-white\/70,
+  .text-white\/75,
+  .text-white\/80,
+  .text-white\/85 {
+    color: var(--muted-foreground);
+  }
+
+  .placeholder\:text-white\/20::placeholder,
+  .placeholder\:text-white\/25::placeholder {
+    color: var(--muted-foreground);
+  }
+
+  .hover\:text-white:hover,
+  .group-hover\:text-white:hover,
+  .group-hover\:text-white:is(:where(.group):hover *) {
+    color: var(--foreground);
+  }
+
+  .text-white {
+    color: var(--foreground);
+  }
+
+  .bg-red-600,
+  .bg-red-500,
+  .bg-red-700,
+  .bg-primary,
+  .bg-black {
+    color: #ffffff;
+  }
+
+  .bg-red-600 .text-white,
+  .bg-red-500 .text-white,
+  .bg-red-700 .text-white,
+  .bg-primary .text-white,
+  .bg-black .text-white,
+  .bg-red-600.text-white,
+  .bg-red-500.text-white,
+  .bg-red-700.text-white,
+  .bg-primary.text-white,
+  .bg-black.text-white,
+  .person-avatar,
+  .person-avatar.text-white {
+    color: #ffffff;
+  }
+
+  .hover\:bg-red-600:hover,
+  .hover\:bg-red-500:hover,
+  .hover\:bg-black:hover,
+  .group-hover\:bg-red-600:is(:where(.group):hover *),
+  .group:hover .group-hover\:bg-red-600 {
+    color: #ffffff;
+  }
+
+  .border-white\/8,
+  .border-white\/10,
+  .border-white\/12,
+  .border-white\/15,
+  .border-white\/20,
+  .border-white\/30,
+  .hover\:border-white\/20:hover,
+  .hover\:border-white\/30:hover,
+  .ring-white\/15 {
+    border-color: var(--border);
+  }
+
+  .divide-white\/10 > :not(:first-child) {
+    border-color: var(--border);
+  }
+
+  .bg-white\/5,
+  .bg-white\/8,
+  .bg-white\/10,
+  .bg-white\/15,
+  .bg-white\/\[0\.02\],
+  .bg-white\/\[0\.025\],
+  .bg-white\/\[0\.03\],
+  .bg-white\/\[0\.035\],
+  .bg-white\/\[0\.04\],
+  .bg-white\/\[0\.05\],
+  .bg-white\/\[0\.06\],
+  .bg-white\/\[0\.08\],
+  .hover\:bg-white\/5:hover,
+  .hover\:bg-white\/10:hover,
+  .hover\:bg-white\/\[0\.05\]:hover,
+  .hover\:bg-white\/\[0\.08\]:hover,
+  .focus\:bg-white\/\[0\.05\]:focus {
+    background-color: var(--muted);
+  }
+
+  .bg-black\/20 {
+    background-color: rgb(17 17 17 / 0.06);
+  }
+
+  .ring-1.ring-white\/15,
+  .ring-white\/15 {
+    --tw-ring-color: var(--border);
+  }
 }

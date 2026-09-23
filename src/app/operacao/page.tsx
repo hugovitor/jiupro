@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import { ArrowLeft, LoaderCircle } from "lucide-react";
 import { DarkCanvas, Eyebrow, Wordmark } from "@/components/brand";
+import { ThemeToggle } from "@/components/theme-toggle";
 import { OperatorAcademiesBoard } from "@/components/operacao/academies-board";
 import { OperatorCouponsPanel } from "@/components/operacao/coupons-panel";
 import { OperatorLeadsBoard } from "@/components/operacao/leads-board";
@@ -130,6 +131,7 @@ export default function OperacaoPage() {
           <Wordmark href="/" kicker={false} />
           <div className="flex items-center gap-3 text-sm">
             <span className="hidden text-white/35 sm:inline">{overview?.operator ?? email}</span>
+            <ThemeToggle />
             <Link
               href="/academia"
               className="inline-flex items-center gap-2 text-white/45 hover:text-white"

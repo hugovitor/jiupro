@@ -9,7 +9,7 @@ export function NativeSelect({
   return (
     <select
       className={cn(
-        "h-9 w-full rounded-lg border border-white/15 bg-[#111] px-2 text-sm text-white outline-none",
+        "h-9 w-full rounded-lg border border-border bg-card px-2 text-sm text-foreground outline-none",
         "focus-visible:border-red-500",
         className,
       )}

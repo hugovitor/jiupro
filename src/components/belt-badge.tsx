@@ -113,10 +113,10 @@ export function PersonAvatar({
   return (
     <span
       className={cn(
-        "inline-flex shrink-0 items-center justify-center rounded-xl font-display font-medium text-white",
+        "person-avatar inline-flex shrink-0 items-center justify-center rounded-xl font-display font-medium text-white",
         dim,
       )}
-      style={{ background: `hsl(${hue} 10% 18%)` }}
+      style={{ background: `hsl(${hue} 10% 18%)`, color: "#fff" }}
     >
       {initials}
     </span>

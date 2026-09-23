@@ -1,13 +1,15 @@
 import Link from "next/link";
 import { Home } from "lucide-react";
 import { DarkCanvas, Eyebrow, Wordmark } from "@/components/brand";
+import { ThemeToggle } from "@/components/theme-toggle";
 import { SUPPORT_PHONE_DISPLAY, supportWhatsAppHref } from "@/lib/support";
 
 export default function NotFound() {
   return (
     <DarkCanvas className="flex min-h-screen flex-col">
-      <header className="mx-auto flex h-20 w-full max-w-7xl items-center px-5 lg:px-8">
+      <header className="mx-auto flex h-20 w-full max-w-7xl items-center justify-between px-5 lg:px-8">
         <Wordmark href="/" />
+        <ThemeToggle />
       </header>
       <section className="flex flex-1 flex-col items-center justify-center px-5 pb-24 text-center">
         <Eyebrow>Página não encontrada</Eyebrow>

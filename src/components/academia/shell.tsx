@@ -19,6 +19,7 @@ import { BillingLock } from "@/components/academia/billing-lock";
 import { HouseSwitcher } from "@/components/academia/house-switcher";
 import { Wordmark } from "@/components/brand";
 import { FirstLoginGuide } from "@/components/first-login-guide";
+import { ThemeToggle } from "@/components/theme-toggle";
 import { Button } from "@/components/ui/button";
 import { academyNeedsPayment } from "@/lib/billing-status";
 import { operatorHeaders } from "@/lib/operator-client";
@@ -222,8 +223,8 @@ export function AcademiaShell({ children }: { children: React.ReactNode }) {
     .toUpperCase();
 
   return (
-    <div className="flex min-h-screen flex-col bg-[#080808] text-white selection:bg-red-600 selection:text-white">
-      <header className="sticky top-0 z-50 flex h-16 items-center justify-between border-b border-white/10 bg-[#080808]/90 px-4 backdrop-blur-xl">
+    <div className="flex min-h-screen flex-col bg-background text-foreground selection:bg-red-600 selection:text-white">
+      <header className="sticky top-0 z-50 flex h-16 items-center justify-between border-b border-border bg-background/90 px-4 backdrop-blur-xl">
         <div className="flex min-w-0 items-center gap-5">
           <Link href={homeHref} className="shrink-0">
             <Wordmark href={null} kicker={false} />
@@ -279,9 +280,10 @@ export function AcademiaShell({ children }: { children: React.ReactNode }) {
             <p className="text-[13px] font-bold">{user?.name ?? "Conta"}</p>
             <p className="text-[11px] text-white/40">{user?.email}</p>
           </div>
-          <span className="flex size-8 items-center justify-center rounded-xl bg-red-600 text-[10px] font-black">
+          <span className="flex size-8 items-center justify-center rounded-xl bg-red-600 text-[10px] font-black text-white">
             {initials}
           </span>
+          <ThemeToggle />
           <Button
             variant="ghost"
             size="icon-sm"
@@ -295,9 +297,9 @@ export function AcademiaShell({ children }: { children: React.ReactNode }) {
       </header>
 
       <div className="flex min-h-0 flex-1">
-        <aside className="sticky top-16 hidden h-[calc(100vh-4rem)] w-[220px] shrink-0 flex-col border-r border-white/10 bg-[#0b0b0b] lg:flex">
+        <aside className="sticky top-16 hidden h-[calc(100vh-4rem)] w-[220px] shrink-0 flex-col border-r border-border bg-sidebar lg:flex">
           <div className="flex items-center gap-2 px-4 pt-5 pb-4">
-            <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-red-600 text-[10px] font-black">
+            <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-red-600 text-[10px] font-black text-white">
               {academyInitials || "JP"}
             </div>
             <div className="min-w-0">
@@ -414,7 +416,7 @@ export function AcademiaShell({ children }: { children: React.ReactNode }) {
         </div>
       </div>
 
-      <nav className="fixed inset-x-0 bottom-0 z-[55] border-t border-white/10 bg-[#080808]/95 pb-[max(0.25rem,env(safe-area-inset-bottom))] backdrop-blur-xl lg:hidden">
+      <nav className="fixed inset-x-0 bottom-0 z-[55] border-t border-border bg-background/95 pb-[max(0.25rem,env(safe-area-inset-bottom))] backdrop-blur-xl lg:hidden">
         <div className="flex">
           {groups.map((group) => {
             const active = groupIsActive(group, pathname);

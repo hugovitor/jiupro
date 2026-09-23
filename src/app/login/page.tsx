@@ -19,6 +19,7 @@ import {
   Users,
 } from "lucide-react";
 import { DarkCanvas, Eyebrow, Wordmark } from "@/components/brand";
+import { ThemeToggle } from "@/components/theme-toggle";
 import { DEMO_ACCOUNTS } from "@/lib/seed";
 import { ownerDestination } from "@/lib/auth-redirect";
 import { useStore } from "@/lib/store";
@@ -86,17 +87,20 @@ export default function LoginPage() {
   }
 
   return (
-    <DarkCanvas className="bg-[#070707]">
+    <DarkCanvas>
       <header className="relative z-20 mx-auto flex h-20 max-w-7xl items-center justify-between px-5 lg:px-8">
         <Wordmark href="/" />
 
-        <Link
-          href="/"
-          className="inline-flex items-center gap-2 rounded-xl px-3 py-2 text-xs font-bold text-white/50 transition hover:bg-white/5 hover:text-white"
-        >
-          <ArrowLeft className="h-4 w-4" />
-          <span className="hidden sm:inline">Voltar ao início</span>
-        </Link>
+        <div className="flex items-center gap-1">
+          <ThemeToggle />
+          <Link
+            href="/"
+            className="inline-flex items-center gap-2 rounded-xl px-3 py-2 text-xs font-bold text-white/50 transition hover:bg-white/5 hover:text-white"
+          >
+            <ArrowLeft className="h-4 w-4" />
+            <span className="hidden sm:inline">Voltar ao início</span>
+          </Link>
+        </div>
       </header>
 
       <section className="relative z-10 mx-auto grid min-h-[calc(100vh-5rem)] max-w-7xl items-center gap-14 px-5 py-10 lg:grid-cols-[1fr_500px] lg:px-8 lg:py-16">

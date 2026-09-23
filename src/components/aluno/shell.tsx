@@ -8,6 +8,7 @@ import { AcademyMark, Wordmark } from "@/components/brand";
 import { FirstLoginGuide } from "@/components/first-login-guide";
 import { HouseSwitcher } from "@/components/academia/house-switcher";
 import { StudentAppBrand } from "@/components/aluno/app-brand";
+import { ThemeToggle } from "@/components/theme-toggle";
 import { hasFeature } from "@/lib/plan-access";
 import { DEMO_ACADEMY_ID } from "@/lib/seed";
 import { currentStudent, useStore } from "@/lib/store";
@@ -58,12 +59,12 @@ export function AlunoShell({ children }: { children: React.ReactNode }) {
   }, [router, store.academy.id, store.hydrated, store.pullNow, store.republishPendingCheckIns, store.session]);
 
   return (
-    <div className="flex min-h-screen justify-center bg-[#070707] text-white selection:bg-red-600 selection:text-white">
-      <div className="relative flex min-h-screen w-full max-w-md flex-col border-x border-white/10 bg-[#080808]">
+    <div className="flex min-h-screen justify-center bg-background text-foreground selection:bg-red-600 selection:text-white">
+      <div className="relative flex min-h-screen w-full max-w-md flex-col border-x border-border bg-background">
         <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_50%_0%,rgba(220,38,38,0.14),transparent_36%)]" />
         <StudentAppBrand />
         <header className={cn(
-          "sticky top-0 z-30 flex items-center gap-3 border-b border-white/10 bg-[#080808]/90 px-4 backdrop-blur-xl",
+          "sticky top-0 z-30 flex items-center gap-3 border-b border-border bg-background/90 px-4 backdrop-blur-xl",
           store.houses.length > 1 ? "min-h-16 py-2" : "h-16",
         )}>
           {branded ? (
@@ -87,9 +88,10 @@ export function AlunoShell({ children }: { children: React.ReactNode }) {
               {student?.name.split(" ")[0] ?? "Aluno"}
             </p>
           </div>
+          <ThemeToggle />
           <button
             type="button"
-            className="rounded-xl p-2 text-white/50 hover:bg-white/10 hover:text-white"
+            className="rounded-xl p-2 text-muted-foreground hover:bg-muted hover:text-foreground"
             onClick={() => {
               store.logout();
               router.push("/");
@@ -109,7 +111,7 @@ export function AlunoShell({ children }: { children: React.ReactNode }) {
         <FirstLoginGuide />
         <nav
           aria-label="Navegação do aluno"
-          className="fixed bottom-0 left-1/2 z-[55] w-full max-w-md -translate-x-1/2 border-t border-red-600/40 bg-[#0c0c0c]/95 pb-[max(0.35rem,env(safe-area-inset-bottom))] backdrop-blur-xl"
+          className="fixed bottom-0 left-1/2 z-[55] w-full max-w-md -translate-x-1/2 border-t border-red-600/40 bg-background/95 pb-[max(0.35rem,env(safe-area-inset-bottom))] backdrop-blur-xl"
         >
           <div className="flex">
             {items.map((item) => {
