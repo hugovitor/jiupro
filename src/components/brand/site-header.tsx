@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { ArrowRight } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { ThemeToggle } from "@/components/theme-toggle";
 import { Wordmark } from "./wordmark";
 
 export function SiteHeader({
@@ -17,7 +18,7 @@ export function SiteHeader({
   return (
     <header
       className={cn(
-        "z-50 border-b border-white/10 bg-[#080808]/85 backdrop-blur-xl",
+        "z-50 border-b border-border bg-background/85 backdrop-blur-xl",
         landing ? "fixed inset-x-0 top-0" : "relative",
       )}
     >
@@ -29,6 +30,7 @@ export function SiteHeader({
           </nav>
         ) : null}
         <div className="flex items-center gap-2">
+          <ThemeToggle />
           {actions ?? (
             <>
               <Link

@@ -11,6 +11,7 @@ import {
   ShieldAlert,
 } from "lucide-react";
 import { DarkCanvas, Eyebrow, Wordmark } from "@/components/brand";
+import { ThemeToggle } from "@/components/theme-toggle";
 import { SUPPORT_PHONE_DISPLAY, supportWhatsAppHref } from "@/lib/support";
 
 interface ErrorPageProps {
@@ -28,17 +29,20 @@ export default function ErrorPage({ error, reset }: ErrorPageProps) {
   }
 
   return (
-    <DarkCanvas className="flex min-h-screen bg-[#070707]">
+    <DarkCanvas className="flex min-h-screen">
       <header className="absolute inset-x-0 top-0 z-20">
         <div className="mx-auto flex h-20 max-w-7xl items-center justify-between px-5 lg:px-8">
           <Wordmark href="/" />
-          <Link
-            href="/"
-            className="inline-flex items-center gap-2 rounded-xl px-3 py-2 text-xs font-bold text-white/45 transition hover:bg-white/5 hover:text-white"
-          >
-            <ArrowLeft className="h-4 w-4" />
-            <span className="hidden sm:inline">Voltar ao início</span>
-          </Link>
+          <div className="flex items-center gap-1">
+            <ThemeToggle />
+            <Link
+              href="/"
+              className="inline-flex items-center gap-2 rounded-xl px-3 py-2 text-xs font-bold text-white/45 transition hover:bg-white/5 hover:text-white"
+            >
+              <ArrowLeft className="h-4 w-4" />
+              <span className="hidden sm:inline">Voltar ao início</span>
+            </Link>
+          </div>
         </div>
       </header>
 

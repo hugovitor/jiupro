@@ -16,7 +16,7 @@ export function SiteFooter({
   links?: { href: string; label: string }[];
 }) {
   return (
-    <footer className="bg-[#070707]">
+    <footer className="bg-background">
       <div className="mx-auto flex max-w-7xl flex-col gap-8 px-5 py-10 lg:px-8">
         <div className="flex flex-col justify-between gap-6 sm:flex-row sm:items-center">
           <div className="flex items-center">

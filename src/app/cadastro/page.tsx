@@ -325,7 +325,7 @@ export default function CadastroPage() {
   return (
     <Suspense
       fallback={
-        <div className="flex min-h-screen items-center justify-center bg-[#080808] text-sm text-white/40">
+        <div className="flex min-h-screen items-center justify-center bg-background text-sm text-muted-foreground">
           Carregando cadastro…
         </div>
       }

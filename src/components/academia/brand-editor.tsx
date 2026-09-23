@@ -44,7 +44,7 @@ export function AcademyBrandEditor() {
         É o que o aluno vê no topo, no atalho da tela inicial e na aba do navegador.
       </p>
 
-      <div className="mt-4 rounded-2xl border border-white/10 bg-[#080808] p-4">
+      <div className="mt-4 rounded-2xl border border-border bg-card p-4">
         <p className="mb-3 text-[10px] font-black tracking-[0.16em] text-white/35 uppercase">
           Preview do app
         </p>

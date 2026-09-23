@@ -57,7 +57,8 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
   return (
     <html
       lang="pt-BR"
-      className={`${inter.variable} ${plexMono.variable} dark h-full`}
+      suppressHydrationWarning
+      className={`${inter.variable} ${plexMono.variable} h-full`}
     >
       <body className="flex min-h-full flex-col bg-background text-foreground">
         <Providers>
