@@ -4,6 +4,7 @@ import { canAddStudent, joinStudentCapMessage, studentLimitForPlan } from "./pla
 import { matchRosterClaim } from "./roster-claim";
 import { ownerDestination } from "./auth-redirect";
 import { canCreateAnotherHouse, mapHouseMembership, routeForRole, staffOfHouse } from "./memberships";
+import { preferredSessionRole } from "./staff-roster";
 
 describe("join · ficha", () => {
   it("amarra pelo e-mail livre e recusa WhatsApp como identidade", () => {
@@ -81,6 +82,13 @@ describe("join · ficha", () => {
     expect(ownerDestination("/academia/atestados", "instructor")).toBe("/academia/atestados");
     expect(ownerDestination("/academia/contratos", "instructor")).toBe("/academia/contratos");
     expect(ownerDestination("/academia", "owner")).toBe("/academia");
+    expect(
+      preferredSessionRole(
+        "student",
+        [{ id: "ac1", role: "instructor" }],
+        "ac1",
+      ),
+    ).toBe("instructor");
     expect(
       mapHouseMembership({
         id: "ac2",

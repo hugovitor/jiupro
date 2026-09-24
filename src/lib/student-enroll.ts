@@ -6,6 +6,7 @@ import { collapseAcademyKey, generateJoinCode, looksLikeHouseCode } from "@/lib/
 import { mapPublicHouse, STUDENT_JOIN_NOT_FOUND, type PublicAcademyJoin } from "@/lib/student-join";
 import { matchRosterClaim } from "@/lib/roster-claim";
 import { staffOfHouse } from "@/lib/memberships";
+import { isStaffRole } from "@/lib/staff-roster";
 
 const HOUSE_COLUMNS = "id, name, slug, city, state, join_code, created_at";
 
@@ -311,17 +312,29 @@ export async function enrollStudentInAcademy(
         status: 400,
       };
     }
-    const { error } = await admin
-      .from("profiles")
-      .update({
-        academy_id: academy.id,
-        role: "student",
-        name: profile.name || label,
-        email: profile.email || email,
-        phone: profile.phone || phone || null,
-      })
-      .eq("id", input.userId);
-    if (error) return { error: error.message, status: 400 };
+    if (isStaffRole(typeof profile.role === "string" ? profile.role : null)) {
+      const { error } = await admin
+        .from("profiles")
+        .update({
+          name: profile.name || label,
+          email: profile.email || email,
+          phone: profile.phone || phone || null,
+        })
+        .eq("id", input.userId);
+      if (error) return { error: error.message, status: 400 };
+    } else {
+      const { error } = await admin
+        .from("profiles")
+        .update({
+          academy_id: academy.id,
+          role: "student",
+          name: profile.name || label,
+          email: profile.email || email,
+          phone: profile.phone || phone || null,
+        })
+        .eq("id", input.userId);
+      if (error) return { error: error.message, status: 400 };
+    }
   } else {
     const { error } = await admin.from("profiles").insert({
       id: input.userId,

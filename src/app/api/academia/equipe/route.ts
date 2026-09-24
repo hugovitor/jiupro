@@ -99,19 +99,15 @@ export async function POST(request: Request) {
     }
   }
 
-  if (otherHouse) {
-    const membership = await admin.from("academy_memberships").upsert({
-      user_id: userId,
-      academy_id: owner.data.academy_id,
-      role: "instructor",
-    });
-    if (
-      membership.error &&
-      !/does not exist|schema cache|42P01|PGRST205/i.test(membership.error.message)
-    ) {
-      return NextResponse.json({ error: membership.error.message }, { status: 400 });
-    }
-  } else {
+  const homeRole = String(existing.data?.role ?? "");
+  if (!otherHouse && homeRole === "owner") {
+    return NextResponse.json(
+      { error: "Este e-mail já é do dono desta academia." },
+      { status: 400 },
+    );
+  }
+  const keepHomeStaff = otherHouse && (homeRole === "owner" || homeRole === "instructor");
+  if (!keepHomeStaff) {
     const profile = await admin.from("profiles").upsert({
       id: userId,
       academy_id: owner.data.academy_id,
@@ -124,11 +120,65 @@ export async function POST(request: Request) {
     if (profile.error) {
       return NextResponse.json({ error: profile.error.message }, { status: 400 });
     }
-    await admin.from("academy_memberships").upsert({
-      user_id: userId,
-      academy_id: owner.data.academy_id,
-      role: "instructor",
-    });
+  }
+
+  const membership = await admin.from("academy_memberships").upsert({
+    user_id: userId,
+    academy_id: owner.data.academy_id,
+    role: "instructor",
+  });
+  if (
+    membership.error &&
+    !/does not exist|schema cache|42P01|PGRST205/i.test(membership.error.message)
+  ) {
+    return NextResponse.json({ error: membership.error.message }, { status: 400 });
+  }
+
+  const membershipsMissing = Boolean(
+    membership.error &&
+      /does not exist|schema cache|42P01|PGRST205/i.test(membership.error.message),
+  );
+
+  await admin.auth.admin.updateUserById(userId, {
+    user_metadata: { name, role: "instructor" },
+    app_metadata: { role: "instructor" },
+  });
+
+  const roster = await admin
+    .from("students")
+    .select("id, user_id, email")
+    .eq("academy_id", owner.data.academy_id);
+  for (const row of roster.data ?? []) {
+    const sameUser = String(row.user_id ?? "") === userId;
+    const sameEmail = email && String(row.email ?? "").trim().toLowerCase() === email;
+    if (!sameUser && !sameEmail) continue;
+    await admin.from("students").update({ user_id: null }).eq("id", row.id);
+  }
+
+  const check = await admin
+    .from("academy_memberships")
+    .select("role")
+    .eq("user_id", userId)
+    .eq("academy_id", owner.data.academy_id)
+    .maybeSingle();
+  const profileCheck = await admin
+    .from("profiles")
+    .select("role, academy_id")
+    .eq("id", userId)
+    .maybeSingle();
+  const membershipRole = String(check.data?.role ?? "");
+  const profileRole = String(profileCheck.data?.role ?? "");
+  const staffHere =
+    membershipRole === "instructor" ||
+    membershipRole === "owner" ||
+    (!check.data &&
+      profileRole === "instructor" &&
+      profileCheck.data?.academy_id === owner.data.academy_id);
+  if (!staffHere && !(keepHomeStaff && membershipsMissing)) {
+    return NextResponse.json(
+      { error: "O convite gravou a conta, mas o papel de professor não ficou. Tente de novo." },
+      { status: 502 },
+    );
   }
 
   const link = await admin.auth.admin.generateLink({

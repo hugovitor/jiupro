@@ -309,14 +309,26 @@ begin
   end if;
 
   if exists (select 1 from public.profiles where id = v_uid) then
-    update public.profiles
-    set
-      academy_id = v_academy,
-      role = 'student',
-      name = coalesce(nullif(name, ''), v_label, split_part(v_email, '@', 1), 'Aluno'),
-      email = case when email is null or email = '' then v_email else email end,
-      phone = case when phone is null or phone = '' then nullif(trim(p_phone), '') else phone end
-    where id = v_uid;
+    if v_profile_role in ('owner', 'instructor') then
+      update public.profiles
+      set
+        name = coalesce(nullif(name, ''), v_label, split_part(v_email, '@', 1), 'Aluno'),
+        email = case when email is null or email = '' then v_email else email end,
+        phone = case when phone is null or phone = '' then nullif(trim(p_phone), '') else phone end
+      where id = v_uid;
+      insert into public.academy_memberships (user_id, academy_id, role)
+      values (v_uid, v_academy, 'student')
+      on conflict (user_id, academy_id) do nothing;
+    else
+      update public.profiles
+      set
+        academy_id = v_academy,
+        role = 'student',
+        name = coalesce(nullif(name, ''), v_label, split_part(v_email, '@', 1), 'Aluno'),
+        email = case when email is null or email = '' then v_email else email end,
+        phone = case when phone is null or phone = '' then nullif(trim(p_phone), '') else phone end
+      where id = v_uid;
+    end if;
   else
     insert into public.profiles (id, academy_id, name, role, email, phone)
     values (
