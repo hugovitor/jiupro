@@ -5,6 +5,7 @@ import { useEffect, useMemo, useState } from "react";
 import { toast } from "sonner";
 import { AlunoAppCard } from "@/components/academia/aluno-app-card";
 import { ImportStudentsButton } from "@/components/academia/import-students-button";
+import { InviteInstructorDialog } from "@/components/academia/invite-instructor-form";
 import { EmptyState } from "@/components/academia/empty-state";
 import { SendStudentAccessButton } from "@/components/academia/send-student-access";
 import { BeltBadge, PersonAvatar } from "@/components/belt-badge";
@@ -26,6 +27,7 @@ import { formatCpf } from "@/lib/cpf";
 import { brl, currentMonth, isoDate } from "@/lib/format";
 import { canAddStudent, planUsageLabel, studentCapMessage } from "@/lib/plan-access";
 import { normalizeStudentFicha } from "@/lib/student-ficha";
+import { dropStaffFromRoster, isStaffRole } from "@/lib/staff-roster";
 import { useStore } from "@/lib/store";
 import type { Student, StudentStatus } from "@/lib/types";
 
@@ -43,8 +45,13 @@ export default function AlunosPage() {
   const [status, setStatus] = useState<StudentStatus | "all" | "overdue">("all");
   const month = currentMonth();
 
+  const roster = useMemo(
+    () => dropStaffFromRoster(store.students, store.users),
+    [store.students, store.users],
+  );
+
   const rows = useMemo(() => {
-    return store.students.filter((s) => {
+    return roster.filter((s) => {
       if (status === "overdue") {
         const late = store.payments.some(
           (p) => p.studentId === s.id && p.status === "overdue",
@@ -62,7 +69,7 @@ export default function AlunosPage() {
       }
       return true;
     });
-  }, [store.students, store.payments, q, status]);
+  }, [roster, store.payments, q, status]);
 
   return (
     <div className="mx-auto max-w-6xl space-y-6">
@@ -70,19 +77,20 @@ export default function AlunosPage() {
         <div>
           <h1 className="font-display text-3xl">Alunos</h1>
           <p className="text-sm text-muted-foreground">
-            {planUsageLabel(store.academy, store.students.length)} ·{" "}
-            {store.students.filter((s) => s.status === "active").length} no tatame
+            {planUsageLabel(store.academy, roster.length)} ·{" "}
+            {roster.filter((s) => s.status === "active").length} no tatame
           </p>
         </div>
         <div className="flex flex-wrap gap-2">
           <ImportStudentsButton />
+          <InviteInstructorDialog />
           <NovoAluno />
         </div>
       </div>
 
       <AlunoAppCard />
 
-        {store.students.length === 0 ? (
+        {roster.length === 0 ? (
         <EmptyState
           title="Sua lista ainda está vazia"
           body="Cadastre a ficha e mande o WhatsApp para criar a senha. Ou o aluno busca o nome da academia no app e entra sozinho."
@@ -266,7 +274,8 @@ function NovoAluno() {
           <>
             <p className="text-sm text-muted-foreground">
               A ficha fica nesta academia. Com WhatsApp, você manda o acesso na hora. Sem ficha, o
-              aluno busca o nome da academia no app e entra na lista sozinho.
+              aluno busca o nome da academia no app e entra na lista sozinho. Professor entra em
+              Novo professor, não aqui.
             </p>
             <form
               className="grid gap-3"
@@ -274,6 +283,17 @@ function NovoAluno() {
                 e.preventDefault();
                 if (!form.name.trim()) {
                   toast.error("Nome é obrigatório.");
+                  return;
+                }
+                const staffEmail = form.email.trim().toLowerCase();
+                if (
+                  staffEmail &&
+                  store.users.some(
+                    (user) =>
+                      isStaffRole(user.role) && user.email.trim().toLowerCase() === staffEmail,
+                  )
+                ) {
+                  toast.error("Este e-mail já é da equipe. Use Novo professor.");
                   return;
                 }
                 const next = normalizeStudentFicha({

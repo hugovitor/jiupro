@@ -5,6 +5,7 @@ import { mapAuthError } from "../auth-errors";
 import { looksLikeHouseCode } from "../join-code";
 import { isStudentJoinNotFound, preferredJoinCode, STUDENT_JOIN_NOT_FOUND, type PublicAcademyJoin } from "../student-join";
 import { mapHouseMembership } from "../memberships";
+import { preferredSessionRole } from "../staff-roster";
 import { ensureUuidState, rehomeAcademy, stateToTables, tablesToState } from "./mapper";
 import { ensureBrowserAuthSession } from "./session";
 import { DEMO_ACADEMY_ID } from "../seed";
@@ -603,10 +604,15 @@ export async function resumeRemoteSession(
   if (error && !isMissingRelation(error)) return { error: error.message };
   const academyId = (profile?.academy_id as string | undefined) || hint?.academyId;
   if (!academyId) return null;
+  const houses = await listMyHouses(client);
   return pullAcademyState({
     userId: user.id,
     academyId,
-    role: ((profile?.role as Role | undefined) || hint?.role || "owner") as Role,
+    role: preferredSessionRole(
+      (profile?.role as Role | undefined) || hint?.role,
+      houses,
+      academyId,
+    ),
   });
 }
 
@@ -784,13 +790,15 @@ export async function signInRemote(email: string, password: string) {
     };
   }
 
+  const houses = await listMyHouses(client);
+  const academyId = profile.academy_id as string;
   return {
     userId: data.user.id,
     profile,
     session: {
       userId: data.user.id,
-      academyId: profile.academy_id as string,
-      role: profile.role as Role,
+      academyId,
+      role: preferredSessionRole(profile.role as Role, houses, academyId),
     } satisfies Session,
   };
 }

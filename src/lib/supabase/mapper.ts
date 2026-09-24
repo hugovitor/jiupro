@@ -1,3 +1,4 @@
+import { dropStaffFromRoster } from "../staff-roster";
 import { asUuid, isUuid, remapIds } from "./ids";
 import type {
   Academy,
@@ -557,11 +558,13 @@ export function tablesToState(input: {
     if (email) seenEmail.add(email);
   }
 
+  const roster = dropStaffFromRoster(students, users);
+
   return {
     version: 7,
     academy,
     users,
-    students,
+    students: roster,
     classes: input.classes.map((c) => ({
       id: str(c.id),
       academyId,

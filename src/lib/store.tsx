@@ -68,6 +68,7 @@ import {
 } from "./enrollment-contract";
 import { canAddStudent, studentCapMessage } from "./plan-access";
 import { canCreateAnotherHouse } from "./memberships";
+import { dropStaffFromRoster, isStaffRole } from "./staff-roster";
 import { kidsGuardianRequiredError, resolvedEnrollmentDivision } from "./kids-enrollment";
 import { clampPersonName, clampPostContent, normalizeStudentPhone } from "./student-live";
 import {
@@ -1099,6 +1100,15 @@ export function StoreProvider({ children }: { children: ReactNode }) {
   const addStudent: Store["addStudent"] = useCallback((input) => {
     const prev = getSnapshot();
     if (!canAddStudent(prev.academy, prev.students.length)) return false;
+    const staffEmail = input.email.trim().toLowerCase();
+    if (
+      staffEmail &&
+      prev.users.some(
+        (user) => isStaffRole(user.role) && user.email.trim().toLowerCase() === staffEmail,
+      )
+    ) {
+      return false;
+    }
     if (
       kidsGuardianRequiredError({
         division: input.division,
@@ -1176,30 +1186,28 @@ export function StoreProvider({ children }: { children: ReactNode }) {
   const addInstructor: Store["addInstructor"] = useCallback((input) => {
     commit((prev) => {
       const email = input.email.trim().toLowerCase();
-      if (prev.users.some((user) => user.email.trim().toLowerCase() === email)) {
-        return {
-          ...prev,
-          users: prev.users.map((user) =>
+      const users = prev.users.some((user) => user.email.trim().toLowerCase() === email)
+        ? prev.users.map((user) =>
             user.email.trim().toLowerCase() === email
-              ? { ...user, name: input.name, phone: input.phone, role: "instructor" }
+              ? { ...user, name: input.name, phone: input.phone, role: "instructor" as const }
               : user,
-          ),
-        };
-      }
+          )
+        : [
+            ...prev.users,
+            {
+              id: input.id || uid("u"),
+              academyId: prev.academy.id,
+              name: input.name.trim(),
+              email,
+              role: "instructor" as const,
+              phone: input.phone.trim(),
+              avatarHue: Math.floor(Math.random() * 360),
+            },
+          ];
       return {
         ...prev,
-        users: [
-          ...prev.users,
-          {
-            id: input.id || uid("u"),
-            academyId: prev.academy.id,
-            name: input.name.trim(),
-            email,
-            role: "instructor" as const,
-            phone: input.phone.trim(),
-            avatarHue: Math.floor(Math.random() * 360),
-          },
-        ],
+        users,
+        students: dropStaffFromRoster(prev.students, users),
       };
     });
   }, []);
